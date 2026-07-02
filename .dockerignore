@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+build
+data/*.json
+data/*.db
+prisma/*.db
+public/uploads/templates/*
+public/uploads/signed/*
+.env*
+.git
+.DS_Store

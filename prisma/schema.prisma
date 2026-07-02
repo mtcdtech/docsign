@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String?
+  pcoName       String?
+  msName        String?
+  department    String?
+  role          String         @default("User") // Admin, OrgLeader, User
+  rawRole       String?
+  organizations Organization[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Organization {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  users       User[]
+  templates   Template[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Template {
+  id                  String           @id @default(cuid())
+  title               String
+  slug                String           @unique
+  pdfPath             String           // Local path of uploaded PDF template
+  fieldsJson          String           // JSON string of all input fields, validations, coordinates, page indexes
+  conditionalLogic    String?          // JSON string for conditional field display
+  emailUser           Boolean          @default(true)
+  emailLeader         Boolean          @default(true)
+  saveSharepoint      Boolean          @default(false)
+  sharepointFolderId  String?          // SharePoint folder path or ID
+  sharepointFolderName String?         // SharePoint folder name
+  organizationId      String
+  organization        Organization     @relation(fields: [organizationId], references: [id])
+  signedDocuments     SignedDocument[]
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+}
+
+model SignedDocument {
+  id             String   @id @default(cuid())
+  templateId     String
+  template       Template @relation(fields: [templateId], references: [id])
+  signerName     String
+  signerEmail    String
+  formDataJson   String   // JSON string of all user input responses
+  signedPdfPath  String   // Local path of generated signed PDF
+  sharepointUrl  String?  // SharePoint URL if uploaded
+  emailedUser    Boolean  @default(false)
+  emailedLeader  Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Setting {
+  key         String   @id
+  value       String
+  updatedAt   DateTime @updatedAt
+}
