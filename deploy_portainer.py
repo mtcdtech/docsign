@@ -15,17 +15,50 @@ def get_compose_content():
     with open("docker-compose.portainer.yml", "r") as f:
         return f.read()
 
+def get_existing_stack_id():
+    url = f"{base}/api/stacks"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "x-api-key": token,
+            "Accept": "application/json"
+        },
+        method="GET"
+    )
+    try:
+        with urllib.request.urlopen(req, context=ssl_context) as r:
+            stacks = json.loads(r.read().decode())
+            for s in stacks:
+                if s.get("Name") == "docsign":
+                    return s.get("Id")
+    except Exception as e:
+        print("Failed to check existing stacks:", e)
+    return None
+
 def deploy_stack():
     compose_content = get_compose_content()
     
-    payload = {
-        "Name": "docsign",
-        "StackFileContent": compose_content,
-        "Env": []
-    }
+    stack_id = get_existing_stack_id()
+    if stack_id:
+        print(f"Stack 'docsign' already exists (ID: {stack_id}). Updating stack...")
+        payload = {
+            "StackFileContent": compose_content,
+            "Env": [],
+            "Prune": True,
+            "PullImage": True
+        }
+        url = f"{base}/api/stacks/{stack_id}?endpointId={endpoint_id}"
+        method = "PUT"
+    else:
+        print("Stack 'docsign' does not exist. Creating stack...")
+        payload = {
+            "Name": "docsign",
+            "StackFileContent": compose_content,
+            "Env": []
+        }
+        url = f"{base}/api/stacks/create/standalone/string?endpointId={endpoint_id}"
+        method = "POST"
     
-    # Standalone stack creation from compose string
-    url = f"{base}/api/stacks/create/standalone/string?endpointId={endpoint_id}"
     req = urllib.request.Request(
         url,
         data=json.dumps(payload).encode(),
@@ -33,12 +66,13 @@ def deploy_stack():
             "x-api-key": token,
             "Content-Type": "application/json"
         },
-        method="POST"
+        method=method
     )
     
     try:
         with urllib.request.urlopen(req, context=ssl_context) as r:
-            print("Portainer Stack Created and Deployed Successfully!")
+            action = "Updated" if method == "PUT" else "Created and Deployed"
+            print(f"Portainer Stack {action} Successfully!")
             print(r.read().decode())
     except urllib.error.HTTPError as e:
         print("Deployment Failed:", e.code)
