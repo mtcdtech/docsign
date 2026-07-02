@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  app:
+    image: mtcdtech/docsign:latest
+    container_name: docsign-app
+    ports:
+      - "3656:3656"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/dev.db
+      - NEXTAUTH_SECRET=ds_session_secret_change_me_in_prod_stack
+      - NEXTAUTH_URL=https://docsign.server.mtcd.org
+      - AUTHENTIK_CLIENT_ID=
+      - AUTHENTIK_CLIENT_SECRET=
+      - AUTHENTIK_ISSUER=
+      - AZURE_AD_CLIENT_ID=
+      - AZURE_AD_CLIENT_SECRET=
+      - AZURE_AD_TENANT_ID=
+      - SMTP_HOST=smtp.office365.com
+      - SMTP_PORT=587
+      - SMTP_USER=announcements@mtcd.org
+      - SMTP_PASS=T#613178294935us
+      - ADMIN_PASSWORD=admin
+    restart: always
+    volumes:
+      - docsign_data:/app/data
+      - docsign_uploads:/app/public/uploads
+
+volumes:
+  docsign_data:
+  docsign_uploads:

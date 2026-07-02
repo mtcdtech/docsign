@@ -7,8 +7,12 @@ RUN npm install --legacy-peer-deps
 
 COPY . .
 
-# Default DATABASE_URL for build time (prisma generate needs it)
-ENV DATABASE_URL="file:/app/prisma/dev.db"
+# Default DATABASE_URL for build time
+ENV DATABASE_URL="file:/app/data/dev.db"
+
+# Force Prisma to use library engines (avoids Rosetta spawn emulation crashes on Apple Silicon)
+ENV PRISMA_CLI_QUERY_ENGINE_TYPE=library
+ENV PRISMA_CLIENT_ENGINE_TYPE=library
 
 # Generate client and build app
 RUN npm run build
