@@ -45,11 +45,14 @@ export default async function RootLayout({
   }
 
   // Version number (Printed in the footer for tracking)
-  const appVersion = "0.1.6";
+  const appVersion = "0.1.7";
 
   return (
     <html lang="en" data-theme={themeMode}>
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
         <style
           dangerouslySetInnerHTML={{
             __html: `
@@ -57,6 +60,10 @@ export default async function RootLayout({
                 --primary-color: ${primaryColor};
                 --primary-hover: ${primaryHover};
                 --primary-glow: ${primaryColor}26; /* Add alpha hex */
+                --border-focus: ${primaryColor}66; /* Match focus states */
+              }
+              :root[data-theme="light"] {
+                --border-focus: ${primaryColor}4d;
               }
             `,
           }}
