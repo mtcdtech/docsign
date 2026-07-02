@@ -32,7 +32,7 @@ export default async function RootLayout({
   }
 
   // Version number (Printed in the footer for tracking)
-  const appVersion = "0.1.3";
+  const appVersion = "0.1.4";
 
   return (
     <html lang="en">
