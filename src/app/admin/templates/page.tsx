@@ -2,12 +2,16 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default async function TemplatesListPage() {
   const session = await getServerSession(authOptions);
-  const user = session!.user as any;
+  if (!session?.user) {
+    redirect("/");
+  }
+  const user = session.user as any;
   const isGlobalAdmin = user.role === "Admin";
 
   let templates = [];

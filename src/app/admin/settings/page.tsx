@@ -9,7 +9,10 @@ export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
-  const user = session!.user as any;
+  if (!session?.user) {
+    redirect("/");
+  }
+  const user = session.user as any;
 
   // Strict check - settings are restricted to global admin only
   if (user.role !== "Admin") {

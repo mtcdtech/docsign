@@ -8,7 +8,10 @@ export const dynamic = "force-dynamic";
 
 export default async function NewTemplatePage() {
   const session = await getServerSession(authOptions);
-  const user = session!.user as any;
+  if (!session?.user) {
+    redirect("/");
+  }
+  const user = session.user as any;
 
   let organizations = [];
 

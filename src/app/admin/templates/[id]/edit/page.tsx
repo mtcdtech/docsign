@@ -14,7 +14,10 @@ interface EditTemplatePageProps {
 
 export default async function EditTemplatePage({ params }: EditTemplatePageProps) {
   const session = await getServerSession(authOptions);
-  const user = session!.user as any;
+  if (!session?.user) {
+    redirect("/");
+  }
+  const user = session.user as any;
 
   const template = await prisma.template.findUnique({
     where: { id: params.id }

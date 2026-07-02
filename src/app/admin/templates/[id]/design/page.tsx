@@ -15,7 +15,10 @@ interface DesignTemplatePageProps {
 
 export default async function DesignTemplatePage({ params }: DesignTemplatePageProps) {
   const session = await getServerSession(authOptions);
-  const user = session!.user as any;
+  if (!session?.user) {
+    redirect("/");
+  }
+  const user = session.user as any;
 
   const template = await prisma.template.findUnique({
     where: { id: params.id },

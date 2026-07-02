@@ -1,13 +1,17 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
 import SyncIamButton from "./SyncIamButton";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
   const session = await getServerSession(authOptions);
-  const user = session!.user as any;
+  if (!session?.user) {
+    redirect("/");
+  }
+  const user = session.user as any;
   const isGlobalAdmin = user.role === "Admin";
 
   let signedDocs = [];
