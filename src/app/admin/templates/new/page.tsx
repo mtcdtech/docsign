@@ -28,6 +28,20 @@ export default async function NewTemplatePage() {
 
   // If org leader has no organizations, they can't create templates yet
   if (organizations.length === 0) {
+    if (user.role === "Admin") {
+      return (
+        <div className="card-glass" style={{ maxWidth: "600px", margin: "40px auto", textAlign: "center" }}>
+          <h2>No Organizations Found</h2>
+          <p style={{ marginTop: "12px", marginBottom: "20px" }}>
+            There are no church organizations in the database yet. As an Administrator, please synchronize with the IAM registry first.
+          </p>
+          <a href="/admin" className="btn btn-primary" style={{ display: "inline-block", width: "auto" }}>
+            Go to Dashboard & Sync IAM
+          </a>
+        </div>
+      );
+    }
+
     return (
       <div className="card-glass" style={{ maxWidth: "600px", margin: "40px auto", textAlign: "center" }}>
         <h2>Access Denied</h2>

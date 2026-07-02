@@ -32,4 +32,4 @@ COPY --from=builder /app/package.json ./package.json
 
 EXPOSE 3656
 
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss --skip-generate && npx next start -H 0.0.0.0 -p 3656"]
+CMD ["sh", "-c", "npx --no-install prisma db push --accept-data-loss --skip-generate && npx next start -H 0.0.0.0 -p 3656"]
