@@ -64,8 +64,13 @@ export const authOptions: NextAuthOptions = {
         
         const authDept = (user as any).department;
         const dbDept = dbUser?.department;
-        const authGroups = (user as any).groups || [];
-        const isAuthentikAdmin = authGroups.includes("docsign-admins") || authGroups.includes("Admins");
+        const authGroups = ((user as any).groups || []).map((g: string) => g.toLowerCase());
+        
+        const isAuthentikAdmin = authGroups.includes("docsign-admins") || 
+                                 authGroups.includes("admins") || 
+                                 authGroups.includes("app_docsign_admin");
+        
+        const isAuthentikOrgLeader = authGroups.includes("app_docsign_orgleader");
         
         // Define if it is a real department
         const isRealDept = (d: string) => d && d !== "General" && !d.toLowerCase().includes("access") && !d.toLowerCase().includes("admin");
@@ -74,24 +79,41 @@ export const authOptions: NextAuthOptions = {
         if (isRealDept(authDept)) extractedDept = authDept;
         else if (dbDept && dbDept !== "General") extractedDept = dbDept;
 
+        // Calculate target role
+        let targetRole = "User";
+        if (emailLower === "tech@mtcd.org" || emailLower === "ben@abraham16.com" || isAuthentikAdmin) {
+          targetRole = "Admin";
+        } else if (isAuthentikOrgLeader) {
+          targetRole = "OrgLeader";
+        }
+
         if (!dbUser) {
-          // New user: tech@mtcd.org, ben@abraham16.com or docsign-admins group are Admins.
-          // Otherwise, check if they exist in organizations and set role as OrgLeader or User.
-          const defaultRole = (emailLower === "tech@mtcd.org" || emailLower === "ben@abraham16.com" || isAuthentikAdmin) ? "Admin" : "User";
           dbUser = await prisma.user.create({
             data: {
               email: emailLower,
-              role: defaultRole,
+              role: targetRole,
               name: user.name,
               department: extractedDept
             }
           });
         } else {
-          // Existing user: preserve Admin status or raise to Admin if in Group
+          // Existing user: sync roles dynamically from Authentik SSO
           let updatedRole = dbUser.role;
-          if ((isAuthentikAdmin || emailLower === "tech@mtcd.org" || emailLower === "ben@abraham16.com") && dbUser.role !== "Admin") {
+          if (emailLower === "tech@mtcd.org" || emailLower === "ben@abraham16.com" || isAuthentikAdmin) {
             updatedRole = "Admin";
+          } else if (isAuthentikOrgLeader) {
+            if (dbUser.role !== "Admin") {
+              updatedRole = "OrgLeader";
+            }
+          } else {
+            // Downgrade to standard User if access revoked in Authentik, unless they are a hardcoded system superadmin
+            if (dbUser.role === "Admin" && (emailLower === "tech@mtcd.org" || emailLower === "ben@abraham16.com")) {
+              // preserve
+            } else {
+              updatedRole = "User";
+            }
           }
+          
           dbUser = await prisma.user.update({
             where: { id: dbUser.id },
             data: { name: user.name, department: extractedDept, role: updatedRole }
