@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { primary_color, primary_hover, portal_title } = body;
+    const { primary_color, primary_hover, portal_title, portal_logo, theme_mode } = body;
 
     // Validate inputs
     if (!primary_color || !primary_hover || !portal_title) {
@@ -23,6 +23,8 @@ export async function POST(req: Request) {
       primary_color,
       primary_hover,
       portal_title,
+      portal_logo: portal_logo || "",
+      theme_mode: theme_mode || "dark",
     };
 
     for (const [key, value] of Object.entries(settings)) {

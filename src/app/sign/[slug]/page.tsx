@@ -24,10 +24,22 @@ export default async function SignPage({ params }: SignPageProps) {
     notFound();
   }
 
+  let portalTitle = "DocSign Portal";
+  let portalLogo = "";
+  try {
+    const settings = await prisma.setting.findMany();
+    const settingsMap = settings.reduce((acc, curr) => {
+      acc[curr.key] = curr.value;
+      return acc;
+    }, {} as Record<string, string>);
+    if (settingsMap["portal_title"]) portalTitle = settingsMap["portal_title"];
+    if (settingsMap["portal_logo"]) portalLogo = settingsMap["portal_logo"];
+  } catch (e) {}
+
   return (
     <main style={{ padding: "20px", display: "flex", flexDirection: "column", width: "100%" }}>
       <div style={{ flex: 1 }}>
-        <SignForm template={template} />
+        <SignForm template={template} portalTitle={portalTitle} portalLogo={portalLogo} />
       </div>
     </main>
   );

@@ -2,10 +2,17 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { prisma } from "@/lib/prisma";
 
-export const metadata: Metadata = {
-  title: "DocSign Portal",
-  description: "Self-hosted Digital PDF Signature Platform",
-};
+export async function generateMetadata() {
+  let title = "DocSign Portal";
+  try {
+    const setting = await prisma.setting.findFirst({ where: { key: "portal_title" } });
+    if (setting?.value) title = setting.value;
+  } catch (e) {}
+  return {
+    title,
+    description: "Self-hosted Digital PDF Signature Platform",
+  };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +24,9 @@ export default async function RootLayout({
   // Load custom style configurations from the database
   let primaryColor = "#4f46e5";
   let primaryHover = "#4338ca";
+  let portalTitle = "DocSign Portal";
+  let portalLogo = "";
+  let themeMode = "dark";
   
   try {
     const settings = await prisma.setting.findMany();
@@ -27,15 +37,18 @@ export default async function RootLayout({
 
     if (settingsMap["primary_color"]) primaryColor = settingsMap["primary_color"];
     if (settingsMap["primary_hover"]) primaryHover = settingsMap["primary_hover"];
+    if (settingsMap["portal_title"]) portalTitle = settingsMap["portal_title"];
+    if (settingsMap["portal_logo"]) portalLogo = settingsMap["portal_logo"];
+    if (settingsMap["theme_mode"]) themeMode = settingsMap["theme_mode"];
   } catch (dbErr) {
     // Falls back to defaults if database is not ready
   }
 
   // Version number (Printed in the footer for tracking)
-  const appVersion = "0.1.5";
+  const appVersion = "0.1.6";
 
   return (
-    <html lang="en">
+    <html lang="en" data-theme={themeMode}>
       <head>
         <style
           dangerouslySetInnerHTML={{
@@ -48,8 +61,27 @@ export default async function RootLayout({
             `,
           }}
         />
+        {portalLogo ? (
+          <link rel="icon" href={portalLogo} />
+        ) : (
+          <link rel="icon" href="/favicon.ico" />
+        )}
       </head>
       <body>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var storedTheme = localStorage.getItem('theme-mode');
+                  if (storedTheme) {
+                    document.documentElement.setAttribute('data-theme', storedTheme);
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
         <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", width: "100%" }}>
           <div style={{ flex: "1 0 auto" }}>{children}</div>
           <footer
@@ -62,7 +94,7 @@ export default async function RootLayout({
               flexShrink: 0,
             }}
           >
-            <p>© {new Date().getFullYear()} DocSign Portal. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} {portalTitle}. All rights reserved.</p>
             <p style={{ marginTop: "4px", fontSize: "11px" }}>
               Version: <strong style={{ color: "var(--text-main)" }}>{appVersion}</strong>
             </p>

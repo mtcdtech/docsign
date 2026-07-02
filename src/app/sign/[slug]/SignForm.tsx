@@ -34,9 +34,11 @@ interface SignFormProps {
       name: string;
     };
   };
+  portalTitle: string;
+  portalLogo: string;
 }
 
-export default function SignForm({ template }: SignFormProps) {
+export default function SignForm({ template, portalTitle, portalLogo }: SignFormProps) {
   const fields = JSON.parse(template.fieldsJson) as FormField[];
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [signerName, setSignerName] = useState("");
@@ -44,6 +46,19 @@ export default function SignForm({ template }: SignFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [signedPdfUrl, setSignedPdfUrl] = useState<string | null>(null);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+  React.useEffect(() => {
+    const currentTheme = document.documentElement.getAttribute("data-theme") as "dark" | "light" || "dark";
+    setTheme(currentTheme);
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    document.documentElement.setAttribute("data-theme", nextTheme);
+    localStorage.setItem("theme-mode", nextTheme);
+  };
 
   // Age Calculator
   const getAge = (dobString: string): number => {
@@ -159,8 +174,59 @@ export default function SignForm({ template }: SignFormProps) {
   }
 
   return (
-    <div className="card-glass" style={{ maxWidth: "600px", margin: "40px auto" }}>
-      <div style={{ marginBottom: "24px", borderBottom: "1px solid var(--border-color)", paddingBottom: "16px" }}>
+    <div className="card-glass" style={{ maxWidth: "600px", margin: "40px auto", position: "relative" }}>
+      {/* Theme Toggle Button */}
+      <button
+        type="button"
+        onClick={toggleTheme}
+        className="btn btn-secondary"
+        style={{
+          position: "absolute",
+          top: "16px",
+          right: "16px",
+          padding: "8px",
+          borderRadius: "50%",
+          width: "36px",
+          height: "36px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          border: "1px solid var(--border-color)",
+          background: "transparent",
+        }}
+        title="Toggle theme mode"
+      >
+        {theme === "dark" ? (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--text-main)" }}>
+            <circle cx="12" cy="12" r="5" />
+            <line x1="12" y1="1" x2="12" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="23" />
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+            <line x1="1" y1="12" x2="3" y2="12" />
+            <line x1="21" y1="12" x2="23" y2="12" />
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+          </svg>
+        ) : (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--text-main)" }}>
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+        )}
+      </button>
+
+      {/* Custom Branding Logo */}
+      {portalLogo && (
+        <div style={{ textAlign: "left", marginBottom: "16px" }}>
+          <img
+            src={portalLogo}
+            alt="Logo"
+            style={{ maxHeight: "36px", maxWidth: "150px", objectFit: "contain" }}
+          />
+        </div>
+      )}
+
+      <div style={{ marginBottom: "24px", borderBottom: "1px solid var(--border-color)", paddingBottom: "16px", paddingRight: "44px" }}>
         <span style={{ fontSize: "12px", color: "var(--primary-color)", fontWeight: "bold", textTransform: "uppercase" }}>
           {template.organization.name}
         </span>

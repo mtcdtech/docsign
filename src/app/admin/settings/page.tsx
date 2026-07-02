@@ -30,6 +30,8 @@ export default async function SettingsPage() {
     const primaryColor = settingsMap["primary_color"] || "#4f46e5";
     const primaryHover = settingsMap["primary_hover"] || "#4338ca";
     const portalTitle = settingsMap["portal_title"] || "DocSign Portal";
+    const portalLogo = settingsMap["portal_logo"] || "";
+    const themeMode = settingsMap["theme_mode"] || "dark";
 
     // Fetch local API key for central IAM registration
     const apiKey = getApiKey();
@@ -48,6 +50,8 @@ export default async function SettingsPage() {
             initialPrimaryColor={primaryColor}
             initialPrimaryHover={primaryHover}
             initialPortalTitle={portalTitle}
+            initialLogoBase64={portalLogo}
+            initialThemeMode={themeMode}
             apiKey={apiKey}
             rolesApiUrl={rolesApiUrl}
           />

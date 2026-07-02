@@ -7,6 +7,8 @@ interface SettingsFormProps {
   initialPrimaryColor: string;
   initialPrimaryHover: string;
   initialPortalTitle: string;
+  initialLogoBase64: string;
+  initialThemeMode: string;
   apiKey: string;
   rolesApiUrl: string;
 }
@@ -15,6 +17,8 @@ export default function SettingsForm({
   initialPrimaryColor,
   initialPrimaryHover,
   initialPortalTitle,
+  initialLogoBase64,
+  initialThemeMode,
   apiKey,
   rolesApiUrl,
 }: SettingsFormProps) {
@@ -22,9 +26,65 @@ export default function SettingsForm({
   const [primaryColor, setPrimaryColor] = useState(initialPrimaryColor);
   const [primaryHover, setPrimaryHover] = useState(initialPrimaryHover);
   const [portalTitle, setPortalTitle] = useState(initialPortalTitle);
+  const [logoBase64, setLogoBase64] = useState(initialLogoBase64);
+  const [themeMode, setThemeMode] = useState(initialThemeMode);
+  const [dragOver, setDragOver] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const triggerFileInput = () => {
+    document.getElementById("logo-file-input")?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      processFile(e.target.files[0]);
+    }
+  };
+
+  const processFile = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setSaveError("Please upload an image file.");
+      return;
+    }
+    
+    // File size limit - SQLite can handle large files but let's keep it under 2MB for standard favicon/logos
+    if (file.size > 2 * 1024 * 1024) {
+      setSaveError("File is too large. Please select an image smaller than 2MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      if (uploadEvent.target?.result) {
+        setLogoBase64(uploadEvent.target.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearLogo = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Avoid triggering file browse
+    setLogoBase64("");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +102,8 @@ export default function SettingsForm({
           primary_color: primaryColor,
           primary_hover: primaryHover,
           portal_title: portalTitle,
+          portal_logo: logoBase64,
+          theme_mode: themeMode,
         }),
       });
 
@@ -56,6 +118,10 @@ export default function SettingsForm({
       // Update variables in real time on this tab
       document.documentElement.style.setProperty("--primary-color", primaryColor);
       document.documentElement.style.setProperty("--primary-hover", primaryHover);
+      
+      // Update theme setting in real time
+      document.documentElement.setAttribute("data-theme", themeMode);
+      localStorage.setItem("theme-mode", themeMode);
     } catch (err: any) {
       setSaveError(err.message || "An error occurred.");
     } finally {
@@ -79,6 +145,76 @@ export default function SettingsForm({
             onChange={(e) => setPortalTitle(e.target.value)}
             placeholder="DocSign Portal"
           />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Default Theme Mode</label>
+          <select
+            className="form-input"
+            value={themeMode}
+            onChange={(e) => setThemeMode(e.target.value)}
+            style={{ background: "rgba(0,0,0,0.2)", cursor: "pointer", border: "1px solid var(--border-color)", borderRadius: "var(--radius-sm)", color: "var(--text-main)" }}
+          >
+            <option value="dark" style={{ background: "var(--bg-card)", color: "var(--text-main)" }}>Dark Mode</option>
+            <option value="light" style={{ background: "var(--bg-card)", color: "var(--text-main)" }}>Light Mode</option>
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Portal Logo</label>
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={triggerFileInput}
+            style={{
+              border: `2px dashed ${dragOver ? "var(--primary-color)" : "var(--border-color)"}`,
+              borderRadius: "var(--radius-md)",
+              padding: "24px",
+              textAlign: "center",
+              cursor: "pointer",
+              background: dragOver ? "rgba(79, 70, 229, 0.05)" : "rgba(0, 0, 0, 0.1)",
+              transition: "all var(--transition-fast)",
+            }}
+          >
+            <input
+              type="file"
+              id="logo-file-input"
+              accept="image/*"
+              onChange={handleFileChange}
+              style={{ display: "none" }}
+            />
+            {logoBase64 ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+                <img
+                  src={logoBase64}
+                  alt="Custom Logo Preview"
+                  style={{ maxHeight: "64px", maxWidth: "100%", objectFit: "contain", borderRadius: "4px" }}
+                />
+                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                  Custom logo uploaded. Drag and drop or click to replace.
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={clearLogo}
+                  style={{ padding: "6px 12px", fontSize: "12px", borderRadius: "6px", width: "auto" }}
+                >
+                  Remove Logo
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
+                </svg>
+                <span style={{ fontSize: "14px", fontWeight: "bold" }}>Drag and drop logo here, or click to browse</span>
+                <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Supports PNG, JPG, or SVG (square/wide aspect ratio)</span>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="dashboard-grid" style={{ gap: "20px" }}>

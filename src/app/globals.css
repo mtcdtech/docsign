@@ -26,6 +26,32 @@
   --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Light Mode Overrides */
+:root[data-theme="light"] {
+  --bg-app: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9;
+  --bg-glass: rgba(255, 255, 255, 0.85);
+  
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --text-inverse: #ffffff;
+  
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-focus: rgba(79, 70, 229, 0.4);
+  
+  --shadow-main: 0 10px 30px -10px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] .form-input {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+:root[data-theme="light"] select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
 /* Global Reset */
 * {
   box-sizing: border-box;
