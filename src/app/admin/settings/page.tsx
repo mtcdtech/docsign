@@ -33,6 +33,7 @@ export default async function SettingsPage() {
 
     // Fetch local API key for central IAM registration
     const apiKey = getApiKey();
+    const rolesApiUrl = `${process.env.NEXTAUTH_URL || "http://docsign.server.mtcd.org"}/api/iam/roles`;
 
     return (
       <div>
@@ -42,61 +43,14 @@ export default async function SettingsPage() {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
-          {/* Branding Styling Form */}
+          {/* Branding Styling Form & Central IAM API Info (Client-Side Component) */}
           <SettingsForm
             initialPrimaryColor={primaryColor}
             initialPrimaryHover={primaryHover}
             initialPortalTitle={portalTitle}
+            apiKey={apiKey}
+            rolesApiUrl={rolesApiUrl}
           />
-
-          {/* Central IAM API Registry Info */}
-          <div className="card-glass">
-            <h2 style={{ marginBottom: "12px" }}>Central IAM Registry Integration</h2>
-            <p style={{ fontSize: "14px", marginBottom: "20px" }}>
-              Use the credentials below to register this DocSign app inside your central central IAM Admin stack, so roles and user lists synchronize properly.
-            </p>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">DocSign Client App Slug</label>
-                <input
-                  type="text"
-                  readOnly
-                  className="form-input"
-                  value="docsign"
-                  style={{ fontFamily: "monospace", background: "rgba(0,0,0,0.4)", cursor: "text" }}
-                  onClick={(e) => (e.target as HTMLInputElement).select()}
-                />
-              </div>
-
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">Exposed User-Roles API URL</label>
-                <input
-                  type="text"
-                  readOnly
-                  className="form-input"
-                  value={`${process.env.NEXTAUTH_URL || "http://docsign.server.mtcd.org"}/api/iam/roles`}
-                  style={{ fontFamily: "monospace", background: "rgba(0,0,0,0.4)", cursor: "text" }}
-                  onClick={(e) => (e.target as HTMLInputElement).select()}
-                />
-              </div>
-
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">Synchronization API Token (Bearer)</label>
-                <input
-                  type="text"
-                  readOnly
-                  className="form-input"
-                  value={apiKey}
-                  style={{ fontFamily: "monospace", background: "rgba(0,0,0,0.4)", cursor: "text", fontSize: "13px" }}
-                  onClick={(e) => (e.target as HTMLInputElement).select()}
-                />
-                <span style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>
-                  Click to highlight and copy. This matches theBearer token authentication required in the central IAM registry configurations.
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     );

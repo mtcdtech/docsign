@@ -7,12 +7,16 @@ interface SettingsFormProps {
   initialPrimaryColor: string;
   initialPrimaryHover: string;
   initialPortalTitle: string;
+  apiKey: string;
+  rolesApiUrl: string;
 }
 
 export default function SettingsForm({
   initialPrimaryColor,
   initialPrimaryHover,
   initialPortalTitle,
+  apiKey,
+  rolesApiUrl,
 }: SettingsFormProps) {
   const router = useRouter();
   const [primaryColor, setPrimaryColor] = useState(initialPrimaryColor);
@@ -60,7 +64,8 @@ export default function SettingsForm({
   };
 
   return (
-    <div className="card-glass">
+    <>
+      <div className="card-glass">
       <h2 style={{ marginBottom: "20px" }}>Visual Customization</h2>
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
         
@@ -141,6 +146,56 @@ export default function SettingsForm({
           {isSaving ? "Saving Settings..." : "Save Theme Preferences"}
         </button>
       </form>
-    </div>
+      </div>
+
+      {/* Central IAM API Registry Info */}
+      <div className="card-glass" style={{ marginTop: "32px" }}>
+        <h2 style={{ marginBottom: "12px" }}>Central IAM Registry Integration</h2>
+        <p style={{ fontSize: "14px", marginBottom: "20px" }}>
+          Use the credentials below to register this DocSign app inside your central central IAM Admin stack, so roles and user lists synchronize properly.
+        </p>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label">DocSign Client App Slug</label>
+            <input
+              type="text"
+              readOnly
+              className="form-input"
+              value="docsign"
+              style={{ fontFamily: "monospace", background: "rgba(0,0,0,0.4)", cursor: "text" }}
+              onClick={(e) => (e.target as HTMLInputElement).select()}
+            />
+          </div>
+
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label">Exposed User-Roles API URL</label>
+            <input
+              type="text"
+              readOnly
+              className="form-input"
+              value={rolesApiUrl}
+              style={{ fontFamily: "monospace", background: "rgba(0,0,0,0.4)", cursor: "text" }}
+              onClick={(e) => (e.target as HTMLInputElement).select()}
+            />
+          </div>
+
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label">Synchronization API Token (Bearer)</label>
+            <input
+              type="text"
+              readOnly
+              className="form-input"
+              value={apiKey}
+              style={{ fontFamily: "monospace", background: "rgba(0,0,0,0.4)", cursor: "text", fontSize: "13px" }}
+              onClick={(e) => (e.target as HTMLInputElement).select()}
+            />
+            <span style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>
+              Click to highlight and copy. This matches the Bearer token authentication required in the central IAM registry configurations.
+            </span>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
