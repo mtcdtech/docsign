@@ -70,3 +70,13 @@ model Setting {
   value       String
   updatedAt   DateTime @updatedAt
 }
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  email     String
+  action    String
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+}
+

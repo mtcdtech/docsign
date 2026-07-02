@@ -11,20 +11,21 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { primary_color, primary_hover, portal_title, portal_logo, theme_mode } = body;
+    const { primary_color, primary_hover, portal_title, portal_logo, theme_mode, central_iam_url } = body;
 
     // Validate inputs
     if (!primary_color || !primary_hover || !portal_title) {
       return NextResponse.json({ ok: false, error: "Missing styling parameters." }, { status: 400 });
     }
 
-    // Save style settings to SQLite
+    // Save settings to SQLite
     const settings = {
       primary_color,
       primary_hover,
       portal_title,
       portal_logo: portal_logo || "",
       theme_mode: theme_mode || "dark",
+      central_iam_url: central_iam_url || "",
     };
 
     for (const [key, value] of Object.entries(settings)) {

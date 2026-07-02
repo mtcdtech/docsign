@@ -141,6 +141,20 @@ export const authOptions: NextAuthOptions = {
         (user as any).id = dbUser.id;
         (user as any).department = dbUser.department || extractedDept;
       }
+
+      if (user?.email) {
+        try {
+          await prisma.auditLog.create({
+            data: {
+              email: user.email.toLowerCase(),
+              action: account?.provider === "authentik" ? "SSO Login" : "Credentials Login",
+            },
+          });
+        } catch (e) {
+          console.error("Failed to write login audit log:", e);
+        }
+      }
+
       return true;
     },
     async jwt({ token, user }) {

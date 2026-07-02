@@ -32,10 +32,26 @@ export default async function SettingsPage() {
     const portalTitle = settingsMap["portal_title"] || "DocSign Portal";
     const portalLogo = settingsMap["portal_logo"] || "";
     const themeMode = settingsMap["theme_mode"] || "dark";
+    const centralIamUrl = settingsMap["central_iam_url"] || "https://admin.server.mtcd.org";
 
     // Fetch local API key for central IAM registration
     const apiKey = getApiKey();
     const rolesApiUrl = `${process.env.NEXTAUTH_URL || "http://docsign.server.mtcd.org"}/api/iam/roles`;
+
+    // Fetch database entries for Directory, Organizations, and Audit Logs
+    const organizations = await prisma.organization.findMany({
+      orderBy: { name: "asc" }
+    });
+
+    const users = await prisma.user.findMany({
+      include: { organizations: true },
+      orderBy: { email: "asc" }
+    });
+
+    const auditLogs = await prisma.auditLog.findMany({
+      take: 100,
+      orderBy: { createdAt: "desc" }
+    });
 
     return (
       <div>
@@ -52,6 +68,10 @@ export default async function SettingsPage() {
             initialPortalTitle={portalTitle}
             initialLogoBase64={portalLogo}
             initialThemeMode={themeMode}
+            initialCentralIamUrl={centralIamUrl}
+            initialOrganizations={organizations}
+            initialUsers={users}
+            initialAuditLogs={auditLogs}
             apiKey={apiKey}
             rolesApiUrl={rolesApiUrl}
           />
