@@ -13,7 +13,7 @@ services:
       - NEXTAUTH_URL=https://docsign.server.mtcd.org
       - AUTHENTIK_CLIENT_ID=docsign_client_id_mtcd
       - AUTHENTIK_CLIENT_SECRET=GMym0HOG89dShkeZVvGwheeEkvUmcLwiIYjemwZZonCyCYiF
-      - AUTHENTIK_ISSUER=https://auth.server.mtcd.org/application/o/docsign/
+      - AUTHENTIK_ISSUER=https://auth.server.mtcd.org/application/o/docsign
       - AZURE_AD_CLIENT_ID=
       - AZURE_AD_CLIENT_SECRET=
       - AZURE_AD_TENANT_ID=
