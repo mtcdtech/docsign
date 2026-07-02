@@ -25,7 +25,7 @@ export default async function SignPage({ params }: SignPageProps) {
   }
 
   return (
-    <main style={{ padding: "20px", display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+    <main style={{ padding: "20px", display: "flex", flexDirection: "column", width: "100%" }}>
       <div style={{ flex: 1 }}>
         <SignForm template={template} />
       </div>

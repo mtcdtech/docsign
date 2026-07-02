@@ -32,7 +32,7 @@ export default async function RootLayout({
   }
 
   // Version number (Printed in the footer for tracking)
-  const appVersion = "0.1.2";
+  const appVersion = "0.1.3";
 
   return (
     <html lang="en">
@@ -50,22 +50,24 @@ export default async function RootLayout({
         />
       </head>
       <body>
-        <div style={{ flex: 1 }}>{children}</div>
-        <footer
-          style={{
-            textAlign: "center",
-            padding: "24px",
-            fontSize: "12px",
-            color: "var(--text-muted)",
-            borderTop: "1px solid var(--border-color)",
-            marginTop: "auto",
-          }}
-        >
-          <p>© {new Date().getFullYear()} DocSign Portal. All rights reserved.</p>
-          <p style={{ marginTop: "4px", fontSize: "11px" }}>
-            Version: <strong style={{ color: "var(--text-main)" }}>{appVersion}</strong>
-          </p>
-        </footer>
+        <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", width: "100%" }}>
+          <div style={{ flex: "1 0 auto" }}>{children}</div>
+          <footer
+            style={{
+              textAlign: "center",
+              padding: "24px",
+              fontSize: "12px",
+              color: "var(--text-muted)",
+              borderTop: "1px solid var(--border-color)",
+              flexShrink: 0,
+            }}
+          >
+            <p>© {new Date().getFullYear()} DocSign Portal. All rights reserved.</p>
+            <p style={{ marginTop: "4px", fontSize: "11px" }}>
+              Version: <strong style={{ color: "var(--text-main)" }}>{appVersion}</strong>
+            </p>
+          </footer>
+        </div>
       </body>
     </html>
   );

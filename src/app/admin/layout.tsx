@@ -21,7 +21,7 @@ export default async function AdminLayout({
   const isGlobalAdmin = user.role === "Admin";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+    <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
       <AdminNavbar user={user} isGlobalAdmin={isGlobalAdmin} />
       <div style={{ flex: 1, padding: "40px 20px", maxWidth: "1200px", width: "100%", margin: "0 auto" }}>
         {children}
