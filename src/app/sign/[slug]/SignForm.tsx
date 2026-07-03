@@ -59,6 +59,9 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
   // Interactive signature modal state
   const [activeSignatureFieldId, setActiveSignatureFieldId] = useState<string | null>(null);
 
+  // Field highlight tracking
+  const [highlightedFieldId, setHighlightedFieldId] = useState<string | null>(null);
+
   useEffect(() => {
     const currentTheme = document.documentElement.getAttribute("data-theme") as "dark" | "light" || "dark";
     setTheme(currentTheme);
@@ -173,14 +176,32 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
     }));
   };
 
+  // Click remaining checklist fields to scroll & highlight
+  const handleChecklistItemClick = (fieldId: string) => {
+    setHighlightedFieldId(fieldId);
+    setTimeout(() => {
+      setHighlightedFieldId(null);
+    }, 2000); // Highlight duration: 2 seconds
+
+    const element = document.getElementById(`field-input-box-${fieldId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+
   // Calculate required fields status in real-time
   const visibleFields = fields.filter(isFieldVisible);
   const remainingRequiredFields = visibleFields.filter((f) => {
     if (f.type === "signer_name") return !signerName.trim();
     if (f.type === "signer_email") return !signerEmail.trim();
-    if (!f.required) return false;
     const val = formData[f.id];
-    return val === undefined || val === null || val === "";
+    const isUnfilled = val === undefined || val === null || val === "";
+    
+    // In progress, required checking
+    if (f.required) {
+      return isUnfilled;
+    }
+    return false;
   });
   const remainingCount = remainingRequiredFields.length;
 
@@ -267,21 +288,21 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
 
       <div style={{ position: "relative", maxWidth: "1400px", margin: "0 auto", padding: "10px 0 40px" }}>
         
-        {/* Header and Brand */}
+        {/* Compressed Header and Brand next to logo */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", paddingBottom: "16px", borderBottom: "1px solid var(--border-color)" }}>
-          <div>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             {portalLogo && (
               <img
                 src={portalLogo}
                 alt="Logo"
-                style={{ maxHeight: "36px", maxWidth: "150px", objectFit: "contain", marginBottom: "8px" }}
+                style={{ maxHeight: "40px", maxWidth: "150px", objectFit: "contain" }}
               />
             )}
-            <div>
-              <span style={{ fontSize: "11px", color: "var(--primary-color)", fontWeight: "bold", textTransform: "uppercase" }}>
+            <div style={{ borderLeft: portalLogo ? "1px solid var(--border-color)" : "none", paddingLeft: portalLogo ? "16px" : 0 }}>
+              <span style={{ fontSize: "11px", color: "var(--primary-color)", fontWeight: "bold", textTransform: "uppercase", display: "block", lineHeight: "1" }}>
                 {template.organization.name}
               </span>
-              <h2 style={{ marginTop: "2px", fontSize: "20px" }}>{template.title}</h2>
+              <h2 style={{ margin: "4px 0 0 0", fontSize: "18px", lineHeight: "1.2" }}>{template.title}</h2>
             </div>
           </div>
 
@@ -357,6 +378,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
 
                           const mapping = f.pdfMapping;
                           const val = formData[f.id] || "";
+                          const isHighlighted = f.id === highlightedFieldId;
 
                           const style: React.CSSProperties = {
                             position: "absolute",
@@ -366,17 +388,24 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                             height: `${mapping.height}px`,
                             boxSizing: "border-box",
                             zIndex: 20,
+                            transition: "all 0.3s ease",
                           };
 
                           if (f.type === "signature") {
                             return (
                               <div
                                 key={f.id}
+                                id={`field-input-box-${f.id}`}
                                 onClick={() => setActiveSignatureFieldId(f.id)}
                                 style={{
                                   ...style,
-                                  border: val ? "2px solid #10b981" : "2.5px dashed var(--primary-color)",
+                                  border: isHighlighted
+                                    ? "3px solid #f59e0b"
+                                    : val
+                                    ? "2px solid #10b981"
+                                    : "2.5px dashed var(--primary-color)",
                                   background: val ? "rgba(16, 185, 129, 0.1)" : "rgba(var(--primary-rgb), 0.12)",
+                                  boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                   cursor: "pointer",
                                   display: "flex",
                                   alignItems: "center",
@@ -401,6 +430,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                             return (
                               <input
                                 key={f.id}
+                                id={`field-input-box-${f.id}`}
                                 type="checkbox"
                                 checked={val === true}
                                 onChange={(e) => handleInputChange(f.id, e.target.checked)}
@@ -409,6 +439,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                   accentColor: "var(--primary-color)",
                                   cursor: "pointer",
                                   margin: 0,
+                                  boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                 }}
                               />
                             );
@@ -418,15 +449,21 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                             return (
                               <input
                                 key={f.id}
+                                id={`field-input-box-${f.id}`}
                                 type="text"
                                 readOnly
                                 value={signerName}
                                 placeholder="Signer Name"
                                 style={{
                                   ...style,
-                                  border: signerName ? "1px solid #10b981" : "2px dashed var(--primary-color)",
-                                  background: "rgba(15, 23, 42, 0.95)",
-                                  color: "white",
+                                  border: isHighlighted
+                                    ? "3px solid #f59e0b"
+                                    : signerName
+                                    ? "1.5px solid #10b981"
+                                    : "2px dashed var(--primary-color)",
+                                  background: "var(--bg-card)",
+                                  color: "var(--text-main)",
+                                  boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                   fontSize: "11px",
                                   padding: "2px 6px",
                                   borderRadius: "4px",
@@ -441,15 +478,21 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                             return (
                               <input
                                 key={f.id}
+                                id={`field-input-box-${f.id}`}
                                 type="text"
                                 readOnly
                                 value={signerEmail}
                                 placeholder="Signer Email"
                                 style={{
                                   ...style,
-                                  border: signerEmail ? "1px solid #10b981" : "2px dashed var(--primary-color)",
-                                  background: "rgba(15, 23, 42, 0.95)",
-                                  color: "white",
+                                  border: isHighlighted
+                                    ? "3px solid #f59e0b"
+                                    : signerEmail
+                                    ? "1.5px solid #10b981"
+                                    : "2px dashed var(--primary-color)",
+                                  background: "var(--bg-card)",
+                                  color: "var(--text-main)",
+                                  boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                   fontSize: "11px",
                                   padding: "2px 6px",
                                   borderRadius: "4px",
@@ -460,24 +503,33 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                             );
                           }
 
-                          // Default: text, date, number inputs
+                          // Default: text, date, number inputs matching theme
                           return (
                             <input
                               key={f.id}
+                              id={`field-input-box-${f.id}`}
                               type={f.type === "date" ? "date" : f.type === "number" ? "number" : "text"}
                               value={val}
                               onChange={(e) => handleInputChange(f.id, e.target.value)}
                               placeholder={f.required ? `${f.label} *` : f.label}
                               style={{
                                 ...style,
-                                background: "rgba(15, 23, 42, 0.95)",
-                                color: "white",
+                                background: "var(--bg-card)",
+                                color: "var(--text-main)",
                                 fontSize: "11px",
                                 padding: "2px 6px",
                                 borderRadius: "4px",
-                                border: val ? "1px solid #10b981" : f.required ? "2.5px solid var(--primary-color)" : "1px solid rgba(255,255,255,0.4)",
+                                border: isHighlighted
+                                  ? "3px solid #f59e0b"
+                                  : val
+                                  ? "1.5px solid #10b981"
+                                  : f.required
+                                  ? "2.5px solid var(--primary-color)"
+                                  : "1.5px solid var(--border-color)",
                                 outline: "none",
                                 height: `${mapping.height}px`,
+                                colorScheme: theme, // renders browser date picker in dark/light mode
+                                boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                               }}
                             />
                           );
@@ -550,6 +602,44 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                     </>
                   )}
                 </div>
+
+                {/* Clickable checklist of remaining fields */}
+                {remainingCount > 0 && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "16px" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "bold", color: "var(--text-muted)" }}>Remaining Fields Checklist:</div>
+                    {remainingRequiredFields.map((f) => (
+                      <div
+                        key={f.id}
+                        onClick={() => handleChecklistItemClick(f.id)}
+                        style={{
+                          background: "rgba(255, 255, 255, 0.03)",
+                          border: "1px solid var(--border-color)",
+                          borderRadius: "6px",
+                          padding: "8px 12px",
+                          fontSize: "12px",
+                          cursor: "pointer",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          transition: "all var(--transition-fast)"
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = "rgba(255, 255, 255, 0.06)";
+                          e.currentTarget.style.borderColor = "var(--primary-color)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
+                          e.currentTarget.style.borderColor = "var(--border-color)";
+                        }}
+                      >
+                        <span style={{ fontWeight: 600 }}>{f.label}</span>
+                        <span style={{ fontSize: "9px", padding: "2px 6px", borderRadius: "4px", background: "var(--primary-glow)", color: "var(--primary-color)", fontWeight: "bold" }}>
+                          {f.required ? "Required *" : "Optional"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {submitError && (
