@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs";
 
 export async function GET(
-  req: Request,
+  _req: Request,
   { params }: { params: { type: string; filename: string } }
 ) {
   try {
