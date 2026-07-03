@@ -20,6 +20,7 @@ export async function POST(req: Request) {
     const organizationId = data.get("organizationId") as string;
     const emailUser = data.get("emailUser") === "true";
     const emailLeader = data.get("emailLeader") === "true";
+    const notificationEmails = data.get("notificationEmails") as string | null;
     const saveSharepoint = data.get("saveSharepoint") === "true";
     const sharepointFolderId = data.get("sharepointFolderId") as string | null;
     const sharepointFolderName = data.get("sharepointFolderName") as string | null;
@@ -92,6 +93,7 @@ export async function POST(req: Request) {
         fieldsJson: initialFieldsJson,
         emailUser,
         emailLeader,
+        notificationEmails,
         saveSharepoint,
         sharepointFolderId,
         sharepointFolderName,

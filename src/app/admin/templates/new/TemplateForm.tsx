@@ -3,9 +3,17 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+interface OrgUser {
+  id: string;
+  name: string | null;
+  email: string;
+  role: string;
+}
+
 interface Organization {
   id: string;
   name: string;
+  users?: OrgUser[];
 }
 
 interface TemplateFormProps {
@@ -16,6 +24,7 @@ interface TemplateFormProps {
     slug: string;
     emailUser: boolean;
     emailLeader: boolean;
+    notificationEmails?: string | null;
     saveSharepoint: boolean;
     sharepointFolderId: string | null;
     sharepointFolderName: string | null;
@@ -37,6 +46,33 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
   const [organizationId, setOrganizationId] = useState(template?.organizationId || organizations[0]?.id || "");
   const [emailUser, setEmailUser] = useState(template?.emailUser ?? true);
   const [emailLeader, setEmailLeader] = useState(template?.emailLeader ?? true);
+  const [selectedLeaderEmails, setSelectedLeaderEmails] = useState<string[]>([]);
+  const [manualEmails, setManualEmails] = useState<string[]>([]);
+
+  // Load initial notification emails configurations
+  useEffect(() => {
+    if (template?.notificationEmails) {
+      const emailList = template.notificationEmails.split(",").map((e) => e.trim()).filter(Boolean);
+      const currentOrg = organizations.find((o) => o.id === organizationId);
+      const orgLeaderEmails = currentOrg?.users
+        ?.filter((u) => u.role === "OrgLeader" || u.role === "Admin")
+        ?.map((u) => u.email) || [];
+
+      const selectedLeaders: string[] = [];
+      const manual: string[] = [];
+
+      emailList.forEach((email) => {
+        if (orgLeaderEmails.includes(email)) {
+          selectedLeaders.push(email);
+        } else {
+          manual.push(email);
+        }
+      });
+
+      setSelectedLeaderEmails(selectedLeaders);
+      setManualEmails(manual);
+    }
+  }, [template, organizationId, organizations]);
   
   // SharePoint States
   const [saveSharepoint, setSaveSharepoint] = useState(template?.saveSharepoint ?? false);
@@ -161,6 +197,12 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
     setError(null);
     setLoading(true);
 
+    const notificationEmailsList = [
+      ...selectedLeaderEmails,
+      ...manualEmails.map((m) => m.trim()).filter(Boolean)
+    ];
+    const notificationEmails = notificationEmailsList.join(",");
+
     try {
       if (isEdit) {
         const res = await fetch(`/api/admin/templates/${template!.id}`, {
@@ -172,6 +214,7 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
             title,
             emailUser,
             emailLeader,
+            notificationEmails,
             saveSharepoint,
             sharepointFolderId: selectedFolderId || null,
             sharepointFolderName: selectedFolderName || null,
@@ -199,6 +242,7 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
         formData.append("organizationId", organizationId);
         formData.append("emailUser", String(emailUser));
         formData.append("emailLeader", String(emailLeader));
+        formData.append("notificationEmails", notificationEmails);
         formData.append("saveSharepoint", String(saveSharepoint));
         formData.append("sharepointFolderId", selectedFolderId);
         formData.append("sharepointFolderName", selectedFolderName);
@@ -289,15 +333,95 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
           Email completed copy to Signer
         </label>
 
-        <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", color: "var(--text-main)", fontSize: "14px" }}>
-          <input
-            type="checkbox"
-            checked={emailLeader}
-            onChange={(e) => setEmailLeader(e.target.checked)}
-            style={{ width: "18px", height: "18px", accentColor: "var(--primary-color)" }}
-          />
-          Email completed copy to Organization Leaders
-        </label>
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", color: "var(--text-main)", fontSize: "14px" }}>
+            <input
+              type="checkbox"
+              checked={emailLeader}
+              onChange={(e) => setEmailLeader(e.target.checked)}
+              style={{ width: "18px", height: "18px", accentColor: "var(--primary-color)" }}
+            />
+            Email completed copy to Custom List (Leaders / External Emails)
+          </label>
+
+          {emailLeader && (() => {
+            const currentOrg = organizations.find((o) => o.id === organizationId);
+            const orgLeaders = currentOrg?.users?.filter((u) => u.role === "OrgLeader" || u.role === "Admin") || [];
+            return (
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px", background: "rgba(0,0,0,0.15)", padding: "16px", borderRadius: "8px", border: "1px solid var(--border-color)", marginTop: "4px", marginLeft: "28px" }}>
+                <label className="form-label" style={{ fontSize: "13px", margin: 0 }}>Select Org Leaders to notify:</label>
+                {orgLeaders.length === 0 ? (
+                  <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>No leaders mapped to this organization.</span>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {orgLeaders.map((u) => {
+                      const isChecked = selectedLeaderEmails.includes(u.email);
+                      return (
+                        <label key={u.id} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", cursor: "pointer" }}>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedLeaderEmails((prev) => [...prev, u.email]);
+                              } else {
+                                setSelectedLeaderEmails((prev) => prev.filter((email) => email !== u.email));
+                              }
+                            }}
+                            style={{ accentColor: "var(--primary-color)" }}
+                          />
+                          {u.name || u.email} ({u.role})
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Manual Email Entries */}
+                <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: "12px", marginTop: "4px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                    <label className="form-label" style={{ fontSize: "13px", margin: 0 }}>Additional Recipient Emails:</label>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setManualEmails((prev) => [...prev, ""])}
+                      style={{ padding: "2px 8px", fontSize: "11px", height: "24px", width: "auto" }}
+                    >
+                      + Add Email
+                    </button>
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {manualEmails.map((email, index) => (
+                      <div key={index} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                        <input
+                          type="email"
+                          className="form-input"
+                          value={email}
+                          onChange={(e) => {
+                            const updated = [...manualEmails];
+                            updated[index] = e.target.value;
+                            setManualEmails(updated);
+                          }}
+                          placeholder="recipient@example.com"
+                          style={{ flex: 1, padding: "6px 12px", fontSize: "13px" }}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => setManualEmails((prev) => prev.filter((_, idx) => idx !== index))}
+                          style={{ padding: "0", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", color: "#ef4444" }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
 
         <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", color: "var(--text-main)", fontSize: "14px" }}>
           <input

@@ -41,6 +41,16 @@ export default async function EditTemplatePage({ params }: EditTemplatePageProps
   }
 
   const organizations = await prisma.organization.findMany({
+    include: {
+      users: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true
+        }
+      }
+    },
     orderBy: { name: "asc" }
   });
 
@@ -60,6 +70,7 @@ export default async function EditTemplatePage({ params }: EditTemplatePageProps
             slug: template.slug,
             emailUser: template.emailUser,
             emailLeader: template.emailLeader,
+            notificationEmails: template.notificationEmails || "",
             saveSharepoint: template.saveSharepoint,
             sharepointFolderId: template.sharepointFolderId,
             sharepointFolderName: template.sharepointFolderName,

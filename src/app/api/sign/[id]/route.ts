@@ -113,14 +113,19 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       }
     }
 
-    // Email to organization leaders
+    // Email to organization leaders or custom lists
     if (template.emailLeader) {
       try {
-        // Resolve emails of leaders in the template's organization
-        const leaders = template.organization.users.filter(u => u.role === "OrgLeader" || u.role === "Admin");
-        const leaderEmails = leaders.map(l => l.email).filter(Boolean);
+        let recipientEmails: string[] = [];
+        if (template.notificationEmails) {
+          recipientEmails = template.notificationEmails.split(",").map(e => e.trim()).filter(Boolean);
+        } else {
+          // Fall back to default org leaders
+          const leaders = template.organization.users.filter(u => u.role === "OrgLeader" || u.role === "Admin");
+          recipientEmails = leaders.map(l => l.email).filter(Boolean);
+        }
 
-        if (leaderEmails.length > 0) {
+        if (recipientEmails.length > 0) {
           const htmlContent = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; color: #333; line-height: 1.6;">
               <h2>New Signed Document Received</h2>
@@ -133,7 +138,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             </div>
           `;
           await sendEmail({
-            to: leaderEmails.join(","),
+            to: recipientEmails.join(","),
             subject: `New Signature: ${template.title} - ${signerName}`,
             html: htmlContent,
             attachmentPath: outputPath,

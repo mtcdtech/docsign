@@ -62,6 +62,45 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
   // Field highlight tracking
   const [highlightedFieldId, setHighlightedFieldId] = useState<string | null>(null);
 
+  // Mobile layout detection & navigation states
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileActiveIdx, setMobileActiveIdx] = useState(0);
+
+  // Load progress from browser localStorage if available
+  useEffect(() => {
+    const saved = localStorage.getItem(`docsign_progress_${template.id}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.signerName) setSignerName(parsed.signerName);
+        if (parsed.signerEmail) setSignerEmail(parsed.signerEmail);
+        if (parsed.formData) setFormData(parsed.formData);
+      } catch (e) {
+        console.error("Failed to parse saved signing progress:", e);
+      }
+    }
+  }, [template.id]);
+
+  // Persist progress to localStorage on change
+  useEffect(() => {
+    if (signerName || signerEmail || Object.keys(formData).length > 0) {
+      localStorage.setItem(
+        `docsign_progress_${template.id}`,
+        JSON.stringify({ signerName, signerEmail, formData })
+      );
+    }
+  }, [signerName, signerEmail, formData, template.id]);
+
+  // Detect mobile view size
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   useEffect(() => {
     const currentTheme = document.documentElement.getAttribute("data-theme") as "dark" | "light" || "dark";
     setTheme(currentTheme);
@@ -176,7 +215,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
     }));
   };
 
-  // Click remaining checklist fields to scroll & highlight
+  // Click remaining checklist fields to scroll, focus & highlight
   const handleChecklistItemClick = (fieldId: string) => {
     setHighlightedFieldId(fieldId);
     setTimeout(() => {
@@ -186,6 +225,12 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
     const element = document.getElementById(`field-input-box-${fieldId}`);
     if (element) {
       element.scrollIntoView({ behavior: "smooth", block: "center" });
+      element.focus();
+    }
+
+    const field = fields.find((f) => f.id === fieldId);
+    if (field?.type === "signature") {
+      setActiveSignatureFieldId(fieldId);
     }
   };
 
@@ -197,13 +242,38 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
     const val = formData[f.id];
     const isUnfilled = val === undefined || val === null || val === "";
     
-    // In progress, required checking
     if (f.required) {
       return isUnfilled;
     }
     return false;
   });
-  const remainingCount = remainingRequiredFields.length;
+  
+  // Sort remaining fields from top-to-bottom, left-to-right
+  const sortedRequiredFields = [...remainingRequiredFields].sort((a, b) => {
+    if (a.pdfMapping.page !== b.pdfMapping.page) {
+      return a.pdfMapping.page - b.pdfMapping.page;
+    }
+    if (Math.abs(a.pdfMapping.y - b.pdfMapping.y) > 2) {
+      return a.pdfMapping.y - b.pdfMapping.y;
+    }
+    return a.pdfMapping.x - b.pdfMapping.x;
+  });
+
+  const remainingCount = sortedRequiredFields.length;
+
+  // Handle next/prev arrow navigation on mobile
+  const handleNavigateChecklist = (direction: "next" | "prev") => {
+    if (sortedRequiredFields.length === 0) return;
+    let nextIdx = 0;
+    if (direction === "next") {
+      nextIdx = mobileActiveIdx < sortedRequiredFields.length - 1 ? mobileActiveIdx + 1 : 0;
+    } else {
+      nextIdx = mobileActiveIdx > 0 ? mobileActiveIdx - 1 : sortedRequiredFields.length - 1;
+    }
+    setMobileActiveIdx(nextIdx);
+    const fieldId = sortedRequiredFields[nextIdx].id;
+    handleChecklistItemClick(fieldId);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -249,6 +319,8 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
         throw new Error(data.error || "Failed to submit document.");
       }
 
+      // Successful signing: clear localStorage progress cache
+      localStorage.removeItem(`docsign_progress_${template.id}`);
       setSignedPdfUrl(data.pdfUrl || `/uploads/signed/${data.signedDocumentId}.pdf`);
     } catch (err: any) {
       setSubmitError(err.message || "An unexpected error occurred.");
@@ -286,9 +358,9 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
         onLoad={() => setPdfjsLoaded(true)}
       />
 
-      <div style={{ position: "relative", maxWidth: "1400px", margin: "0 auto", padding: "10px 0 40px" }}>
+      <div style={{ position: "relative", maxWidth: "1400px", margin: "0 auto", padding: "10px 0 80px" }}>
         
-        {/* Compressed Header and Brand next to logo */}
+        {/* Compressed Header and Brand next to logo with Exit triggers */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", paddingBottom: "16px", borderBottom: "1px solid var(--border-color)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             {portalLogo && (
@@ -306,23 +378,35 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="btn btn-secondary"
-            style={{ width: "36px", height: "36px", borderRadius: "50%", padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
-            title="Toggle Theme"
-          >
-            {theme === "dark" ? (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-              </svg>
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-              </svg>
-            )}
-          </button>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="btn btn-secondary"
+              style={{ width: "36px", height: "36px", borderRadius: "50%", padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
+              title="Toggle Theme"
+            >
+              {theme === "dark" ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                </svg>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => window.location.href = "/"}
+              className="btn btn-secondary"
+              style={{ padding: "0 16px", height: "36px", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px" }}
+              title="Exit signing workspace"
+            >
+              ✕ Exit
+            </button>
+          </div>
         </div>
 
         {/* Split screen signing workspace */}
@@ -451,8 +535,8 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                 key={f.id}
                                 id={`field-input-box-${f.id}`}
                                 type="text"
-                                readOnly
                                 value={signerName}
+                                onChange={(e) => setSignerName(e.target.value)}
                                 placeholder="Signer Name"
                                 style={{
                                   ...style,
@@ -469,7 +553,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                   borderRadius: "4px",
                                   outline: "none"
                                 }}
-                                title="Pre-populated from Section 1"
+                                title="Click to edit Name"
                               />
                             );
                           }
@@ -480,8 +564,8 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                 key={f.id}
                                 id={`field-input-box-${f.id}`}
                                 type="text"
-                                readOnly
                                 value={signerEmail}
+                                onChange={(e) => setSignerEmail(e.target.value)}
                                 placeholder="Signer Email"
                                 style={{
                                   ...style,
@@ -498,7 +582,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                   borderRadius: "4px",
                                   outline: "none"
                                 }}
-                                title="Pre-populated from Section 1"
+                                title="Click to edit Email"
                               />
                             );
                           }
@@ -578,7 +662,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                 </div>
               </div>
 
-              {/* Progress Checklist Bar */}
+              {/* Progress Checklist Bar (Only display list if NOT on mobile) */}
               <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: "20px" }}>
                 <h3 style={{ margin: 0 }}>2. Document Completion</h3>
                 <p style={{ margin: "4px 0 0", fontSize: "11px", color: "var(--text-muted)" }}>
@@ -603,11 +687,11 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                   )}
                 </div>
 
-                {/* Clickable checklist of remaining fields */}
-                {remainingCount > 0 && (
+                {/* Clickable checklist of remaining fields (Hidden on mobile screens to save layout space) */}
+                {!isMobile && remainingCount > 0 && (
                   <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "16px" }}>
                     <div style={{ fontSize: "11px", fontWeight: "bold", color: "var(--text-muted)" }}>Remaining Fields Checklist:</div>
-                    {remainingRequiredFields.map((f) => (
+                    {sortedRequiredFields.map((f) => (
                       <div
                         key={f.id}
                         onClick={() => handleChecklistItemClick(f.id)}
@@ -699,6 +783,60 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Mobile-Only Document Completion Floating Navigation Bar */}
+      {isMobile && remainingCount > 0 && (
+        <div style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: "var(--bg-glass)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          borderTop: "1px solid var(--border-color)",
+          padding: "12px 16px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          zIndex: 1000,
+          boxShadow: "0 -4px 20px rgba(0,0,0,0.3)"
+        }}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => handleNavigateChecklist("prev")}
+            style={{ padding: "8px 12px", width: "auto", fontSize: "12px" }}
+          >
+            ← Prev
+          </button>
+
+          <div
+            onClick={() => {
+              if (sortedRequiredFields[mobileActiveIdx]) {
+                handleChecklistItemClick(sortedRequiredFields[mobileActiveIdx].id);
+              }
+            }}
+            style={{ textAlign: "center", flex: 1, padding: "0 8px", cursor: "pointer" }}
+          >
+            <div style={{ fontSize: "10px", textTransform: "uppercase", color: "var(--primary-color)", fontWeight: "bold" }}>
+              Field {mobileActiveIdx + 1} of {remainingCount}
+            </div>
+            <div style={{ fontSize: "13px", fontWeight: "bold", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "200px", margin: "0 auto" }}>
+              {sortedRequiredFields[mobileActiveIdx]?.label || "Tap to view"} {sortedRequiredFields[mobileActiveIdx]?.required && "*"}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => handleNavigateChecklist("next")}
+            style={{ padding: "8px 12px", width: "auto", fontSize: "12px" }}
+          >
+            Next →
+          </button>
         </div>
       )}
     </>

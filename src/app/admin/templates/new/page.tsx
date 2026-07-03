@@ -17,6 +17,16 @@ export default async function NewTemplatePage() {
 
   if (user.role === "Admin") {
     organizations = await prisma.organization.findMany({
+      include: {
+        users: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true
+          }
+        }
+      },
       orderBy: { name: "asc" }
     });
   } else {
@@ -24,6 +34,16 @@ export default async function NewTemplatePage() {
     organizations = await prisma.organization.findMany({
       where: {
         users: { some: { id: user.id } }
+      },
+      include: {
+        users: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true
+          }
+        }
       },
       orderBy: { name: "asc" }
     });
