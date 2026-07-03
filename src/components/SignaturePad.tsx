@@ -7,7 +7,7 @@ interface SignaturePadProps {
   strokeColor?: string;
 }
 
-export default function SignaturePad({ onChange, strokeColor = "#ffffff" }: SignaturePadProps) {
+export default function SignaturePad({ onChange, strokeColor = "#000000" }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);

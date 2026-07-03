@@ -14,12 +14,25 @@ export interface SharePointItem {
 
 // Get Access Token using Client Credentials Flow
 export async function getMsGraphToken(): Promise<string> {
-  const tenantId = process.env.AZURE_AD_TENANT_ID || process.env.AZURE_TENANT_ID;
-  const clientId = process.env.AZURE_AD_CLIENT_ID || process.env.AZURE_CLIENT_ID;
-  const clientSecret = process.env.AZURE_AD_CLIENT_SECRET || process.env.AZURE_CLIENT_SECRET;
+  let tenantId = process.env.AZURE_AD_TENANT_ID || process.env.AZURE_TENANT_ID;
+  let clientId = process.env.AZURE_AD_CLIENT_ID || process.env.AZURE_CLIENT_ID;
+  let clientSecret = process.env.AZURE_AD_CLIENT_SECRET || process.env.AZURE_CLIENT_SECRET;
+
+  try {
+    const { prisma } = require("./prisma");
+    const tenantSetting = await prisma.setting.findUnique({ where: { key: "azure_tenant_id" } });
+    const clientSetting = await prisma.setting.findUnique({ where: { key: "azure_client_id" } });
+    const secretSetting = await prisma.setting.findUnique({ where: { key: "azure_client_secret" } });
+
+    if (tenantSetting?.value) tenantId = tenantSetting.value;
+    if (clientSetting?.value) clientId = clientSetting.value;
+    if (secretSetting?.value) clientSecret = secretSetting.value;
+  } catch (err) {
+    console.warn("Could not query Azure credentials from DB settings, falling back to process.env:", err);
+  }
 
   if (!tenantId || !clientId || !clientSecret) {
-    throw new Error("Microsoft Graph credentials are not configured in the environment.");
+    throw new Error("Microsoft Graph credentials are not configured in the database settings or environment.");
   }
 
   const url = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;

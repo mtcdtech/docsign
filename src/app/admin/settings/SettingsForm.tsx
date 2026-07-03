@@ -31,6 +31,9 @@ interface SettingsFormProps {
   initialLogoBase64: string;
   initialThemeMode: string;
   initialCentralIamUrl: string;
+  initialAzureTenantId: string;
+  initialAzureClientId: string;
+  initialAzureClientSecret: string;
   initialOrganizations: Organization[];
   initialUsers: User[];
   initialAuditLogs: AuditLog[];
@@ -45,6 +48,9 @@ export default function SettingsForm({
   initialLogoBase64,
   initialThemeMode,
   initialCentralIamUrl,
+  initialAzureTenantId,
+  initialAzureClientId,
+  initialAzureClientSecret,
   initialOrganizations,
   initialUsers,
   initialAuditLogs,
@@ -63,6 +69,9 @@ export default function SettingsForm({
   const [logoBase64, setLogoBase64] = useState(initialLogoBase64);
   const [themeMode, setThemeMode] = useState(initialThemeMode);
   const [centralIamUrl, setCentralIamUrl] = useState(initialCentralIamUrl);
+  const [azureTenantId, setAzureTenantId] = useState(initialAzureTenantId || "");
+  const [azureClientId, setAzureClientId] = useState(initialAzureClientId || "");
+  const [azureClientSecret, setAzureClientSecret] = useState(initialAzureClientSecret || "");
 
   // Directory synchronizing states
   const [isSyncing, setIsSyncing] = useState(false);
@@ -86,6 +95,9 @@ export default function SettingsForm({
         portal_logo: fieldsToUpdate.portal_logo !== undefined ? fieldsToUpdate.portal_logo : logoBase64,
         theme_mode: fieldsToUpdate.theme_mode ?? themeMode,
         central_iam_url: fieldsToUpdate.central_iam_url ?? centralIamUrl,
+        azure_tenant_id: fieldsToUpdate.azure_tenant_id ?? azureTenantId,
+        azure_client_id: fieldsToUpdate.azure_client_id ?? azureClientId,
+        azure_client_secret: fieldsToUpdate.azure_client_secret ?? azureClientSecret,
       };
 
       const res = await fetch("/api/admin/settings", {
@@ -199,6 +211,7 @@ export default function SettingsForm({
 
   const tabs = [
     { id: "general", label: "General Configuration" },
+    { id: "azure", label: "Azure AD / SharePoint" },
     { id: "branding", label: "Theming & Logo" },
     { id: "central_iam", label: "Central IAM Portal" },
     { id: "users", label: "User Directory" },
@@ -307,6 +320,79 @@ export default function SettingsForm({
 
             <button type="submit" className="btn btn-primary" disabled={isSaving} style={{ width: "auto", alignSelf: "flex-end" }}>
               {isSaving ? "Saving Settings..." : "Save General Settings"}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {activeTab === "azure" && (
+        <div className="card-glass">
+          <h2 style={{ marginBottom: "8px" }}>Azure AD / SharePoint Integration</h2>
+          <p style={{ color: "var(--text-muted)", fontSize: "13px", marginBottom: "24px" }}>
+            Configure client credentials for your Azure Active Directory application registration to enable automated SharePoint document uploads.
+          </p>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              saveSettings({
+                azure_tenant_id: azureTenantId,
+                azure_client_id: azureClientId,
+                azure_client_secret: azureClientSecret
+              });
+            }}
+            style={{ display: "flex", flexDirection: "column", gap: "20px" }}
+          >
+            <div className="form-group">
+              <label className="form-label">Azure Tenant ID *</label>
+              <input
+                type="text"
+                className="form-input"
+                required
+                value={azureTenantId}
+                onChange={(e) => setAzureTenantId(e.target.value)}
+                placeholder="e.g. 3a789...-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Azure Client (Application) ID *</label>
+              <input
+                type="text"
+                className="form-input"
+                required
+                value={azureClientId}
+                onChange={(e) => setAzureClientId(e.target.value)}
+                placeholder="e.g. 1a234...-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Azure Client Secret *</label>
+              <input
+                type="password"
+                className="form-input"
+                required
+                value={azureClientSecret}
+                onChange={(e) => setAzureClientSecret(e.target.value)}
+                placeholder="••••••••••••••••••••••••••••••••"
+              />
+            </div>
+
+            {saveSuccess && (
+              <div style={{ color: "#22c55e", fontSize: "14px", fontWeight: "bold", background: "rgba(34, 197, 94, 0.1)", padding: "12px", borderRadius: "8px", border: "1px solid rgba(34, 197, 94, 0.2)" }}>
+                ✓ Azure settings saved successfully!
+              </div>
+            )}
+
+            {saveError && (
+              <div style={{ color: "#ef4444", fontSize: "14px", fontWeight: "bold", background: "rgba(239, 68, 68, 0.1)", padding: "12px", borderRadius: "8px", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
+                ⚠️ {saveError}
+              </div>
+            )}
+
+            <button type="submit" className="btn btn-primary" disabled={isSaving} style={{ width: "auto", alignSelf: "flex-end" }}>
+              {isSaving ? "Saving Credentials..." : "Save Azure Credentials"}
             </button>
           </form>
         </div>

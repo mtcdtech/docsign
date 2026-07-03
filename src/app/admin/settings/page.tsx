@@ -33,6 +33,9 @@ export default async function SettingsPage() {
     const portalLogo = settingsMap["portal_logo"] || "";
     const themeMode = settingsMap["theme_mode"] || "dark";
     const centralIamUrl = settingsMap["central_iam_url"] || "https://admin.server.mtcd.org";
+    const azureTenantId = settingsMap["azure_tenant_id"] || "";
+    const azureClientId = settingsMap["azure_client_id"] || "";
+    const azureClientSecret = settingsMap["azure_client_secret"] || "";
 
     // Fetch local API key for central IAM registration
     const apiKey = getApiKey();
@@ -69,6 +72,9 @@ export default async function SettingsPage() {
             initialLogoBase64={portalLogo}
             initialThemeMode={themeMode}
             initialCentralIamUrl={centralIamUrl}
+            initialAzureTenantId={azureTenantId}
+            initialAzureClientId={azureClientId}
+            initialAzureClientSecret={azureClientSecret}
             initialOrganizations={organizations}
             initialUsers={users}
             initialAuditLogs={auditLogs}

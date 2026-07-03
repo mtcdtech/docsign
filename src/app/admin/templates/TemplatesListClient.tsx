@@ -51,7 +51,7 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
   const [searchQuery, setSearchQuery] = useState("");
   const [orgSortOrder, setOrgSortOrder] = useState<"asc" | "desc" | null>(null);
 
-  // History Modal States
+  // History Expandable States
   const [activeTemplate, setActiveTemplate] = useState<Template | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loadingSubmissions, setLoadingSubmissions] = useState(false);
@@ -76,8 +76,13 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
     setTemplates(sorted);
   };
 
-  // Fetch submissions from API
-  const handleOpenHistory = async (template: Template) => {
+  // Toggle collapsible history row and fetch submissions
+  const handleToggleHistory = async (template: Template) => {
+    if (activeTemplate?.id === template.id) {
+      setActiveTemplate(null);
+      setSubmissions([]);
+      return;
+    }
     setActiveTemplate(template);
     setLoadingSubmissions(true);
     setSubmissionSearch("");
@@ -175,43 +180,163 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
               <tbody>
                 {filteredTemplates.map((tpl) => {
                   const publicUrl = `/sign/${tpl.slug}`;
+                  const isExpanded = activeTemplate?.id === tpl.id;
                   return (
-                    <tr key={tpl.id}>
-                      <td style={{ fontWeight: 600, color: "var(--text-main)" }}>{tpl.title}</td>
-                      <td>{tpl.organization.name}</td>
-                      <td>
-                        <a href={publicUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--primary-color)", textDecoration: "none" }}>
-                          /{tpl.slug}
-                        </a>
-                      </td>
-                      <td>
-                        {tpl.saveSharepoint ? (
-                          <span style={{ color: "#22c55e", fontSize: "12px", background: "rgba(34, 197, 94, 0.1)", padding: "4px 8px", borderRadius: "4px" }}>
-                            Enabled ({tpl.sharepointFolderName || "Root"})
-                          </span>
-                        ) : (
-                          <span style={{ color: "var(--text-muted)", fontSize: "12px" }}>Disabled</span>
-                        )}
-                      </td>
-                      <td style={{ textAlign: "right" }}>
-                        <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-                          <button
-                            type="button"
-                            className="btn btn-secondary"
-                            onClick={() => handleOpenHistory(tpl)}
-                            style={{ padding: "6px 12px", fontSize: "12px", width: "auto" }}
-                          >
-                            📜 History
-                          </button>
-                          <Link href={`/admin/templates/${tpl.id}/design`} className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "12px", width: "auto" }}>
-                            Designer
-                          </Link>
-                          <Link href={`/admin/templates/${tpl.id}/edit`} className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "12px", width: "auto" }}>
-                            Settings
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
+                    <React.Fragment key={tpl.id}>
+                      <tr style={{ background: isExpanded ? "rgba(255, 255, 255, 0.03)" : "none" }}>
+                        <td style={{ fontWeight: 600, color: "var(--text-main)" }}>{tpl.title}</td>
+                        <td>{tpl.organization.name}</td>
+                        <td>
+                          <a href={publicUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--primary-color)", textDecoration: "none" }}>
+                            /{tpl.slug}
+                          </a>
+                        </td>
+                        <td>
+                          {tpl.saveSharepoint ? (
+                            <span style={{ color: "#22c55e", fontSize: "12px", background: "rgba(34, 197, 94, 0.1)", padding: "4px 8px", borderRadius: "4px" }}>
+                              Enabled ({tpl.sharepointFolderName || "Root"})
+                            </span>
+                          ) : (
+                            <span style={{ color: "var(--text-muted)", fontSize: "12px" }}>Disabled</span>
+                          )}
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              onClick={() => handleToggleHistory(tpl)}
+                              style={{ padding: "6px 12px", fontSize: "12px", width: "auto", display: "flex", alignItems: "center", gap: "4px" }}
+                            >
+                              {isExpanded ? "▲ Hide Log" : "📜 History"}
+                            </button>
+                            <Link href={`/admin/templates/${tpl.id}/design`} className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "12px", width: "auto" }}>
+                              Designer
+                            </Link>
+                            <Link href={`/admin/templates/${tpl.id}/edit`} className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "12px", width: "auto" }}>
+                              Settings
+                            </Link>
+                          </div>
+                        </td>
+                      </tr>
+
+                      {/* Collapsible history subtable drawer */}
+                      {isExpanded && (
+                        <tr style={{ background: "rgba(0, 0, 0, 0.12)" }}>
+                          <td colSpan={5} style={{ padding: "20px", borderTop: "none" }}>
+                            <div className="card-glass" style={{ background: "rgba(0,0,0,0.25)", padding: "16px", display: "flex", flexDirection: "column", gap: "12px", border: "1px solid rgba(255,255,255,0.05)" }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,0.05)", paddingBottom: "8px" }}>
+                                <span style={{ fontSize: "11px", color: "var(--primary-color)", fontWeight: "bold", textTransform: "uppercase" }}>
+                                  Historic Submissions Log ({submissions.length} Total)
+                                </span>
+                                <button
+                                  className="btn btn-secondary"
+                                  onClick={() => setActiveTemplate(null)}
+                                  style={{ padding: "4px 8px", fontSize: "11px", width: "auto" }}
+                                >
+                                  ✕ Close
+                                </button>
+                              </div>
+
+                              <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+                                <input
+                                  type="text"
+                                  className="form-input"
+                                  value={submissionSearch}
+                                  onChange={(e) => setSubmissionSearch(e.target.value)}
+                                  placeholder="Search by Signer Name or Email..."
+                                  style={{ flex: 1, minWidth: "220px", padding: "8px 12px", fontSize: "13px" }}
+                                />
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary"
+                                  onClick={() => {
+                                    setSubmissionSortBy("signerName");
+                                    setSubmissionSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+                                  }}
+                                  style={{ padding: "8px 14px", fontSize: "12px", width: "auto" }}
+                                >
+                                  Sort Name {submissionSortBy === "signerName" ? (submissionSortOrder === "asc" ? "▲" : "▼") : ""}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary"
+                                  onClick={() => {
+                                    setSubmissionSortBy("createdAt");
+                                    setSubmissionSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+                                  }}
+                                  style={{ padding: "8px 14px", fontSize: "12px", width: "auto" }}
+                                >
+                                  Sort Date {submissionSortBy === "createdAt" ? (submissionSortOrder === "asc" ? "▲" : "▼") : ""}
+                                </button>
+                              </div>
+
+                              <div style={{ overflowX: "auto" }}>
+                                {loadingSubmissions ? (
+                                  <div style={{ padding: "20px", textAlign: "center", color: "var(--text-muted)", fontSize: "13px" }}>
+                                    Retrieving signature logs...
+                                  </div>
+                                ) : filteredSubmissions.length === 0 ? (
+                                  <div style={{ padding: "20px", textAlign: "center", color: "var(--text-muted)", fontSize: "13px" }}>
+                                    No submission logs found.
+                                  </div>
+                                ) : (
+                                  <div className="table-container" style={{ margin: 0, border: "1px solid rgba(255,255,255,0.05)", borderRadius: "6px" }}>
+                                    <table style={{ width: "100%" }}>
+                                      <thead>
+                                        <tr>
+                                          <th>Date Signed</th>
+                                          <th>Signer Name</th>
+                                          <th>Signer Email</th>
+                                          <th>Fields Payload</th>
+                                          <th style={{ textAlign: "right" }}>PDF</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {filteredSubmissions.map((doc) => {
+                                          const date = new Date(doc.createdAt).toLocaleString();
+                                          const formData = JSON.parse(doc.formDataJson);
+                                          return (
+                                            <tr key={doc.id}>
+                                              <td style={{ fontSize: "12px" }}>{date}</td>
+                                              <td style={{ fontWeight: 600 }}>{doc.signerName}</td>
+                                              <td style={{ fontSize: "12px" }}>{doc.signerEmail}</td>
+                                              <td>
+                                                <details style={{ cursor: "pointer" }}>
+                                                  <summary style={{ fontSize: "11px", color: "var(--primary-color)" }}>View Mapped Fields ({Object.keys(formData).length})</summary>
+                                                  <div style={{ background: "rgba(0,0,0,0.3)", padding: "8px", borderRadius: "4px", fontSize: "11px", marginTop: "4px", maxHeight: "150px", overflowY: "auto", fontFamily: "monospace" }}>
+                                                    {Object.entries(formData).map(([k, v]) => (
+                                                      <div key={k} style={{ marginBottom: "2px" }}>
+                                                        <span style={{ color: "var(--text-muted)" }}>{k}:</span> {String(v)}
+                                                      </div>
+                                                    ))}
+                                                  </div>
+                                                </details>
+                                              </td>
+                                              <td style={{ textAlign: "right" }}>
+                                                <a
+                                                  href={`/api/download/signed/${getFilename(doc.signedPdfPath)}`}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="btn btn-secondary"
+                                                  style={{ padding: "4px 8px", fontSize: "11px", width: "auto" }}
+                                                >
+                                                  View PDF
+                                                </a>
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>
@@ -219,132 +344,6 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
           )}
         </div>
       </div>
-
-      {/* Template History Modal Popup Overlay */}
-      {activeTemplate && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: "20px" }}>
-          <div className="card-glass" style={{ width: "900px", maxWidth: "100%", maxHeight: "90vh", display: "flex", flexDirection: "column", gap: "16px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-color)", paddingBottom: "12px" }}>
-              <div>
-                <span style={{ fontSize: "11px", color: "var(--primary-color)", fontWeight: "bold" }}>TEMPLATE SUBMISSIONS HISTORIC LOG</span>
-                <h3 style={{ margin: 0, fontSize: "18px" }}>{activeTemplate.title}</h3>
-              </div>
-              <button
-                className="btn btn-secondary"
-                onClick={() => setActiveTemplate(null)}
-                style={{ padding: "6px 12px", width: "auto" }}
-              >
-                ✕ Close
-              </button>
-            </div>
-
-            <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-              <input
-                type="text"
-                className="form-input"
-                value={submissionSearch}
-                onChange={(e) => setSubmissionSearch(e.target.value)}
-                placeholder="Search by Signer Name or Email..."
-                style={{ flex: 1, padding: "8px 12px", fontSize: "13px" }}
-              />
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => {
-                  setSubmissionSortBy("signerName");
-                  setSubmissionSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-                }}
-                style={{ padding: "8px 14px", fontSize: "12px", width: "auto" }}
-              >
-                Sort Name {submissionSortBy === "signerName" ? (submissionSortOrder === "asc" ? "▲" : "▼") : ""}
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => {
-                  setSubmissionSortBy("createdAt");
-                  setSubmissionSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-                }}
-                style={{ padding: "8px 14px", fontSize: "12px", width: "auto" }}
-              >
-                Sort Date {submissionSortBy === "createdAt" ? (submissionSortOrder === "asc" ? "▲" : "▼") : ""}
-              </button>
-            </div>
-
-            <div style={{ flex: 1, overflowY: "auto" }}>
-              {loadingSubmissions ? (
-                <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
-                  Retrieving historic signatures logs...
-                </div>
-              ) : filteredSubmissions.length === 0 ? (
-                <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
-                  No submission logs found for this template.
-                </div>
-              ) : (
-                <div className="table-container">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th style={{ cursor: "pointer" }} onClick={() => {
-                          setSubmissionSortBy("createdAt");
-                          setSubmissionSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-                        }}>
-                          Date Signed {submissionSortBy === "createdAt" ? (submissionSortOrder === "asc" ? "▲" : "▼") : ""}
-                        </th>
-                        <th style={{ cursor: "pointer" }} onClick={() => {
-                          setSubmissionSortBy("signerName");
-                          setSubmissionSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-                        }}>
-                          Signer Name {submissionSortBy === "signerName" ? (submissionSortOrder === "asc" ? "▲" : "▼") : ""}
-                        </th>
-                        <th>Signer Email</th>
-                        <th>Submission Payload</th>
-                        <th style={{ textAlign: "right" }}>PDF</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredSubmissions.map((doc) => {
-                        const date = new Date(doc.createdAt).toLocaleString();
-                        const formData = JSON.parse(doc.formDataJson);
-                        return (
-                          <tr key={doc.id}>
-                            <td style={{ fontSize: "12px" }}>{date}</td>
-                            <td style={{ fontWeight: 600 }}>{doc.signerName}</td>
-                            <td style={{ fontSize: "12px" }}>{doc.signerEmail}</td>
-                            <td>
-                              <details style={{ cursor: "pointer" }}>
-                                <summary style={{ fontSize: "11px", color: "var(--primary-color)" }}>View Mapped Fields ({Object.keys(formData).length})</summary>
-                                <div style={{ background: "rgba(0,0,0,0.3)", padding: "8px", borderRadius: "4px", fontSize: "11px", marginTop: "4px", maxHeight: "150px", overflowY: "auto", fontFamily: "monospace" }}>
-                                  {Object.entries(formData).map(([k, v]) => (
-                                    <div key={k} style={{ marginBottom: "2px" }}>
-                                      <span style={{ color: "var(--text-muted)" }}>{k}:</span> {String(v)}
-                                    </div>
-                                  ))}
-                                </div>
-                              </details>
-                            </td>
-                            <td style={{ textAlign: "right" }}>
-                              <a
-                                href={`/api/download/signed/${getFilename(doc.signedPdfPath)}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="btn btn-secondary"
-                                style={{ padding: "4px 8px", fontSize: "11px", width: "auto" }}
-                              >
-                                View PDF
-                              </a>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

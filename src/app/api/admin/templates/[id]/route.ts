@@ -11,10 +11,10 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const templateId = params.id;
     const body = await req.json();
-    const { title, emailUser, emailLeader, notificationEmails, saveSharepoint, sharepointFolderId, sharepointFolderName, fieldsJson } = body;
+    const { title, slug, emailUser, emailLeader, notificationEmails, saveSharepoint, sharepointFolderId, sharepointFolderName, fieldsJson } = body;
 
+    const templateId = params.id;
     const template = await prisma.template.findUnique({ where: { id: templateId } });
     if (!template) {
       return NextResponse.json({ ok: false, error: "Template not found." }, { status: 404 });
@@ -37,6 +37,20 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     // Update settings or fieldsJson
     const updateData: any = {};
     if (title !== undefined) updateData.title = title;
+    if (slug !== undefined) {
+      const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, "");
+      // Check slug uniqueness
+      const existing = await prisma.template.findFirst({
+        where: {
+          slug: cleanSlug,
+          id: { not: templateId }
+        }
+      });
+      if (existing) {
+        return NextResponse.json({ ok: false, error: "Public access link slug is already taken." }, { status: 400 });
+      }
+      updateData.slug = cleanSlug;
+    }
     if (emailUser !== undefined) updateData.emailUser = emailUser;
     if (emailLeader !== undefined) updateData.emailLeader = emailLeader;
     if (notificationEmails !== undefined) updateData.notificationEmails = notificationEmails;

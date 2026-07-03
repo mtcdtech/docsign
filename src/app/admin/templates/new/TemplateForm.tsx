@@ -293,7 +293,6 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
             type="text"
             className="form-input"
             required
-            disabled={isEdit}
             value={slug}
             onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
             placeholder="youth-camp-liability"

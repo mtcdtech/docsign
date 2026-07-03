@@ -190,7 +190,7 @@ button, .btn {
 .sig-canvas-container {
   border: 1px dashed var(--border-color);
   border-radius: var(--radius-md);
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: #ffffff;
   position: relative;
   overflow: hidden;
   display: flex;
