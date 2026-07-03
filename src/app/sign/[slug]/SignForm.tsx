@@ -632,7 +632,8 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                         })}
                     </div>
                   </div>
-                ))}
+                </div>
+              ))}
               </div>
             )}
           </div>
