@@ -16,6 +16,9 @@ RUN npm run build
 # Stage 2: Final runner container compiled for target platform (AMD64)
 FROM node:18-bullseye-slim
 
+# Install LibreOffice for Word document to PDF conversion support
+RUN apt-get update && apt-get install -y libreoffice --no-install-recommends && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY package*.json ./

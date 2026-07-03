@@ -188,7 +188,7 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
         router.refresh();
       } else {
         if (!file) {
-          throw new Error("Please upload a PDF template file.");
+          throw new Error("Please upload a template file (PDF or Word DOCX).");
         }
 
         const formData = new FormData();
@@ -418,17 +418,17 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
 
       {!isEdit && (
         <div className="form-group" style={{ borderTop: "1px solid var(--border-color)", paddingTop: "20px" }}>
-          <label className="form-label">Base PDF Template File</label>
+          <label className="form-label">Base Template Document (PDF or Word DOCX)</label>
           <input
             type="file"
-            accept="application/pdf"
+            accept="application/pdf,.docx,.doc"
             className="form-input"
             required
             onChange={(e) => setFile(e.target.files?.[0] || null)}
             style={{ background: "rgba(0,0,0,0.4)" }}
           />
           <span style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>
-            Upload a clean template PDF document. You will overlay form input fields on this document in the next step.
+            Upload a clean PDF or Word document. Word documents will be automatically converted to PDF for mapping.
           </span>
         </div>
       )}

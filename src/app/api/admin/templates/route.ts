@@ -38,20 +38,47 @@ export async function POST(req: Request) {
     }
 
     if (!file) {
-      return NextResponse.json({ ok: false, error: "Missing PDF template file upload." }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "Missing template file upload." }, { status: 400 });
     }
 
-    // Save uploaded PDF template to public/uploads/templates
     const tplId = `tpl_${Date.now()}`;
-    const filename = `${tplId}.pdf`;
     const templatesDir = path.join(process.cwd(), "public", "uploads", "templates");
     if (!fs.existsSync(templatesDir)) {
       fs.mkdirSync(templatesDir, { recursive: true });
     }
 
-    const templatePdfPath = path.join(templatesDir, filename);
-    const fileBuffer = Buffer.from(await file.arrayBuffer());
-    fs.writeFileSync(templatePdfPath, fileBuffer);
+    const templatePdfPath = path.join(templatesDir, `${tplId}.pdf`);
+    const originalExt = path.extname(file.name).toLowerCase();
+
+    if (originalExt === ".docx" || originalExt === ".doc") {
+      const tempDocxPath = path.join(templatesDir, `${tplId}${originalExt}`);
+      const fileBuffer = Buffer.from(await file.arrayBuffer());
+      fs.writeFileSync(tempDocxPath, fileBuffer);
+
+      try {
+        const { execSync } = require("child_process");
+        // Convert to PDF using headless LibreOffice command line
+        execSync(`libreoffice --headless --convert-to pdf --outdir "${templatesDir}" "${tempDocxPath}"`, {
+          stdio: "ignore",
+          timeout: 30000 // 30 seconds max timeout
+        });
+      } catch (err: any) {
+        console.error("LibreOffice conversion failed:", err);
+        return NextResponse.json({
+          ok: false,
+          error: "Failed to convert Word document to PDF. Ensure LibreOffice is installed on the host."
+        }, { status: 500 });
+      } finally {
+        // Remove temporary DOCX/DOC file
+        if (fs.existsSync(tempDocxPath)) {
+          fs.unlinkSync(tempDocxPath);
+        }
+      }
+    } else {
+      // Standard PDF upload
+      const fileBuffer = Buffer.from(await file.arrayBuffer());
+      fs.writeFileSync(templatePdfPath, fileBuffer);
+    }
 
     // Initial empty fields array mapping
     const initialFieldsJson = JSON.stringify([]);

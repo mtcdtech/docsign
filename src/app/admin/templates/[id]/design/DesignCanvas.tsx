@@ -79,6 +79,14 @@ export default function DesignCanvas({
     }
   }, [initialFieldsJson]);
 
+  // Check if PDF.js is already loaded in window to prevent stuck loading state
+  useEffect(() => {
+    // @ts-ignore
+    if (window.pdfjsLib || window["pdfjs-dist/build/pdf"]) {
+      setPdfjsLoaded(true);
+    }
+  }, []);
+
   // Sync ID to Label as user types
   useEffect(() => {
     if (!isEditing && fieldLabel) {
@@ -116,9 +124,11 @@ export default function DesignCanvas({
       try {
         setLoadingPdf(true);
         // @ts-ignore
-        const pdfjsLib = window["pdfjs-dist/build/pdf"];
-        pdfjsLib.GlobalWorkerOptions.workerSrc =
-          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js";
+        const pdfjsLib = window["pdfjs-dist/build/pdf"] || window.pdfjsLib;
+        if (!pdfjsLib) {
+          throw new Error("PDF.js library not found in window object.");
+        }
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "/js/pdf.worker.min.js";
 
         const loadingTask = pdfjsLib.getDocument(pdfUrl);
         const pdf = await loadingTask.promise;
@@ -293,7 +303,7 @@ export default function DesignCanvas({
   return (
     <>
       <Script
-        src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"
+        src="/js/pdf.min.js"
         onLoad={() => setPdfjsLoaded(true)}
       />
 
