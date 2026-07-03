@@ -15,7 +15,7 @@ interface FieldMapping {
 interface FormField {
   id: string;
   label: string;
-  type: "text" | "date" | "number" | "checkbox" | "signature";
+  type: "text" | "date" | "number" | "checkbox" | "signature" | "signer_name" | "signer_email";
   required: boolean;
   pdfMapping: FieldMapping;
   conditional?: {
@@ -46,6 +46,14 @@ export default function DesignCanvas({
   const [numPages, setNumPages] = useState(0);
   const [loadingPdf, setLoadingPdf] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Custom inline dialog states (avoiding system native popups)
+  const [alertState, setAlertState] = useState<{ message: string; title?: string } | null>(null);
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   // Mouse drag & resize states
   const [activeAction, setActiveAction] = useState<"moving" | "resizing" | null>(null);
@@ -108,7 +116,6 @@ export default function DesignCanvas({
           const ctx = canvas.getContext("2d");
           if (!ctx) continue;
 
-          // Scale 1.3 for crisp rendering
           const viewport = page.getViewport({ scale: 1.3 });
           canvas.width = viewport.width;
           canvas.height = viewport.height;
@@ -153,7 +160,6 @@ export default function DesignCanvas({
         const deltaXPercent = (deltaX / rect.width) * 100;
         const deltaYPercent = (deltaY / rect.height) * 100;
 
-        // Bounded boundaries
         const newX = Math.max(
           0,
           Math.min(
@@ -263,11 +269,19 @@ export default function DesignCanvas({
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
 
-    // Generate variables identifiers
+    // Generate variables identifiers with user-friendly incremented suffix
     const count = fields.filter((f) => f.type === type).length + 1;
-    const cleanTypeName = type.charAt(0).toUpperCase() + type.slice(1);
-    const label = `${cleanTypeName} Field ${count}`;
-    const id = `${type}_${Date.now()}`;
+    let baseId = `${type}_${count}`;
+    let idx = count;
+    while (fields.some((f) => f.id === baseId)) {
+      idx++;
+      baseId = `${type}_${idx}`;
+    }
+    const id = baseId;
+
+    let cleanTypeName = type.replace(/_/g, " ");
+    cleanTypeName = cleanTypeName.charAt(0).toUpperCase() + cleanTypeName.slice(1);
+    const label = `${cleanTypeName} Field ${idx}`;
 
     let defaultWidth = 150;
     let defaultHeight = 24;
@@ -308,10 +322,14 @@ export default function DesignCanvas({
   };
 
   const handleDeleteField = (id: string) => {
-    if (confirm("Delete this field configuration?")) {
-      setFields((prev) => prev.filter((f) => f.id !== id));
-      setSelectedFieldId(null);
-    }
+    setConfirmState({
+      title: "Delete Variable",
+      message: `Are you sure you want to remove the variable ID "${id}" from this template mapping?`,
+      onConfirm: () => {
+        setFields((prev) => prev.filter((f) => f.id !== id));
+        setSelectedFieldId(null);
+      },
+    });
   };
 
   // Save layout to database
@@ -333,11 +351,18 @@ export default function DesignCanvas({
         throw new Error(data.error || "Failed to save fields schema.");
       }
 
-      alert("Visual schema template successfully saved!");
+      setAlertState({
+        title: "Success",
+        message: "Visual schema template successfully saved!",
+      });
+      // Redirect handled cleanly after alert close or router push
       router.push("/admin/templates");
       router.refresh();
     } catch (e: any) {
-      alert("Error: " + e.message);
+      setAlertState({
+        title: "Error Saving",
+        message: e.message || "Failed to save visual fields configuration.",
+      });
     } finally {
       setSaving(false);
     }
@@ -398,6 +423,22 @@ export default function DesignCanvas({
               >
                 ✍️ Signature Canvas
               </div>
+              
+              {/* Discreet Draggable Signer Fields */}
+              <div
+                draggable
+                onDragStart={(e) => handleDragStart(e, "signer_name")}
+                style={{ background: "rgba(var(--primary-rgb), 0.05)", border: "1.5px dashed var(--primary-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 600, gridColumn: "span 2" }}
+              >
+                👤 Draggable Signer Name
+              </div>
+              <div
+                draggable
+                onDragStart={(e) => handleDragStart(e, "signer_email")}
+                style={{ background: "rgba(var(--primary-rgb), 0.05)", border: "1.5px dashed var(--primary-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 600, gridColumn: "span 2" }}
+              >
+                ✉️ Draggable Signer Email
+              </div>
             </div>
           </div>
 
@@ -445,6 +486,8 @@ export default function DesignCanvas({
                       <option value="number">Number</option>
                       <option value="checkbox">Checkbox</option>
                       <option value="signature">Signature</option>
+                      <option value="signer_name">Signer Name</option>
+                      <option value="signer_email">Signer Email</option>
                     </select>
                   </div>
 
@@ -554,7 +597,7 @@ export default function DesignCanvas({
                 </div>
 
                 <button
-                  onClick={() => handleDeleteField(selectedFieldId!)}
+                  onClick={() => handleDeleteField(selectedField.id)}
                   className="btn btn-danger"
                   style={{ width: "100%", padding: "8px", fontSize: "12px", marginTop: "4px" }}
                 >
@@ -595,7 +638,9 @@ export default function DesignCanvas({
                     }}
                   >
                     <div>
-                      <div style={{ fontWeight: 600, color: "var(--text-main)" }}>{f.label}</div>
+                      <div style={{ fontWeight: 600, color: "var(--text-main)" }}>
+                        {f.label} {f.required && <span style={{ color: "#ef4444" }}>*</span>}
+                      </div>
                       <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>
                         ID: {f.id} | Page {f.pdfMapping.page + 1}
                       </div>
@@ -670,9 +715,9 @@ export default function DesignCanvas({
                           width: `${f.pdfMapping.width}px`,
                           height: `${f.pdfMapping.height}px`,
                           border: isSelected ? "2px solid var(--primary-color)" : "1px solid rgba(255,255,255,0.4)",
-                          background: isSelected ? "var(--primary-glow)" : "rgba(0, 0, 0, 0.6)",
+                          background: "rgba(15, 23, 42, 0.95)", // High contrast dark background for crisp white text
                           borderRadius: "4px",
-                          color: "white",
+                          color: "#ffffff",
                           fontSize: "10px",
                           fontWeight: "bold",
                           display: "flex",
@@ -682,11 +727,12 @@ export default function DesignCanvas({
                           zIndex: isSelected ? 30 : 20,
                           cursor: "move",
                           userSelect: "none",
-                          boxSizing: "border-box"
+                          boxSizing: "border-box",
+                          boxShadow: isSelected ? "0 0 8px var(--primary-color)" : "none"
                         }}
                       >
                         <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: "6px" }}>
-                          {f.label}
+                          {f.label} {f.required && <span style={{ color: "#ef4444", marginLeft: "2px" }}>*</span>}
                         </span>
 
                         {/* Drag Resize Corner Handle */}
@@ -713,6 +759,44 @@ export default function DesignCanvas({
         </div>
 
       </div>
+
+      {/* Generated In-App Alert Dialog Overlay */}
+      {alertState && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
+          <div className="card-glass" style={{ width: "400px", padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+            <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "bold" }}>{alertState.title || "Notification"}</h3>
+            <p style={{ margin: 0, fontSize: "14px", color: "var(--text-muted)", lineHeight: "1.5" }}>{alertState.message}</p>
+            <button className="btn btn-primary" onClick={() => setAlertState(null)} style={{ alignSelf: "flex-end", width: "auto", minWidth: "80px" }}>
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Generated In-App Confirmation Dialog Overlay */}
+      {confirmState && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
+          <div className="card-glass" style={{ width: "400px", padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+            <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "bold" }}>{confirmState.title}</h3>
+            <p style={{ margin: 0, fontSize: "14px", color: "var(--text-muted)", lineHeight: "1.5" }}>{confirmState.message}</p>
+            <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+              <button className="btn btn-secondary" onClick={() => setConfirmState(null)} style={{ width: "auto" }}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  confirmState.onConfirm();
+                  setConfirmState(null);
+                }}
+                style={{ width: "auto" }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

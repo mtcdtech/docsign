@@ -53,6 +53,7 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
   
   const [selectedFolderId, setSelectedFolderId] = useState(template?.sharepointFolderId || "");
   const [selectedFolderName, setSelectedFolderName] = useState(template?.sharepointFolderName || "");
+  const [successModal, setSuccessModal] = useState<string | null>(null);
   
   const [file, setFile] = useState<File | null>(null);
   
@@ -153,7 +154,6 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
     
     setSelectedFolderId(combinedId);
     setSelectedFolderName(pathLabel);
-    alert(`Selected: ${pathLabel}`);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -183,9 +183,11 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
           throw new Error(data.error || "Failed to update template.");
         }
 
-        alert("Template configuration updated!");
-        router.push("/admin/templates");
-        router.refresh();
+        setSuccessModal("Template configuration updated successfully! Redirecting...");
+        setTimeout(() => {
+          router.push("/admin/templates");
+          router.refresh();
+        }, 1500);
       } else {
         if (!file) {
           throw new Error("Please upload a template file (PDF or Word DOCX).");
@@ -212,9 +214,11 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
           throw new Error(data.error || "Failed to create template.");
         }
 
-        alert("Template created successfully! Redirecting to visual fields designer...");
-        router.push(`/admin/templates/${data.templateId}/design`);
-        router.refresh();
+        setSuccessModal("Template created successfully! Redirecting to visual fields designer...");
+        setTimeout(() => {
+          router.push(`/admin/templates/${data.templateId}/design`);
+          router.refresh();
+        }, 1500);
       }
     } catch (err: any) {
       setError(err.message || "An error occurred.");
@@ -457,6 +461,15 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
           {loading ? "Processing..." : isEdit ? "Save Configuration" : "Upload & Design Fields"}
         </button>
       </div>
+
+      {successModal && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
+          <div className="card-glass" style={{ width: "400px", padding: "24px", display: "flex", flexDirection: "column", gap: "16px", textAlign: "center" }}>
+            <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "bold", color: "var(--primary-color)" }}>Success</h3>
+            <p style={{ margin: 0, fontSize: "14px", color: "var(--text-muted)", lineHeight: "1.5" }}>{successModal}</p>
+          </div>
+        </div>
+      )}
     </form>
   );
 }
