@@ -15,7 +15,7 @@ interface FieldMapping {
 interface FormField {
   id: string;
   label: string;
-  type: "text" | "date" | "number" | "checkbox" | "signature" | "signer_name" | "signer_email";
+  type: "text" | "date" | "number" | "checkbox" | "signature" | "signer_name" | "signer_email" | "dob" | "age" | "todays_date";
   required: boolean;
   pdfMapping: FieldMapping;
   conditional?: {
@@ -280,7 +280,15 @@ export default function DesignCanvas({
     const id = baseId;
 
     let cleanTypeName = type.replace(/_/g, " ");
-    cleanTypeName = cleanTypeName.charAt(0).toUpperCase() + cleanTypeName.slice(1);
+    if (type === "dob") {
+      cleanTypeName = "Date of Birth";
+    } else if (type === "todays_date") {
+      cleanTypeName = "Today's Date";
+    } else if (type === "age") {
+      cleanTypeName = "Age";
+    } else {
+      cleanTypeName = cleanTypeName.charAt(0).toUpperCase() + cleanTypeName.slice(1);
+    }
     const label = `${cleanTypeName} Field ${idx}`;
 
     let defaultWidth = 150;
@@ -424,6 +432,29 @@ export default function DesignCanvas({
                 ✍️ Signature Canvas
               </div>
               
+              
+              <div
+                draggable
+                onDragStart={(e) => handleDragStart(e, "dob")}
+                style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500 }}
+              >
+                👶 Date of Birth
+              </div>
+              <div
+                draggable
+                onDragStart={(e) => handleDragStart(e, "age")}
+                style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500 }}
+              >
+                🧮 Age (Calculated)
+              </div>
+              <div
+                draggable
+                onDragStart={(e) => handleDragStart(e, "todays_date")}
+                style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500, gridColumn: "span 2" }}
+              >
+                📅 Today's Date
+              </div>
+
               {/* Discreet Draggable Signer Fields */}
               <div
                 draggable

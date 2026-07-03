@@ -48,6 +48,33 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
   const [emailLeader, setEmailLeader] = useState(template?.emailLeader ?? true);
   const [selectedLeaderEmails, setSelectedLeaderEmails] = useState<string[]>([]);
   const [manualEmails, setManualEmails] = useState<string[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteWaiver = async () => {
+    setDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/templates/${template?.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok || data.ok === false) {
+        throw new Error(data.error || "Failed to delete waiver template.");
+      }
+      
+      setSuccessModal("Waiver template deleted successfully. Redirecting...");
+      setTimeout(() => {
+        router.push("/admin/templates");
+        router.refresh();
+      }, 1500);
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred.");
+      setShowDeleteConfirm(false);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Load initial notification emails configurations
   useEffect(() => {
@@ -566,24 +593,98 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
         </div>
       )}
 
-      <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end", borderTop: "1px solid var(--border-color)", paddingTop: "20px" }}>
-        <button
-          type="button"
-          onClick={() => router.push("/admin/templates")}
-          className="btn btn-secondary"
-          style={{ width: "auto" }}
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          className="btn btn-primary"
-          disabled={loading}
-          style={{ width: "auto" }}
-        >
-          {loading ? "Processing..." : isEdit ? "Save Configuration" : "Upload & Design Fields"}
-        </button>
+      <div style={{ display: "flex", gap: "12px", justifyContent: "space-between", borderTop: "1px solid var(--border-color)", paddingTop: "20px" }}>
+        <div>
+          {isEdit && (
+            <button
+              type="button"
+              className="btn"
+              onClick={() => setShowDeleteConfirm(true)}
+              style={{
+                width: "auto",
+                background: "rgba(239, 68, 68, 0.12)",
+                color: "#f87171",
+                border: "1px solid rgba(239, 68, 68, 0.25)",
+                padding: "10px 18px",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+                borderRadius: "6px"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(239, 68, 68, 0.22)";
+                e.currentTarget.style.borderColor = "rgba(239, 68, 68, 0.4)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(239, 68, 68, 0.12)";
+                e.currentTarget.style.borderColor = "rgba(239, 68, 68, 0.25)";
+              }}
+            >
+              🗑 Delete Waiver
+            </button>
+          )}
+        </div>
+        <div style={{ display: "flex", gap: "12px" }}>
+          <button
+            type="button"
+            onClick={() => router.push("/admin/templates")}
+            className="btn btn-secondary"
+            style={{ width: "auto" }}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={loading}
+            style={{ width: "auto" }}
+          >
+            {loading ? "Processing..." : isEdit ? "Save Configuration" : "Upload & Design Fields"}
+          </button>
+        </div>
       </div>
+
+      {showDeleteConfirm && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
+          <div className="card-glass" style={{ width: "450px", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", textAlign: "center" }}>
+            <div style={{ fontSize: "36px" }}>⚠️</div>
+            <div>
+              <h3 style={{ margin: "0 0 8px 0", color: "#f87171", fontSize: "18px", fontWeight: "bold" }}>Delete Waiver Template</h3>
+              <p style={{ margin: 0, fontSize: "14px", color: "var(--text-muted)", lineHeight: "1.5" }}>
+                Are you absolutely sure you want to delete <strong>{template?.title}</strong>? This action cannot be undone and will permanently remove this waiver template and all associated signed logs.
+              </p>
+            </div>
+            
+            <div style={{ display: "flex", gap: "12px", justifyContent: "center", marginTop: "8px" }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setShowDeleteConfirm(false)}
+                style={{ width: "auto", minWidth: "100px" }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn"
+                disabled={deleting}
+                onClick={handleDeleteWaiver}
+                style={{
+                  width: "auto",
+                  minWidth: "120px",
+                  background: "#ef4444",
+                  color: "#ffffff",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  borderRadius: "6px"
+                }}
+              >
+                {deleting ? "Deleting..." : "Yes, Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {successModal && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>

@@ -14,7 +14,7 @@ export interface FieldMapping {
 export interface FormField {
   id: string;
   label: string;
-  type: "text" | "date" | "number" | "checkbox" | "signature" | "signer_name" | "signer_email";
+  type: "text" | "date" | "number" | "checkbox" | "signature" | "signer_name" | "signer_email" | "dob" | "age" | "todays_date";
   required: boolean;
   pdfMapping: FieldMapping;
 }

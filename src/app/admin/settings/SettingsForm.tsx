@@ -83,6 +83,37 @@ export default function SettingsForm({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  // User directory sorting states
+  const [userSortBy, setUserSortBy] = useState<"name" | "email" | "role">("name");
+  const [userSortOrder, setUserSortOrder] = useState<"asc" | "desc">("asc");
+
+  const handleUserSort = (field: "name" | "email" | "role") => {
+    if (userSortBy === field) {
+      setUserSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setUserSortBy(field);
+      setUserSortOrder("asc");
+    }
+  };
+
+  const getSortedUsers = (userList: User[]) => {
+    return [...userList].sort((a, b) => {
+      let valA = "";
+      let valB = "";
+      if (userSortBy === "name") {
+        valA = (a.name || "").toLowerCase();
+        valB = (b.name || "").toLowerCase();
+      } else if (userSortBy === "email") {
+        valA = a.email.toLowerCase();
+        valB = b.email.toLowerCase();
+      } else if (userSortBy === "role") {
+        valA = a.role.toLowerCase();
+        valB = b.role.toLowerCase();
+      }
+      return userSortOrder === "asc" ? valA.localeCompare(valB) : valB.localeCompare(valA);
+    });
+  };
+
   const saveSettings = async (fieldsToUpdate: any) => {
     setIsSaving(true);
     setSaveSuccess(false);
@@ -624,159 +655,189 @@ export default function SettingsForm({
         </div>
       )}
 
-      {activeTab === "users" && (
-        <div className="card-glass">
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "16px",
-              marginBottom: "24px",
-            }}
-          >
-            <div>
-              <h2>User Management Directory</h2>
-              <p style={{ fontSize: "14px", color: "var(--text-muted)", margin: 0 }}>
-                View users and departments populated from the Central IAM Portal. This is read-only.
-              </p>
-            </div>
-            <div style={{ display: "flex", gap: "10px" }}>
-              <a
-                href={`${centralIamUrl}/iam/`}
-                target="_blank"
-                rel="noreferrer"
-                className="btn btn-secondary"
-                style={{ width: "auto", display: "inline-flex", alignItems: "center", gap: "6px" }}
-              >
-                <span>Manage in IAM Portal</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                  <polyline points="15 3 21 3 21 9" />
-                  <line x1="10" y1="14" x2="21" y2="3" />
-                </svg>
-              </a>
-              <button
-                type="button"
-                onClick={handleSyncDirectory}
-                disabled={isSyncing}
-                className="btn btn-primary"
-                style={{ width: "auto" }}
-              >
-                {isSyncing ? "Syncing Directory..." : "Sync Directory"}
-              </button>
-            </div>
-          </div>
+      {activeTab === "users" && (() => {
+        // Group users by department
+        const usersByDept = initialUsers.reduce((acc, user) => {
+          const dept = user.department?.trim() || "Unassigned Department";
+          if (!acc[dept]) {
+            acc[dept] = [];
+          }
+          acc[dept].push(user);
+          return acc;
+        }, {} as Record<string, User[]>);
 
-          {syncStatus && (
+        return (
+          <div className="card-glass">
             <div
               style={{
-                marginBottom: "20px",
-                padding: "12px 16px",
-                borderRadius: "6px",
-                fontSize: "14px",
-                border: syncStatus.success ? "1px solid rgba(34, 197, 94, 0.2)" : "1px solid rgba(239, 68, 68, 0.2)",
-                background: syncStatus.success ? "rgba(34, 197, 94, 0.05)" : "rgba(239, 68, 68, 0.05)",
-                color: syncStatus.success ? "#22c55e" : "#ef4444",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "16px",
+                marginBottom: "24px",
               }}
             >
-              {syncStatus.success
-                ? `✓ Directory synchronized successfully! Imported/Updated ${syncStatus.count} user configurations.`
-                : `⚠️ Sync failed: ${syncStatus.error}`}
+              <div>
+                <h2>User Management Directory</h2>
+                <p style={{ fontSize: "14px", color: "var(--text-muted)", margin: 0 }}>
+                  View users organized by department and synchronized from the Central IAM Portal.
+                </p>
+              </div>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <a
+                  href={`${centralIamUrl}/iam/`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn btn-secondary"
+                  style={{ width: "auto", display: "inline-flex", alignItems: "center", gap: "6px" }}
+                >
+                  <span>Manage in IAM Portal</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                </a>
+                <button
+                  type="button"
+                  onClick={handleSyncDirectory}
+                  disabled={isSyncing}
+                  className="btn btn-primary"
+                  style={{ width: "auto" }}
+                >
+                  {isSyncing ? "Syncing Directory..." : "Sync Directory"}
+                </button>
+              </div>
             </div>
-          )}
 
-          {/* Users Table */}
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px" }}>
-              <thead>
-                <tr style={{ borderBottom: "1px solid var(--border-color)", color: "var(--text-muted)" }}>
-                  <th style={{ padding: "12px 8px" }}>Name</th>
-                  <th style={{ padding: "12px 8px" }}>Email</th>
-                  <th style={{ padding: "12px 8px" }}>Departments</th>
-                  <th style={{ padding: "12px 8px" }}>Assigned Role</th>
-                </tr>
-              </thead>
-              <tbody>
-                {initialUsers.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} style={{ padding: "24px", textAlign: "center", color: "var(--text-muted)" }}>
-                      No users in directory. Click "Sync Directory" to fetch from central registry.
-                    </td>
-                  </tr>
-                ) : (
-                  initialUsers.map((u) => (
-                    <tr
-                      key={u.id}
-                      style={{
-                        borderBottom: "1px solid rgba(255, 255, 255, 0.03)",
-                        transition: "background var(--transition-fast)",
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.01)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                    >
-                      <td style={{ padding: "12px 8px", fontWeight: "500" }}>{u.name || "—"}</td>
-                      <td style={{ padding: "12px 8px", fontFamily: "monospace", color: "var(--text-muted)" }}>
-                        {u.email}
-                      </td>
-                      <td style={{ padding: "12px 8px" }}>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                          {u.organizations.length === 0 ? (
-                            <span style={{ fontSize: "12px", padding: "2px 8px", background: "rgba(255,255,255,0.05)", borderRadius: "4px", color: "var(--text-muted)" }}>
-                              General Access
-                            </span>
-                          ) : (
-                            u.organizations.map((org) => (
-                              <span
-                                key={org.id}
-                                style={{
-                                  fontSize: "12px",
-                                  padding: "2px 8px",
-                                  background: "rgba(79, 70, 229, 0.1)",
-                                  border: "1px solid rgba(79, 70, 229, 0.2)",
-                                  color: "var(--primary-color)",
-                                  borderRadius: "4px",
-                                }}
-                              >
-                                {org.name}
-                              </span>
-                            ))
-                          )}
-                        </div>
-                      </td>
-                      <td style={{ padding: "12px 8px" }}>
-                        <span
-                          style={{
-                            fontSize: "12px",
-                            padding: "3px 8px",
-                            borderRadius: "4px",
-                            fontWeight: "600",
-                            background:
-                              u.role === "Admin"
-                                ? "rgba(239, 68, 68, 0.15)"
-                                : u.role === "OrgLeader"
-                                ? "rgba(234, 179, 8, 0.15)"
-                                : "rgba(255, 255, 255, 0.05)",
-                            color:
-                              u.role === "Admin"
-                                ? "#f87171"
-                                : u.role === "OrgLeader"
-                                ? "#facc15"
-                                : "var(--text-main)",
-                          }}
-                        >
-                          {u.role}
+            {syncStatus && (
+              <div
+                style={{
+                  marginBottom: "20px",
+                  padding: "12px 16px",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  border: syncStatus.success ? "1px solid rgba(34, 197, 94, 0.2)" : "1px solid rgba(239, 68, 68, 0.2)",
+                  background: syncStatus.success ? "rgba(34, 197, 94, 0.05)" : "rgba(239, 68, 68, 0.05)",
+                  color: syncStatus.success ? "#22c55e" : "#ef4444",
+                }}
+              >
+                {syncStatus.success
+                  ? `✓ Directory synchronized successfully! Imported/Updated ${syncStatus.count} user configurations.`
+                  : `⚠️ Sync failed: ${syncStatus.error}`}
+              </div>
+            )}
+
+            {initialUsers.length === 0 ? (
+              <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
+                No users in directory. Click "Sync Directory" to fetch from central registry.
+              </div>
+            ) : (
+              Object.entries(usersByDept)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([dept, deptUsers]) => {
+                  const sortedDeptUsers = getSortedUsers(deptUsers);
+                  return (
+                    <div key={dept} style={{ marginBottom: "32px", border: "1px solid var(--border-color)", borderRadius: "8px", padding: "16px", background: "rgba(255,255,255,0.01)" }}>
+                      <h3 style={{ margin: "0 0 16px 0", paddingBottom: "8px", borderBottom: "1px solid var(--border-color)", color: "var(--primary-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span>📁 {dept}</span>
+                        <span style={{ fontSize: "12px", background: "rgba(255,255,255,0.05)", padding: "2px 8px", borderRadius: "10px", color: "var(--text-muted)" }}>
+                          {deptUsers.length} {deptUsers.length === 1 ? "User" : "Users"}
                         </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                      </h3>
+                      <div style={{ overflowX: "auto" }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px" }}>
+                          <thead>
+                            <tr style={{ borderBottom: "1px solid var(--border-color)", color: "var(--text-muted)" }}>
+                              <th style={{ padding: "12px 8px", cursor: "pointer", userSelect: "none" }} onClick={() => handleUserSort("name")}>
+                                Name {userSortBy === "name" ? (userSortOrder === "asc" ? " ▲" : " ▼") : " ↕"}
+                              </th>
+                              <th style={{ padding: "12px 8px", cursor: "pointer", userSelect: "none" }} onClick={() => handleUserSort("email")}>
+                                Email {userSortBy === "email" ? (userSortOrder === "asc" ? " ▲" : " ▼") : " ↕"}
+                              </th>
+                              <th style={{ padding: "12px 8px" }}>Organizations</th>
+                              <th style={{ padding: "12px 8px", cursor: "pointer", userSelect: "none" }} onClick={() => handleUserSort("role")}>
+                                Assigned Role {userSortBy === "role" ? (userSortOrder === "asc" ? " ▲" : " ▼") : " ↕"}
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sortedDeptUsers.map((u) => (
+                              <tr
+                                key={u.id}
+                                style={{
+                                  borderBottom: "1px solid rgba(255, 255, 255, 0.03)",
+                                  transition: "background var(--transition-fast)",
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.015)")}
+                                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                              >
+                                <td style={{ padding: "12px 8px", fontWeight: "500" }}>{u.name || "—"}</td>
+                                <td style={{ padding: "12px 8px", fontFamily: "monospace", color: "var(--text-muted)" }}>
+                                  {u.email}
+                                </td>
+                                <td style={{ padding: "12px 8px" }}>
+                                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                                    {u.organizations.length === 0 ? (
+                                      <span style={{ fontSize: "12px", padding: "2px 8px", background: "rgba(255,255,255,0.05)", borderRadius: "4px", color: "var(--text-muted)" }}>
+                                        General Access
+                                      </span>
+                                    ) : (
+                                      u.organizations.map((org) => (
+                                        <span
+                                          key={org.id}
+                                          style={{
+                                            fontSize: "12px",
+                                            padding: "2px 8px",
+                                            background: "rgba(79, 70, 229, 0.1)",
+                                            border: "1px solid rgba(79, 70, 229, 0.2)",
+                                            color: "var(--primary-color)",
+                                            borderRadius: "4px",
+                                          }}
+                                        >
+                                          {org.name}
+                                        </span>
+                                      ))
+                                    )}
+                                  </div>
+                                </td>
+                                <td style={{ padding: "12px 8px" }}>
+                                  <span
+                                    style={{
+                                      fontSize: "12px",
+                                      padding: "3px 8px",
+                                      borderRadius: "4px",
+                                      fontWeight: "600",
+                                      background:
+                                        u.role === "Admin"
+                                          ? "rgba(239, 68, 68, 0.15)"
+                                          : u.role === "OrgLeader"
+                                          ? "rgba(234, 179, 8, 0.15)"
+                                          : "rgba(255, 255, 255, 0.05)",
+                                      color:
+                                        u.role === "Admin"
+                                          ? "#f87171"
+                                          : u.role === "OrgLeader"
+                                          ? "#facc15"
+                                          : "var(--text-main)",
+                                    }}
+                                  >
+                                    {u.role}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {activeTab === "audit" && (
         <div className="card-glass">

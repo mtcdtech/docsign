@@ -15,7 +15,7 @@ interface FieldMapping {
 interface FormField {
   id: string;
   label: string;
-  type: "text" | "date" | "number" | "checkbox" | "signature" | "signer_name" | "signer_email";
+  type: "text" | "date" | "number" | "checkbox" | "signature" | "signer_name" | "signer_email" | "dob" | "age" | "todays_date";
   required: boolean;
   pdfMapping: FieldMapping;
   conditional?: {
@@ -134,6 +134,22 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
     };
   }, [isMobile]);
 
+  // Pre-fill today's date on all "todays_date" fields automatically on mount
+  useEffect(() => {
+    const todayStr = new Date().toLocaleDateString();
+    setFormData((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      fields.forEach((f) => {
+        if (f.type === "todays_date" && !next[f.id]) {
+          next[f.id] = todayStr;
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [fields]);
+
   useEffect(() => {
     const currentTheme = document.documentElement.getAttribute("data-theme") as "dark" | "light" || "dark";
     setTheme(currentTheme);
@@ -242,10 +258,32 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
   };
 
   const handleInputChange = (fieldId: string, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [fieldId]: value,
-    }));
+    setFormData((prev) => {
+      const next = { ...prev, [fieldId]: value };
+
+      // Handle automatic Age calculation if the updated field is a Date of Birth (dob)
+      const field = fields.find((f) => f.id === fieldId);
+      if (field?.type === "dob" && value) {
+        const birthDate = new Date(value);
+        if (!isNaN(birthDate.getTime())) {
+          const today = new Date();
+          let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+          const m = today.getMonth() - birthDate.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            calculatedAge--;
+          }
+          
+          // Populate all Age fields automatically
+          fields.forEach((f) => {
+            if (f.type === "age") {
+              next[f.id] = calculatedAge.toString();
+            }
+          });
+        }
+      }
+
+      return next;
+    });
   };
 
   // Click remaining checklist fields to scroll, focus & highlight
@@ -640,6 +678,105 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                   outline: "none"
                                 }}
                                 title="Click to edit Email"
+                              />
+                            );
+                          }
+
+                          if (f.type === "dob") {
+                            return (
+                              <input
+                                key={f.id}
+                                id={`field-input-box-${f.id}`}
+                                type="date"
+                                value={val}
+                                tabIndex={tabIdx}
+                                onChange={(e) => handleInputChange(f.id, e.target.value)}
+                                style={{
+                                  ...style,
+                                  background: "var(--bg-card)",
+                                  color: "var(--text-main)",
+                                  fontSize: isMobile ? "16px" : "11px",
+                                  padding: "2px 6px",
+                                  borderRadius: "4px",
+                                  border: isHighlighted
+                                    ? "3px solid #f59e0b"
+                                    : val
+                                    ? "1.5px solid #10b981"
+                                    : f.required
+                                    ? "2.5px solid var(--primary-color)"
+                                    : "1.5px solid var(--border-color)",
+                                  outline: "none",
+                                  height: `${mapping.height}px`,
+                                  colorScheme: theme,
+                                  boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
+                                }}
+                              />
+                            );
+                          }
+
+                          if (f.type === "age") {
+                            return (
+                              <input
+                                key={f.id}
+                                id={`field-input-box-${f.id}`}
+                                type="text"
+                                value={val}
+                                readOnly
+                                tabIndex={tabIdx}
+                                placeholder="Auto Age"
+                                style={{
+                                  ...style,
+                                  background: "rgba(255, 255, 255, 0.05)",
+                                  color: "var(--text-main)",
+                                  fontSize: isMobile ? "16px" : "11px",
+                                  padding: "2px 6px",
+                                  borderRadius: "4px",
+                                  border: isHighlighted
+                                    ? "3px solid #f59e0b"
+                                    : val
+                                    ? "1.5px solid #10b981"
+                                    : f.required
+                                    ? "2.5px solid var(--primary-color)"
+                                    : "1.5px solid var(--border-color)",
+                                  outline: "none",
+                                  height: `${mapping.height}px`,
+                                  cursor: "not-allowed",
+                                  boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
+                                }}
+                                title="Calculated automatically based on Date of Birth"
+                              />
+                            );
+                          }
+
+                          if (f.type === "todays_date") {
+                            return (
+                              <input
+                                key={f.id}
+                                id={`field-input-box-${f.id}`}
+                                type="text"
+                                value={val}
+                                readOnly
+                                tabIndex={tabIdx}
+                                style={{
+                                  ...style,
+                                  background: "rgba(255, 255, 255, 0.05)",
+                                  color: "var(--text-main)",
+                                  fontSize: isMobile ? "16px" : "11px",
+                                  padding: "2px 6px",
+                                  borderRadius: "4px",
+                                  border: isHighlighted
+                                    ? "3px solid #f59e0b"
+                                    : val
+                                    ? "1.5px solid #10b981"
+                                    : f.required
+                                    ? "2.5px solid var(--primary-color)"
+                                    : "1.5px solid var(--border-color)",
+                                  outline: "none",
+                                  height: `${mapping.height}px`,
+                                  cursor: "not-allowed",
+                                  boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
+                                }}
+                                title="Today's Date"
                               />
                             );
                           }
