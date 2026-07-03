@@ -46,7 +46,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     const fields = JSON.parse(template.fieldsJson);
     await overlayPdf(template.pdfPath, outputPath, fields, formData);
 
-    const relativePdfUrl = `/uploads/signed/${outputFilename}`;
+    const relativePdfUrl = `/api/download/signed/${outputFilename}`;
 
     // 2. Perform SharePoint Upload if configured
     let sharepointUrl: string | null = null;

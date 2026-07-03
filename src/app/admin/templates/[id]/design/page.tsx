@@ -44,7 +44,7 @@ export default async function DesignTemplatePage({ params }: DesignTemplatePageP
 
   // Resolve static URL path of uploaded PDF file
   const filename = path.basename(template.pdfPath);
-  const pdfUrl = `/uploads/templates/${filename}`;
+  const pdfUrl = `/api/download/templates/${filename}`;
 
   return (
     <div style={{ maxWidth: "1400px", margin: "0 auto" }}>

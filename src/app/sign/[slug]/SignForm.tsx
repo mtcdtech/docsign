@@ -426,22 +426,34 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                 Rendering document pages...
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "20px", alignItems: "center" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", alignItems: "stretch" }}>
                 {Array.from({ length: numPages }).map((_, pageIdx) => (
                   <div
                     key={pageIdx}
-                    id={`pdf-preview-overlay-${pageIdx}`}
                     style={{
-                      position: "relative",
-                      border: "1px solid var(--border-color)",
-                      borderRadius: "4px",
-                      background: "#000",
+                      width: "100%",
+                      overflowX: "auto",
+                      WebkitOverflowScrolling: "touch",
+                      display: "flex",
+                      justifyContent: isMobile ? "flex-start" : "center",
+                      background: "rgba(0,0,0,0.05)",
+                      paddingBottom: "8px"
                     }}
                   >
-                    <canvas
-                      id={`pdf-preview-canvas-${pageIdx}`}
-                      style={{ display: "block", maxWidth: "100%", height: "auto" }}
-                    />
+                    <div
+                      id={`pdf-preview-overlay-${pageIdx}`}
+                      style={{
+                        position: "relative",
+                        border: "1px solid var(--border-color)",
+                        borderRadius: "4px",
+                        background: "#000",
+                        flexShrink: 0
+                      }}
+                    >
+                      <canvas
+                        id={`pdf-preview-canvas-${pageIdx}`}
+                        style={{ display: "block" }}
+                      />
                     
                     {/* Absolute Overlay Fields */}
                     <div
@@ -548,7 +560,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                   background: "var(--bg-card)",
                                   color: "var(--text-main)",
                                   boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
-                                  fontSize: "11px",
+                                  fontSize: isMobile ? "16px" : "11px",
                                   padding: "2px 6px",
                                   borderRadius: "4px",
                                   outline: "none"
@@ -577,7 +589,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                   background: "var(--bg-card)",
                                   color: "var(--text-main)",
                                   boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
-                                  fontSize: "11px",
+                                  fontSize: isMobile ? "16px" : "11px",
                                   padding: "2px 6px",
                                   borderRadius: "4px",
                                   outline: "none"
@@ -600,7 +612,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                 ...style,
                                 background: "var(--bg-card)",
                                 color: "var(--text-main)",
-                                fontSize: "11px",
+                                fontSize: isMobile ? "16px" : "11px",
                                 padding: "2px 6px",
                                 borderRadius: "4px",
                                 border: isHighlighted
