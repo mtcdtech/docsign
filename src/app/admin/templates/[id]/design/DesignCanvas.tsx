@@ -42,6 +42,7 @@ export default function DesignCanvas({
 
   const [fields, setFields] = useState<FormField[]>([]);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+  const [copiedField, setCopiedField] = useState<FormField | null>(null);
   const [pdfjsLoaded, setPdfjsLoaded] = useState(false);
   const [numPages, setNumPages] = useState(0);
   const [loadingPdf, setLoadingPdf] = useState(true);
@@ -77,6 +78,104 @@ export default function DesignCanvas({
       setFields([]);
     }
   }, [initialFieldsJson]);
+
+  // Keyboard Actions Listener (Copy/Paste, Delete, Arrow moves)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore shortcut actions if typing inside an input field
+      const activeEl = document.activeElement;
+      if (
+        activeEl &&
+        (activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          activeEl.tagName === "SELECT" ||
+          activeEl.getAttribute("contenteditable") === "true")
+      ) {
+        return;
+      }
+
+      // 1. Delete element (Delete/Backspace keys)
+      if (selectedFieldId && (e.key === "Delete" || e.key === "Backspace")) {
+        e.preventDefault();
+        handleDeleteField(selectedFieldId);
+        return;
+      }
+
+      // 2. Copy element (Ctrl/Cmd + C)
+      if (selectedFieldId && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c") {
+        const field = fields.find((f) => f.id === selectedFieldId);
+        if (field) {
+          e.preventDefault();
+          setCopiedField(field);
+        }
+        return;
+      }
+
+      // 3. Paste element (Ctrl/Cmd + V)
+      if (copiedField && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v") {
+        e.preventDefault();
+
+        const type = copiedField.type;
+        const count = fields.filter((f) => f.type === type).length + 1;
+        let baseId = `${type}_${count}`;
+        let idx = count;
+        while (fields.some((f) => f.id === baseId)) {
+          idx++;
+          baseId = `${type}_${idx}`;
+        }
+        const newId = baseId;
+        const newLabel = `${copiedField.label.replace(/ Copy/g, "")} Copy`;
+
+        const newField: FormField = {
+          ...copiedField,
+          id: newId,
+          label: newLabel,
+          pdfMapping: {
+            ...copiedField.pdfMapping,
+            x: Math.min(95, copiedField.pdfMapping.x + 3),
+            y: Math.min(95, copiedField.pdfMapping.y + 3),
+          },
+        };
+
+        setFields((prev) => [...prev, newField]);
+        setSelectedFieldId(newId);
+        return;
+      }
+
+      // 4. Move element with Arrow keys
+      if (selectedFieldId && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+        e.preventDefault();
+        const step = e.shiftKey ? 3.0 : 0.5;
+
+        setFields((prev) =>
+          prev.map((f) => {
+            if (f.id !== selectedFieldId) return f;
+            let newX = f.pdfMapping.x;
+            let newY = f.pdfMapping.y;
+
+            if (e.key === "ArrowUp") newY = Math.max(0, f.pdfMapping.y - step);
+            if (e.key === "ArrowDown") newY = Math.min(100, f.pdfMapping.y + step);
+            if (e.key === "ArrowLeft") newX = Math.max(0, f.pdfMapping.x - step);
+            if (e.key === "ArrowRight") newX = Math.min(100, f.pdfMapping.x + step);
+
+            return {
+              ...f,
+              pdfMapping: {
+                ...f.pdfMapping,
+                x: newX,
+                y: newY,
+              },
+            };
+          })
+        );
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedFieldId, fields, copiedField]);
 
   // Check if pdfjs is already loaded in window
   useEffect(() => {
@@ -389,7 +488,7 @@ export default function DesignCanvas({
         <div style={{ width: "360px", display: "flex", flexDirection: "column", gap: "20px", position: "sticky", top: "100px", maxHeight: "calc(100vh - 140px)", overflowY: "auto" }}>
           
           {/* Section 1: Drag-and-Drop Elements Library */}
-          <div className="card-glass" style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div className="card-glass" style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px", flexShrink: 0 }}>
             <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "bold" }}>Toolbox Library</h3>
             <p style={{ margin: 0, fontSize: "11px", color: "var(--text-muted)" }}>
               Drag elements onto the document pages to overlay variables.
@@ -474,7 +573,7 @@ export default function DesignCanvas({
           </div>
 
           {/* Section 2: Selected Field Properties Configuration */}
-          <div className="card-glass" style={{ padding: "16px", minHeight: "180px", display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div className="card-glass" style={{ padding: "16px", minHeight: "180px", display: "flex", flexDirection: "column", gap: "12px", flexShrink: 0 }}>
             <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "bold" }}>Properties Editor</h3>
             
             {selectedField ? (
@@ -668,14 +767,35 @@ export default function DesignCanvas({
                       alignItems: "center"
                     }}
                   >
-                    <div>
-                      <div style={{ fontWeight: 600, color: "var(--text-main)" }}>
+                    <div style={{ overflow: "hidden", marginRight: "8px" }}>
+                      <div style={{ fontWeight: 600, color: "var(--text-main)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {f.label} {f.required && <span style={{ color: "#ef4444" }}>*</span>}
                       </div>
                       <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>
                         ID: {f.id} | Page {f.pdfMapping.page + 1}
                       </div>
                     </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteField(f.id);
+                      }}
+                      title="Delete Field"
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        color: "var(--text-muted)",
+                        cursor: "pointer",
+                        padding: "4px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "14px",
+                        flexShrink: 0
+                      }}
+                    >
+                      🗑️
+                    </button>
                   </div>
                 ))
               )}
@@ -745,10 +865,10 @@ export default function DesignCanvas({
                           top: `${f.pdfMapping.y}%`,
                           width: `${f.pdfMapping.width}px`,
                           height: `${f.pdfMapping.height}px`,
-                          border: isSelected ? "2px solid var(--primary-color)" : "1px solid rgba(255,255,255,0.4)",
-                          background: "rgba(15, 23, 42, 0.95)", // High contrast dark background for crisp white text
+                          border: isSelected ? "2px solid var(--primary-color)" : "1px solid var(--text-muted)",
+                          background: "var(--bg-glass)",
                           borderRadius: "4px",
-                          color: "#ffffff",
+                          color: "var(--text-main)",
                           fontSize: "10px",
                           fontWeight: "bold",
                           display: "flex",
@@ -775,7 +895,7 @@ export default function DesignCanvas({
                             right: 0,
                             width: "8px",
                             height: "8px",
-                            background: isSelected ? "var(--primary-color)" : "rgba(255,255,255,0.5)",
+                            background: isSelected ? "var(--primary-color)" : "var(--text-muted)",
                             cursor: "se-resize",
                             zIndex: 40,
                             borderRadius: "1px"
