@@ -119,6 +119,25 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
   const [successModal, setSuccessModal] = useState<string | null>(null);
   
   const [file, setFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setFile(e.dataTransfer.files[0]);
+    }
+  };
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -132,7 +151,7 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
           const data = await res.json();
           if (data.ok) {
             setSites(data.sites || []);
-            if (data.sites.length > 0) {
+            if (data.sites.length > 0 && !selectedSiteId) {
               setSelectedSiteId(data.sites[0].id);
             }
           }
@@ -142,7 +161,7 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
       };
       fetchInitialSites();
     }
-  }, [saveSharepoint, sites.length]);
+  }, [saveSharepoint, sites.length, selectedSiteId]);
 
   // Auto-slugify title for convenience
   useEffect(() => {
@@ -486,39 +505,27 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
           <h4>SharePoint Folder Configuration</h4>
           
           <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label">Search SharePoint Site (Site Name)</label>
-            <div style={{ display: "flex", gap: "10px" }}>
-              <input
-                type="text"
-                className="form-input"
-                value={siteSearch}
-                onChange={(e) => setSiteSearch(e.target.value)}
-                placeholder="e.g. Carrollton Church"
-                style={{ flex: 1 }}
-              />
-              <button type="button" onClick={handleSiteSearch} className="btn btn-secondary" style={{ width: "auto" }}>
-                Search Site
-              </button>
-            </div>
-          </div>
-
-          {sites.length > 0 && (
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Select Site</label>
+            <label className="form-label">Select SharePoint Site</label>
+            {sites.length === 0 ? (
+              <div style={{ fontSize: "13px", color: "var(--text-muted)", padding: "8px 0" }}>
+                ⏳ Loading tenant SharePoint sites...
+              </div>
+            ) : (
               <select
                 className="form-input"
                 value={selectedSiteId}
                 onChange={(e) => setSelectedSiteId(e.target.value)}
                 style={{ background: "rgba(0,0,0,0.4)" }}
               >
+                <option value="">-- Choose a SharePoint Site --</option>
                 {sites.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
                   </option>
                 ))}
               </select>
-            </div>
-          )}
+            )}
+          </div>
 
           {drives.length > 0 && (
             <div className="form-group" style={{ margin: 0 }}>
@@ -595,18 +602,21 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
         <div className="form-group" style={{ borderTop: "1px solid var(--border-color)", paddingTop: "20px", display: "flex", flexDirection: "column", gap: "8px" }}>
           <label className="form-label">Base Template Document (PDF or Word DOCX)</label>
           <div style={{
-            border: "2px dashed var(--border-color)",
+            border: isDragging ? "2px dashed var(--primary-hover)" : "2px dashed var(--border-color)",
             borderRadius: "var(--radius-lg)",
             padding: "32px 20px",
             textAlign: "center",
-            background: "rgba(0,0,0,0.15)",
+            background: isDragging ? "var(--primary-glow)" : "rgba(0,0,0,0.15)",
             cursor: "pointer",
             transition: "all var(--transition-fast)",
             position: "relative"
           }}
-          onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--primary-color)"}
-          onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border-color)"}
+          onMouseEnter={(e) => { if (!isDragging) e.currentTarget.style.borderColor = "var(--primary-color)" }}
+          onMouseLeave={(e) => { if (!isDragging) e.currentTarget.style.borderColor = "var(--border-color)" }}
           onClick={() => document.getElementById("file-upload-input")?.click()}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
           >
             <input
               id="file-upload-input"
