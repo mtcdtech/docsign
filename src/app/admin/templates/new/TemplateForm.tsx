@@ -622,7 +622,6 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
               id="file-upload-input"
               type="file"
               accept="application/pdf,.docx,.doc"
-              required
               onChange={(e) => setFile(e.target.files?.[0] || null)}
               style={{ display: "none" }}
             />
