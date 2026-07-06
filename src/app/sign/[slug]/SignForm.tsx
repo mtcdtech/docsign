@@ -20,8 +20,9 @@ interface FormField {
   pdfMapping: FieldMapping;
   conditional?: {
     field: string;
-    operator: "equals" | "age_less_than" | "checked";
+    operator: "equals" | "greater_than" | "less_than" | "checked" | "is_checked" | "age_less_than";
     value: any;
+    fallbackValue?: string;
   };
 }
 
@@ -240,7 +241,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
     const { field: targetFieldId, operator, value } = field.conditional;
     const targetVal = formData[targetFieldId];
 
-    if (operator === "checked") {
+    if (operator === "checked" || operator === "is_checked") {
       return targetVal === true || targetVal === "true" || targetVal === "on";
     }
 
@@ -254,34 +255,66 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
       return String(targetVal) === String(value);
     }
 
+    if (operator === "greater_than") {
+      if (targetVal === undefined || targetVal === null || targetVal === "") return false;
+      return Number(targetVal) > Number(value);
+    }
+
+    if (operator === "less_than") {
+      if (targetVal === undefined || targetVal === null || targetVal === "") return false;
+      return Number(targetVal) < Number(value);
+    }
+
     return true;
   };
+
+  // Real-time automatic Age field synchronization based on Date of Birth (dob) values
+  useEffect(() => {
+    const dobFields = fields.filter((f) => f.type === "dob");
+    if (dobFields.length > 0) {
+      let dobValue = "";
+      for (const df of dobFields) {
+        if (formData[df.id]) {
+          dobValue = formData[df.id];
+          break;
+        }
+      }
+
+      const ageFields = fields.filter((f) => f.type === "age");
+      if (ageFields.length > 0) {
+        let calculatedAgeStr = "";
+        if (dobValue) {
+          const birthDate = new Date(dobValue);
+          if (!isNaN(birthDate.getTime())) {
+            const today = new Date();
+            let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+              calculatedAge--;
+            }
+            calculatedAgeStr = calculatedAge.toString();
+          }
+        }
+
+        let needsUpdate = false;
+        const nextFormData = { ...formData };
+        ageFields.forEach((af) => {
+          if (formData[af.id] !== calculatedAgeStr) {
+            nextFormData[af.id] = calculatedAgeStr;
+            needsUpdate = true;
+          }
+        });
+
+        if (needsUpdate) {
+          setFormData(nextFormData);
+        }
+      }
+    }
+  }, [formData, fields]);
 
   const handleInputChange = (fieldId: string, value: any) => {
     setFormData((prev) => {
       const next = { ...prev, [fieldId]: value };
-
-      // Handle automatic Age calculation if the updated field is a Date of Birth (dob)
-      const field = fields.find((f) => f.id === fieldId);
-      if (field?.type === "dob" && value) {
-        const birthDate = new Date(value);
-        if (!isNaN(birthDate.getTime())) {
-          const today = new Date();
-          let calculatedAge = today.getFullYear() - birthDate.getFullYear();
-          const m = today.getMonth() - birthDate.getMonth();
-          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-            calculatedAge--;
-          }
-          
-          // Populate all Age fields automatically
-          fields.forEach((f) => {
-            if (f.type === "age") {
-              next[f.id] = calculatedAge.toString();
-            }
-          });
-        }
-      }
-
       return next;
     });
   };
@@ -362,13 +395,20 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
 
     setIsSubmitting(true);
 
-    // Auto-fill discrete name and email variables into the form data payload
+    // Auto-fill discrete variables and conditional fallback values into the form data payload
     const finalFormData = { ...formData };
     fields.forEach((f) => {
+      const isVisible = isFieldVisible(f);
       if (f.type === "signer_name") {
         finalFormData[f.id] = signerName;
       } else if (f.type === "signer_email") {
         finalFormData[f.id] = signerEmail;
+      } else if (f.conditional && !isVisible) {
+        if (f.conditional.fallbackValue !== undefined && f.conditional.fallbackValue !== null && f.conditional.fallbackValue !== "") {
+          finalFormData[f.id] = f.conditional.fallbackValue;
+        } else {
+          delete finalFormData[f.id];
+        }
       }
     });
 
@@ -541,10 +581,11 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                         .filter((f) => f.pdfMapping.page === pageIdx)
                         .map((f) => {
                           const isVisible = isFieldVisible(f);
-                          if (!isVisible) return null;
+                          const hasFallback = f.conditional?.fallbackValue !== undefined && f.conditional?.fallbackValue !== null && f.conditional?.fallbackValue !== "";
+                          if (!isVisible && !hasFallback) return null;
 
                           const mapping = f.pdfMapping;
-                          const val = formData[f.id] || "";
+                          const val = isVisible ? (formData[f.id] || "") : (f.conditional?.fallbackValue || "");
                           const isHighlighted = f.id === highlightedFieldId;
 
                           const style: React.CSSProperties = {
@@ -561,6 +602,29 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                           const tabIdx = sortedAllFields.findIndex((sf) => sf.id === f.id) + 1;
 
                           if (f.type === "signature") {
+                            if (!isVisible) {
+                              return (
+                                <input
+                                  key={f.id}
+                                  type="text"
+                                  value={val}
+                                  disabled
+                                  readOnly
+                                  style={{
+                                    ...style,
+                                    background: "rgba(255, 255, 255, 0.05)",
+                                    color: "var(--text-main)",
+                                    fontSize: "11px",
+                                    padding: "2px 6px",
+                                    borderRadius: "4px",
+                                    border: "1px solid var(--border-color)",
+                                    outline: "none",
+                                    height: `${mapping.height}px`,
+                                    cursor: "not-allowed",
+                                  }}
+                                />
+                              );
+                            }
                             return (
                               <div
                                 key={f.id}
@@ -608,13 +672,14 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                 key={f.id}
                                 id={`field-input-box-${f.id}`}
                                 type="checkbox"
-                                checked={val === true}
-                                tabIndex={tabIdx}
-                                onChange={(e) => handleInputChange(f.id, e.target.checked)}
+                                checked={val === true || val === "true" || val === "on"}
+                                disabled={!isVisible}
+                                tabIndex={isVisible ? tabIdx : -1}
+                                onChange={(e) => isVisible && handleInputChange(f.id, e.target.checked)}
                                 style={{
                                   ...style,
                                   accentColor: "var(--primary-color)",
-                                  cursor: "pointer",
+                                  cursor: isVisible ? "pointer" : "not-allowed",
                                   margin: 0,
                                   boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                 }}
@@ -628,26 +693,29 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                 key={f.id}
                                 id={`field-input-box-${f.id}`}
                                 type="text"
-                                value={signerName}
-                                tabIndex={tabIdx}
-                                onChange={(e) => setSignerName(e.target.value)}
+                                value={isVisible ? signerName : val}
+                                disabled={!isVisible}
+                                readOnly={!isVisible}
+                                tabIndex={isVisible ? tabIdx : -1}
+                                onChange={(e) => isVisible && setSignerName(e.target.value)}
                                 placeholder="Signer Name"
                                 style={{
                                   ...style,
                                   border: isHighlighted
                                     ? "3px solid #f59e0b"
-                                    : signerName
+                                    : (isVisible ? signerName : val)
                                     ? "1.5px solid #10b981"
                                     : "2px dashed var(--primary-color)",
-                                  background: "var(--bg-card)",
+                                  background: isVisible ? "var(--bg-card)" : "rgba(255, 255, 255, 0.05)",
                                   color: "var(--text-main)",
                                   boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                   fontSize: isMobile ? "16px" : "11px",
                                   padding: "2px 6px",
                                   borderRadius: "4px",
-                                  outline: "none"
+                                  outline: "none",
+                                  cursor: isVisible ? "text" : "not-allowed"
                                 }}
-                                title="Click to edit Name"
+                                title={isVisible ? "Click to edit Name" : "Condition not met"}
                               />
                             );
                           }
@@ -658,26 +726,29 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                 key={f.id}
                                 id={`field-input-box-${f.id}`}
                                 type="text"
-                                value={signerEmail}
-                                tabIndex={tabIdx}
-                                onChange={(e) => setSignerEmail(e.target.value)}
+                                value={isVisible ? signerEmail : val}
+                                disabled={!isVisible}
+                                readOnly={!isVisible}
+                                tabIndex={isVisible ? tabIdx : -1}
+                                onChange={(e) => isVisible && setSignerEmail(e.target.value)}
                                 placeholder="Signer Email"
                                 style={{
                                   ...style,
                                   border: isHighlighted
                                     ? "3px solid #f59e0b"
-                                    : signerEmail
+                                    : (isVisible ? signerEmail : val)
                                     ? "1.5px solid #10b981"
                                     : "2px dashed var(--primary-color)",
-                                  background: "var(--bg-card)",
+                                  background: isVisible ? "var(--bg-card)" : "rgba(255, 255, 255, 0.05)",
                                   color: "var(--text-main)",
                                   boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                   fontSize: isMobile ? "16px" : "11px",
                                   padding: "2px 6px",
                                   borderRadius: "4px",
-                                  outline: "none"
+                                  outline: "none",
+                                  cursor: isVisible ? "text" : "not-allowed"
                                 }}
-                                title="Click to edit Email"
+                                title={isVisible ? "Click to edit Email" : "Condition not met"}
                               />
                             );
                           }
@@ -689,11 +760,13 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                 id={`field-input-box-${f.id}`}
                                 type="date"
                                 value={val}
-                                tabIndex={tabIdx}
-                                onChange={(e) => handleInputChange(f.id, e.target.value)}
+                                disabled={!isVisible}
+                                readOnly={!isVisible}
+                                tabIndex={isVisible ? tabIdx : -1}
+                                onChange={(e) => isVisible && handleInputChange(f.id, e.target.value)}
                                 style={{
                                   ...style,
-                                  background: "var(--bg-card)",
+                                  background: isVisible ? "var(--bg-card)" : "rgba(255, 255, 255, 0.05)",
                                   color: "var(--text-main)",
                                   fontSize: isMobile ? "16px" : "11px",
                                   padding: "2px 6px",
@@ -702,12 +775,13 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                     ? "3px solid #f59e0b"
                                     : val
                                     ? "1.5px solid #10b981"
-                                    : f.required
+                                    : f.required && isVisible
                                     ? "2.5px solid var(--primary-color)"
                                     : "1.5px solid var(--border-color)",
                                   outline: "none",
                                   height: `${mapping.height}px`,
                                   colorScheme: theme,
+                                  cursor: isVisible ? "text" : "not-allowed",
                                   boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                 }}
                               />
@@ -722,7 +796,8 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                 type="text"
                                 value={val}
                                 readOnly
-                                tabIndex={tabIdx}
+                                disabled={!isVisible}
+                                tabIndex={isVisible ? tabIdx : -1}
                                 placeholder="Auto Age"
                                 style={{
                                   ...style,
@@ -735,7 +810,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                     ? "3px solid #f59e0b"
                                     : val
                                     ? "1.5px solid #10b981"
-                                    : f.required
+                                    : f.required && isVisible
                                     ? "2.5px solid var(--primary-color)"
                                     : "1.5px solid var(--border-color)",
                                   outline: "none",
@@ -743,7 +818,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                   cursor: "not-allowed",
                                   boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                 }}
-                                title="Calculated automatically based on Date of Birth"
+                                title={isVisible ? "Calculated automatically based on Date of Birth" : "Condition not met"}
                               />
                             );
                           }
@@ -756,7 +831,8 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                 type="text"
                                 value={val}
                                 readOnly
-                                tabIndex={tabIdx}
+                                disabled={!isVisible}
+                                tabIndex={isVisible ? tabIdx : -1}
                                 style={{
                                   ...style,
                                   background: "rgba(255, 255, 255, 0.05)",
@@ -768,7 +844,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                     ? "3px solid #f59e0b"
                                     : val
                                     ? "1.5px solid #10b981"
-                                    : f.required
+                                    : f.required && isVisible
                                     ? "2.5px solid var(--primary-color)"
                                     : "1.5px solid var(--border-color)",
                                   outline: "none",
@@ -776,7 +852,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                   cursor: "not-allowed",
                                   boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                 }}
-                                title="Today's Date"
+                                title={isVisible ? "Today's Date" : "Condition not met"}
                               />
                             );
                           }
@@ -788,12 +864,14 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                               id={`field-input-box-${f.id}`}
                               type={f.type === "date" ? "date" : f.type === "number" ? "number" : "text"}
                               value={val}
-                              tabIndex={tabIdx}
-                              onChange={(e) => handleInputChange(f.id, e.target.value)}
-                              placeholder={f.required ? `${f.label} *` : f.label}
+                              disabled={!isVisible}
+                              readOnly={!isVisible}
+                              tabIndex={isVisible ? tabIdx : -1}
+                              onChange={(e) => isVisible && handleInputChange(f.id, e.target.value)}
+                              placeholder={isVisible ? (f.required ? `${f.label} *` : f.label) : "Condition not met"}
                               style={{
                                 ...style,
-                                background: "var(--bg-card)",
+                                background: isVisible ? "var(--bg-card)" : "rgba(255, 255, 255, 0.05)",
                                 color: "var(--text-main)",
                                 fontSize: isMobile ? "16px" : "11px",
                                 padding: "2px 6px",
@@ -802,12 +880,13 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                   ? "3px solid #f59e0b"
                                   : val
                                   ? "1.5px solid #10b981"
-                                  : f.required
+                                  : f.required && isVisible
                                   ? "2.5px solid var(--primary-color)"
                                   : "1.5px solid var(--border-color)",
                                 outline: "none",
                                 height: `${mapping.height}px`,
-                                colorScheme: theme, // renders browser date picker in dark/light mode
+                                colorScheme: theme,
+                                cursor: isVisible ? "text" : "not-allowed",
                                 boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                               }}
                             />

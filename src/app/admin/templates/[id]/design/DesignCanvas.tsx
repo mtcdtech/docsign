@@ -423,8 +423,28 @@ export default function DesignCanvas({
 
   const updateSelectedField = (updater: (field: FormField) => FormField) => {
     if (!selectedFieldId) return;
+    const oldField = fields.find((f) => f.id === selectedFieldId);
+    if (!oldField) return;
+
+    const newUpdatedField = updater({ ...oldField });
+    const idChanged = newUpdatedField.id !== oldField.id;
+    const labelChanged = newUpdatedField.label !== oldField.label;
+    const typeChanged = newUpdatedField.type !== oldField.type;
+
     setFields((prev) =>
-      prev.map((f) => (f.id === selectedFieldId ? updater(f) : f))
+      prev.map((f) => {
+        if (f.id === oldField.id) {
+          const baseUpdated = updater(f);
+          return {
+            ...baseUpdated,
+            id: idChanged ? newUpdatedField.id : baseUpdated.id,
+            label: labelChanged ? newUpdatedField.label : baseUpdated.label,
+            type: typeChanged ? newUpdatedField.type : baseUpdated.type,
+            required: newUpdatedField.required
+          };
+        }
+        return f;
+      })
     );
   };
 
@@ -700,8 +720,10 @@ export default function DesignCanvas({
                             style={{ background: "rgba(0,0,0,0.4)" }}
                           >
                             <option value="equals">Equals</option>
-                            <option value="age_less_than">Age &lt;</option>
+                            <option value="greater_than">Greater Than (&gt;)</option>
+                            <option value="less_than">Less Than (&lt;)</option>
                             <option value="checked">Is Checked</option>
+                            <option value="age_less_than">Age Less Than (&lt;)</option>
                           </select>
                         </div>
 
@@ -719,6 +741,22 @@ export default function DesignCanvas({
                               }))
                             }
                             placeholder="e.g. 18"
+                          />
+                        </div>
+
+                        <div className="form-group" style={{ margin: 0, gridColumn: "span 2" }}>
+                          <label className="form-label" style={{ fontSize: "10px" }}>Fallback Value (Show if conditions not met)</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={selectedField.conditional.fallbackValue || ""}
+                            onChange={(e) =>
+                              updateSelectedField((f) => ({
+                                ...f,
+                                conditional: { ...f.conditional!, fallbackValue: e.target.value },
+                              }))
+                            }
+                            placeholder="e.g. N/A or None (Leave empty to hide completely)"
                           />
                         </div>
                       </div>

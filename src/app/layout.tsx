@@ -45,7 +45,7 @@ export default async function RootLayout({
   }
 
   // Version number (Printed in the footer for tracking)
-  const appVersion = "0.9.9";
+  const appVersion = "0.10.0";
 
   return (
     <html lang="en" data-theme={themeMode}>
