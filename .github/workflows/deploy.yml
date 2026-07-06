@@ -22,6 +22,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and Push Docker Image
+        id: build_image
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -30,5 +31,7 @@ jobs:
           tags: mtcdtech/docsign:latest
 
       - name: Deploy to Portainer Stack
+        env:
+          IMAGE_SHA: ${{ steps.build_image.outputs.digest }}
         run: |
           python3 deploy_portainer.py

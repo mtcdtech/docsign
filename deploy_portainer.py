@@ -12,8 +12,16 @@ token = "ptr_caKh16OVXC+3G4shu9s7TXtumDZY04R6wwaOYkq+Pls="
 endpoint_id = 2 # Church Synology endpoint
 
 def get_compose_content():
+    import os
     with open("docker-compose.portainer.yml", "r") as f:
-        return f.read()
+        content = f.read()
+    image_sha = os.environ.get("IMAGE_SHA")
+    if image_sha:
+        # If it starts with sha256:, use it, otherwise format it
+        digest = image_sha if image_sha.startswith("sha256:") else f"sha256:{image_sha}"
+        content = content.replace("mtcdtech/docsign:latest", f"mtcdtech/docsign@{digest}")
+        print(f"Using compose image digest: mtcdtech/docsign@{digest}")
+    return content
 
 def get_existing_stack_id():
     url = f"{base}/api/stacks"
