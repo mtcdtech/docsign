@@ -13,7 +13,7 @@ export async function GET(req: Request) {
     }
 
     const { searchParams } = new URL(req.url);
-    const search = searchParams.get("search") || "";
+    const search = searchParams.get("search") || "*";
 
     const token = await getMsGraphToken();
     const sites = await listSharepointSites(token, search);

@@ -123,6 +123,27 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Auto-poll SharePoint sites when integration toggle is checked
+  useEffect(() => {
+    if (saveSharepoint && sites.length === 0) {
+      const fetchInitialSites = async () => {
+        try {
+          const res = await fetch(`/api/admin/sharepoint/sites?search=*`);
+          const data = await res.json();
+          if (data.ok) {
+            setSites(data.sites || []);
+            if (data.sites.length > 0) {
+              setSelectedSiteId(data.sites[0].id);
+            }
+          }
+        } catch (e) {
+          console.error("Failed to load initial SharePoint sites:", e);
+        }
+      };
+      fetchInitialSites();
+    }
+  }, [saveSharepoint, sites.length]);
+
   // Auto-slugify title for convenience
   useEffect(() => {
     if (!isEdit && title) {
@@ -571,19 +592,38 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
       )}
 
       {!isEdit && (
-        <div className="form-group" style={{ borderTop: "1px solid var(--border-color)", paddingTop: "20px" }}>
+        <div className="form-group" style={{ borderTop: "1px solid var(--border-color)", paddingTop: "20px", display: "flex", flexDirection: "column", gap: "8px" }}>
           <label className="form-label">Base Template Document (PDF or Word DOCX)</label>
-          <input
-            type="file"
-            accept="application/pdf,.docx,.doc"
-            className="form-input"
-            required
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-            style={{ background: "rgba(0,0,0,0.4)" }}
-          />
-          <span style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>
-            Upload a clean PDF or Word document. Word documents will be automatically converted to PDF for mapping.
-          </span>
+          <div style={{
+            border: "2px dashed var(--border-color)",
+            borderRadius: "var(--radius-lg)",
+            padding: "32px 20px",
+            textAlign: "center",
+            background: "rgba(0,0,0,0.15)",
+            cursor: "pointer",
+            transition: "all var(--transition-fast)",
+            position: "relative"
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--primary-color)"}
+          onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border-color)"}
+          onClick={() => document.getElementById("file-upload-input")?.click()}
+          >
+            <input
+              id="file-upload-input"
+              type="file"
+              accept="application/pdf,.docx,.doc"
+              required
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              style={{ display: "none" }}
+            />
+            <div style={{ fontSize: "32px", marginBottom: "12px" }}>📄</div>
+            <div style={{ fontWeight: 600, fontSize: "14px", color: "var(--text-main)", marginBottom: "4px" }}>
+              {file ? file.name : "Click to select or drag document here"}
+            </div>
+            <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+              {file ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` : "Accepts PDF or Word documents (Word converts automatically)"}
+            </div>
+          </div>
         </div>
       )}
 
