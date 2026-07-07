@@ -20,8 +20,9 @@ interface FormField {
   pdfMapping: FieldMapping;
   conditional?: {
     field: string;
-    operator: "equals" | "age_less_than" | "checked";
+    operator: "equals" | "greater_than" | "less_than" | "checked" | "is_checked" | "age_less_than";
     value: any;
+    fallbackValue?: string;
   };
 }
 
@@ -42,6 +43,7 @@ export default function DesignCanvas({
 
   const [fields, setFields] = useState<FormField[]>([]);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+  const [editingField, setEditingField] = useState<FormField | null>(null);
   const [copiedField, setCopiedField] = useState<FormField | null>(null);
   const [pdfjsLoaded, setPdfjsLoaded] = useState(false);
   const [numPages, setNumPages] = useState(0);
@@ -421,31 +423,39 @@ export default function DesignCanvas({
   // Selected Field Properties Updates
   const selectedField = fields.find((f) => f.id === selectedFieldId) || null;
 
-  const updateSelectedField = (updater: (field: FormField) => FormField) => {
-    if (!selectedFieldId) return;
-    const oldField = fields.find((f) => f.id === selectedFieldId);
-    if (!oldField) return;
+  const updateEditingField = (updater: (field: FormField) => FormField) => {
+    setEditingField((prev) => (prev ? updater({ ...prev }) : null));
+  };
 
-    const newUpdatedField = updater({ ...oldField });
-    const idChanged = newUpdatedField.id !== oldField.id;
-    const labelChanged = newUpdatedField.label !== oldField.label;
-    const typeChanged = newUpdatedField.type !== oldField.type;
+  const handleSaveProperties = () => {
+    if (!editingField || !selectedFieldId) return;
 
+    // Validate ID
+    const cleanId = editingField.id.trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
+    if (!cleanId) {
+      setAlertState({
+        title: "Invalid ID",
+        message: "Variable ID cannot be empty."
+      });
+      return;
+    }
+
+    // Check uniqueness
+    const isDuplicate = fields.some((f) => f.id === cleanId && f.id !== selectedFieldId);
+    if (isDuplicate) {
+      setAlertState({
+        title: "Duplicate ID",
+        message: `A variable with ID "${cleanId}" already exists. Please enter a unique ID.`
+      });
+      return;
+    }
+
+    // Update fields array
     setFields((prev) =>
-      prev.map((f) => {
-        if (f.id === oldField.id) {
-          const baseUpdated = updater(f);
-          return {
-            ...baseUpdated,
-            id: idChanged ? newUpdatedField.id : baseUpdated.id,
-            label: labelChanged ? newUpdatedField.label : baseUpdated.label,
-            type: typeChanged ? newUpdatedField.type : baseUpdated.type,
-            required: newUpdatedField.required
-          };
-        }
-        return f;
-      })
+      prev.map((f) => (f.id === selectedFieldId ? { ...editingField, id: cleanId } : f))
     );
+    setSelectedFieldId(cleanId);
+    setEditingField(null);
   };
 
   const handleDeleteField = (id: string) => {
@@ -505,7 +515,7 @@ export default function DesignCanvas({
       <div style={{ display: "flex", gap: "24px", alignItems: "flex-start" }}>
         
         {/* Left Side: Drag Library & Configuration Panels */}
-        <div style={{ width: "360px", display: "flex", flexDirection: "column", gap: "20px", position: "sticky", top: "100px", maxHeight: "calc(100vh - 140px)", overflowY: "auto" }}>
+        <div style={{ width: "360px", minWidth: "360px", maxWidth: "360px", flexShrink: 0, display: "flex", flexDirection: "column", gap: "20px", position: "sticky", top: "100px", maxHeight: "calc(100vh - 140px)", overflowY: "auto", overflowX: "hidden" }}>
           
           {/* Section 1: Drag-and-Drop Elements Library */}
           <div className="card-glass" style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px", flexShrink: 0 }}>
@@ -592,182 +602,39 @@ export default function DesignCanvas({
             </div>
           </div>
 
-          {/* Section 2: Selected Field Properties Configuration */}
-          <div className="card-glass" style={{ padding: "16px", minHeight: "180px", display: "flex", flexDirection: "column", gap: "12px", flexShrink: 0 }}>
+          {/* Section 2: Selected Field Properties Configuration Summary */}
+          <div className="card-glass" style={{ padding: "16px", minHeight: "120px", display: "flex", flexDirection: "column", gap: "12px", flexShrink: 0 }}>
             <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "bold" }}>Properties Editor</h3>
             
             {selectedField ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: "11px" }}>Display Name</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={selectedField.label}
-                    onChange={(e) => updateSelectedField((f) => ({ ...f, label: e.target.value }))}
-                  />
-                </div>
-
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: "11px" }}>System Variable ID</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={selectedField.id}
-                    onChange={(e) => {
-                      const cleanId = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "");
-                      updateSelectedField((f) => ({ ...f, id: cleanId }));
-                      setSelectedFieldId(cleanId);
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontSize: "11px" }}>Input Type</label>
-                    <select
-                      className="form-input"
-                      value={selectedField.type}
-                      onChange={(e) => updateSelectedField((f) => ({ ...f, type: e.target.value as any }))}
-                      style={{ background: "rgba(0,0,0,0.4)", height: "36px", padding: "4px 8px" }}
-                    >
-                      <option value="text">Text Input</option>
-                      <option value="date">Date Picker</option>
-                      <option value="number">Number</option>
-                      <option value="checkbox">Checkbox</option>
-                      <option value="signature">Signature</option>
-                      <option value="signer_name">Signer Name</option>
-                      <option value="signer_email">Signer Email</option>
-                    </select>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div style={{ padding: "10px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-color)", borderRadius: "6px" }}>
+                  <div style={{ fontSize: "10px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>
+                    Selected Variable
                   </div>
-
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontSize: "11px" }}>Validation</label>
-                    <select
-                      className="form-input"
-                      value={String(selectedField.required)}
-                      onChange={(e) => updateSelectedField((f) => ({ ...f, required: e.target.value === "true" }))}
-                      style={{ background: "rgba(0,0,0,0.4)", height: "36px", padding: "4px 8px" }}
-                    >
-                      <option value="true">Required</option>
-                      <option value="false">Optional</option>
-                    </select>
+                  <div style={{ fontSize: "13px", fontWeight: "bold", color: "var(--text-main)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {selectedField.label}
+                  </div>
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>
+                    ID: <code style={{ color: "var(--primary-color)", fontWeight: "bold" }}>{selectedField.id}</code>
+                  </div>
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                    Type: <span style={{ color: "var(--text-main)" }}>{selectedField.type.replace(/_/g, " ")}</span>
                   </div>
                 </div>
-
-                {/* Conditional Logic Section */}
-                <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: "12px", marginTop: "4px" }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>
-                    <input
-                      type="checkbox"
-                      checked={!!selectedField.conditional}
-                      onChange={(e) => {
-                        updateSelectedField((f) => {
-                          if (e.target.checked) {
-                            return {
-                              ...f,
-                              conditional: { field: "", operator: "equals", value: "" },
-                            };
-                          } else {
-                            const { conditional, ...rest } = f;
-                            return rest as FormField;
-                          }
-                        });
-                      }}
-                      style={{ accentColor: "var(--primary-color)" }}
-                    />
-                    Enable Conditional display
-                  </label>
-
-                  {selectedField.conditional && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", background: "rgba(0,0,0,0.2)", padding: "10px", borderRadius: "6px", border: "1px solid var(--border-color)", marginTop: "8px" }}>
-                      <div className="form-group" style={{ margin: 0 }}>
-                        <label className="form-label" style={{ fontSize: "10px" }}>Show if other Field ID</label>
-                        <select
-                          className="form-input"
-                          value={selectedField.conditional.field}
-                          onChange={(e) =>
-                            updateSelectedField((f) => ({
-                              ...f,
-                              conditional: { ...f.conditional!, field: e.target.value },
-                            }))
-                          }
-                          style={{ background: "rgba(0,0,0,0.4)" }}
-                        >
-                          <option value="">-- Choose Field --</option>
-                          {fields
-                            .filter((f) => f.id !== selectedFieldId)
-                            .map((f) => (
-                              <option key={f.id} value={f.id}>
-                                {f.label} ({f.id})
-                              </option>
-                            ))}
-                        </select>
-                      </div>
-
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                        <div className="form-group" style={{ margin: 0 }}>
-                          <label className="form-label" style={{ fontSize: "10px" }}>Operator</label>
-                          <select
-                            className="form-input"
-                            value={selectedField.conditional.operator}
-                            onChange={(e) =>
-                              updateSelectedField((f) => ({
-                                ...f,
-                                conditional: { ...f.conditional!, operator: e.target.value as any },
-                              }))
-                            }
-                            style={{ background: "rgba(0,0,0,0.4)" }}
-                          >
-                            <option value="equals">Equals</option>
-                            <option value="greater_than">Greater Than (&gt;)</option>
-                            <option value="less_than">Less Than (&lt;)</option>
-                            <option value="checked">Is Checked</option>
-                            <option value="age_less_than">Age Less Than (&lt;)</option>
-                          </select>
-                        </div>
-
-                        <div className="form-group" style={{ margin: 0 }}>
-                          <label className="form-label" style={{ fontSize: "10px" }}>Value</label>
-                          <input
-                            type="text"
-                            className="form-input"
-                            disabled={selectedField.conditional.operator === "checked"}
-                            value={selectedField.conditional.value || ""}
-                            onChange={(e) =>
-                              updateSelectedField((f) => ({
-                                ...f,
-                                conditional: { ...f.conditional!, value: e.target.value },
-                              }))
-                            }
-                            placeholder="e.g. 18"
-                          />
-                        </div>
-
-                        <div className="form-group" style={{ margin: 0, gridColumn: "span 2" }}>
-                          <label className="form-label" style={{ fontSize: "10px" }}>Fallback Value (Show if conditions not met)</label>
-                          <input
-                            type="text"
-                            className="form-input"
-                            value={selectedField.conditional.fallbackValue || ""}
-                            onChange={(e) =>
-                              updateSelectedField((f) => ({
-                                ...f,
-                                conditional: { ...f.conditional!, fallbackValue: e.target.value },
-                              }))
-                            }
-                            placeholder="e.g. N/A or None (Leave empty to hide completely)"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
+                
+                <button
+                  onClick={() => setEditingField(selectedField)}
+                  className="btn btn-primary"
+                  style={{ width: "100%", padding: "10px", fontSize: "12px" }}
+                >
+                  ⚙️ Edit Properties
+                </button>
+                
                 <button
                   onClick={() => handleDeleteField(selectedField.id)}
                   className="btn btn-danger"
-                  style={{ width: "100%", padding: "8px", fontSize: "12px", marginTop: "4px" }}
+                  style={{ width: "100%", padding: "10px", fontSize: "12px" }}
                 >
                   Remove Variable
                 </button>
@@ -802,7 +669,9 @@ export default function DesignCanvas({
                       cursor: "pointer",
                       display: "flex",
                       justifyContent: "space-between",
-                      alignItems: "center"
+                      alignItems: "center",
+                      width: "100%",
+                      boxSizing: "border-box"
                     }}
                   >
                     <div style={{ overflow: "hidden", marginRight: "8px" }}>
@@ -813,27 +682,49 @@ export default function DesignCanvas({
                         ID: {f.id} | Page {f.pdfMapping.page + 1}
                       </div>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteField(f.id);
-                      }}
-                      title="Delete Field"
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        color: "var(--text-muted)",
-                        cursor: "pointer",
-                        padding: "4px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "14px",
-                        flexShrink: 0
-                      }}
-                    >
-                      🗑️
-                    </button>
+                    <div style={{ display: "flex", gap: "6px", alignItems: "center", flexShrink: 0 }}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedFieldId(f.id);
+                          setEditingField(f);
+                        }}
+                        title="Edit Properties"
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "var(--text-muted)",
+                          cursor: "pointer",
+                          padding: "4px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "14px"
+                        }}
+                      >
+                        ⚙️
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteField(f.id);
+                        }}
+                        title="Delete Field"
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "var(--text-muted)",
+                          cursor: "pointer",
+                          padding: "4px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "14px"
+                        }}
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -897,6 +788,10 @@ export default function DesignCanvas({
                       <div
                         key={f.id}
                         onMouseDown={(e) => handleStartMove(e, f)}
+                        onDoubleClick={(e) => {
+                          e.stopPropagation();
+                          setEditingField(f);
+                        }}
                         style={{
                           position: "absolute",
                           left: `${f.pdfMapping.x}%`,
@@ -948,6 +843,243 @@ export default function DesignCanvas({
         </div>
 
       </div>
+
+      {/* Properties Editor Modal */}
+      {editingField && (
+        <div 
+          style={{ 
+            position: "fixed", 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            bottom: 0, 
+            background: "rgba(0,0,0,0.8)", 
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "center", 
+            zIndex: 5000,
+            backdropFilter: "blur(4px)",
+            WebkitBackdropFilter: "blur(4px)"
+          }}
+        >
+          <div 
+            className="card-glass" 
+            style={{ 
+              width: "500px", 
+              maxWidth: "95%", 
+              padding: "24px", 
+              display: "flex", 
+              flexDirection: "column", 
+              gap: "16px", 
+              maxHeight: "90vh", 
+              overflowY: "auto" 
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-color)", paddingBottom: "12px" }}>
+              <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "bold" }}>Edit Variable Properties</h3>
+              <button 
+                onClick={() => setEditingField(null)}
+                style={{ background: "transparent", border: "none", color: "var(--text-muted)", fontSize: "20px", cursor: "pointer", padding: "4px" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: "12px" }}>Display Name</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={editingField.label}
+                  onChange={(e) => updateEditingField((f) => ({ ...f, label: e.target.value }))}
+                  placeholder="e.g. Signer Name"
+                />
+              </div>
+
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: "12px" }}>System Variable ID</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={editingField.id}
+                  onChange={(e) => {
+                    const cleanId = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "");
+                    updateEditingField((f) => ({ ...f, id: cleanId }));
+                  }}
+                  placeholder="e.g. signer_name"
+                />
+                <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                  Must contain only lowercase letters, numbers, and underscores.
+                </span>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: "12px" }}>Input Type</label>
+                  <select
+                    className="form-input"
+                    value={editingField.type}
+                    onChange={(e) => updateEditingField((f) => ({ ...f, type: e.target.value as any }))}
+                    style={{ background: "rgba(0,0,0,0.4)", height: "42px", padding: "4px 8px" }}
+                  >
+                    <option value="text">Text Input</option>
+                    <option value="date">Date Picker</option>
+                    <option value="number">Number</option>
+                    <option value="checkbox">Checkbox</option>
+                    <option value="signature">Signature</option>
+                    <option value="signer_name">Signer Name</option>
+                    <option value="signer_email">Signer Email</option>
+                    <option value="dob">Date of Birth</option>
+                    <option value="age">Age (Calculated)</option>
+                    <option value="todays_date">Today's Date</option>
+                  </select>
+                </div>
+
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: "12px" }}>Validation</label>
+                  <select
+                    className="form-input"
+                    value={String(editingField.required)}
+                    onChange={(e) => updateEditingField((f) => ({ ...f, required: e.target.value === "true" }))}
+                    style={{ background: "rgba(0,0,0,0.4)", height: "42px", padding: "4px 8px" }}
+                  >
+                    <option value="true">Required</option>
+                    <option value="false">Optional</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Conditional Logic Section */}
+              <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: "16px", marginTop: "4px" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: "bold", cursor: "pointer", userSelect: "none" }}>
+                  <input
+                    type="checkbox"
+                    checked={!!editingField.conditional}
+                    onChange={(e) => {
+                      updateEditingField((f) => {
+                        if (e.target.checked) {
+                          return {
+                            ...f,
+                            conditional: { field: "", operator: "equals", value: "" },
+                          };
+                        } else {
+                          const { conditional, ...rest } = f;
+                          return rest as FormField;
+                        }
+                      });
+                    }}
+                    style={{ accentColor: "var(--primary-color)", width: "16px", height: "16px" }}
+                  />
+                  Enable Conditional display
+                </label>
+
+                {editingField.conditional && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px", background: "rgba(0,0,0,0.2)", padding: "12px", borderRadius: "6px", border: "1px solid var(--border-color)", marginTop: "10px" }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: "11px" }}>Show if other Field ID</label>
+                      <select
+                        className="form-input"
+                        value={editingField.conditional.field}
+                        onChange={(e) =>
+                          updateEditingField((f) => ({
+                            ...f,
+                            conditional: { ...f.conditional!, field: e.target.value },
+                          }))
+                        }
+                        style={{ background: "rgba(0,0,0,0.4)" }}
+                      >
+                        <option value="">-- Choose Field --</option>
+                        {fields
+                          .filter((f) => f.id !== selectedFieldId)
+                          .map((f) => (
+                            <option key={f.id} value={f.id}>
+                              {f.label} ({f.id})
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: "11px" }}>Operator</label>
+                        <select
+                          className="form-input"
+                          value={editingField.conditional.operator}
+                          onChange={(e) =>
+                            updateEditingField((f) => ({
+                              ...f,
+                              conditional: { ...f.conditional!, operator: e.target.value as any },
+                            }))
+                          }
+                          style={{ background: "rgba(0,0,0,0.4)" }}
+                        >
+                          <option value="equals">Equals</option>
+                          <option value="greater_than">Greater Than (&gt;)</option>
+                          <option value="less_than">Less Than (&lt;)</option>
+                          <option value="checked">Is Checked</option>
+                          <option value="age_less_than">Age Less Than (&lt;)</option>
+                        </select>
+                      </div>
+
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: "11px" }}>Value</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          disabled={editingField.conditional.operator === "checked"}
+                          value={editingField.conditional.value || ""}
+                          onChange={(e) =>
+                            updateEditingField((f) => ({
+                              ...f,
+                              conditional: { ...f.conditional!, value: e.target.value },
+                            }))
+                          }
+                          placeholder="e.g. 18"
+                        />
+                      </div>
+
+                      <div className="form-group" style={{ margin: 0, gridColumn: "span 2" }}>
+                        <label className="form-label" style={{ fontSize: "11px" }}>Fallback Value (Show if conditions not met)</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={editingField.conditional.fallbackValue || ""}
+                          onChange={(e) =>
+                            updateEditingField((f) => ({
+                              ...f,
+                              conditional: { ...f.conditional!, fallbackValue: e.target.value },
+                            }))
+                          }
+                          placeholder="e.g. N/A or None (Leave empty to hide completely)"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end", borderTop: "1px solid var(--border-color)", paddingTop: "16px", marginTop: "8px" }}>
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => setEditingField(null)} 
+                style={{ width: "auto", minWidth: "100px" }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleSaveProperties}
+                style={{ width: "auto", minWidth: "120px" }}
+              >
+                OK / Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Generated In-App Alert Dialog Overlay */}
       {alertState && (

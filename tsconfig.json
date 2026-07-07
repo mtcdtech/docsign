@@ -37,6 +37,14 @@
     "**/*.mts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "node_modules_defunct",
+    "node_modules_old_2",
+    "node_modules_old_3",
+    "temp_deps_old_4",
+    ".temp_deps",
+    ".temp_deps_fresh_123",
+    ".temp_deps_fresh_456",
+    ".next"
   ]
 }
