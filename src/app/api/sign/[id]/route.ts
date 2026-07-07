@@ -100,6 +100,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             <p style="font-size: 12px; color: #777;">This is an automated notification from DocSign.</p>
           </div>
         `;
+        
+        // Send email to signer
         await sendEmail({
           to: signerEmail,
           subject: `Signed Document: ${template.title}`,
@@ -107,6 +109,37 @@ export async function POST(req: Request, { params }: { params: { id: string } })
           attachmentPath: outputPath,
           attachmentName: `${template.title}_Signed.pdf`
         });
+
+        // Collect and email any custom_email fields (e.g. parent_email)
+        const customEmails: string[] = [];
+        try {
+          const parsedFields = JSON.parse(template.fieldsJson) || [];
+          parsedFields.forEach((f: any) => {
+            if (f.type === "custom_email" && formData[f.id]) {
+              const emailVal = String(formData[f.id]).trim();
+              if (emailVal && emailVal.includes("@") && !customEmails.includes(emailVal)) {
+                customEmails.push(emailVal);
+              }
+            }
+          });
+        } catch (parseErr) {
+          console.error("Failed to parse template fields to check for custom email variables:", parseErr);
+        }
+
+        for (const email of customEmails) {
+          try {
+            await sendEmail({
+              to: email,
+              subject: `Signed Document Copy: ${template.title}`,
+              html: htmlContent,
+              attachmentPath: outputPath,
+              attachmentName: `${template.title}_Signed.pdf`
+            });
+          } catch (customEmailErr) {
+            console.error(`Failed to send custom copy email to ${email}:`, customEmailErr);
+          }
+        }
+
         emailedUser = true;
       } catch (mailErr) {
         console.error(`Failed to send confirmation email to signer ${signerEmail}:`, mailErr);

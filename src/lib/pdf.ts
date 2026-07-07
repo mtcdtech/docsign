@@ -14,7 +14,7 @@ export interface FieldMapping {
 export interface FormField {
   id: string;
   label: string;
-  type: "text" | "date" | "number" | "checkbox" | "signature" | "signer_name" | "signer_email" | "dob" | "age" | "todays_date";
+  type: "text" | "date" | "number" | "checkbox" | "signature" | "signer_name" | "signer_email" | "dob" | "age" | "todays_date" | "custom_email";
   required: boolean;
   pdfMapping: FieldMapping;
 }
@@ -63,7 +63,8 @@ export async function overlayPdf(
     // Map screen top-left percentages to PDF bottom-left coordinates
     const drawX = (mapping.x / 100) * pageWidth;
     // Invert Y coordinate because PDF Y goes bottom-up
-    const drawY = ((100 - mapping.y) / 100) * pageHeight - (mapping.height || 15);
+    const boxHeight = mapping.height || 24;
+    const drawY = ((100 - mapping.y) / 100) * pageHeight - boxHeight;
 
     const fSize = mapping.fontSize || 11;
 
@@ -79,7 +80,7 @@ export async function overlayPdf(
             x: drawX,
             y: drawY,
             width: mapping.width || 120,
-            height: mapping.height || 45,
+            height: boxHeight,
           });
         } catch (imgErr) {
           console.error(`Failed to embed signature image for field "${field.id}":`, imgErr);
@@ -91,7 +92,7 @@ export async function overlayPdf(
       if (isChecked) {
         page.drawText("X", {
           x: drawX + 3,
-          y: drawY + 2,
+          y: drawY + (boxHeight - (fSize + 2)) / 2 + 1, // center X in checkbox
           size: fSize + 2,
           font,
         });
@@ -101,7 +102,7 @@ export async function overlayPdf(
       const textVal = String(val);
       page.drawText(textVal, {
         x: drawX,
-        y: drawY + 2, // nudge slightly up for text alignment
+        y: drawY + (boxHeight - fSize) / 2, // vertically center text in the box
         size: fSize,
         font,
       });

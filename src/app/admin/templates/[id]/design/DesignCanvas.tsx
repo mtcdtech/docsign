@@ -15,7 +15,7 @@ interface FieldMapping {
 interface FormField {
   id: string;
   label: string;
-  type: "text" | "date" | "number" | "checkbox" | "signature" | "signer_name" | "signer_email" | "dob" | "age" | "todays_date";
+  type: "text" | "date" | "number" | "checkbox" | "signature" | "signer_name" | "signer_email" | "dob" | "age" | "todays_date" | "custom_email";
   required: boolean;
   pdfMapping: FieldMapping;
   conditional?: {
@@ -387,6 +387,8 @@ export default function DesignCanvas({
       cleanTypeName = "Today's Date";
     } else if (type === "age") {
       cleanTypeName = "Age";
+    } else if (type === "custom_email") {
+      cleanTypeName = "Custom Email";
     } else {
       cleanTypeName = cleanTypeName.charAt(0).toUpperCase() + cleanTypeName.slice(1);
     }
@@ -598,6 +600,13 @@ export default function DesignCanvas({
                 style={{ background: "rgba(var(--primary-rgb), 0.05)", border: "1.5px dashed var(--primary-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 600, gridColumn: "span 2" }}
               >
                 ✉️ Draggable Signer Email
+              </div>
+              <div
+                draggable
+                onDragStart={(e) => handleDragStart(e, "custom_email")}
+                style={{ background: "rgba(var(--primary-rgb), 0.05)", border: "1.5px dashed var(--primary-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 600, gridColumn: "span 2" }}
+              >
+                ✉️ Custom Email Field (e.g., Parent)
               </div>
             </div>
           </div>
@@ -922,7 +931,7 @@ export default function DesignCanvas({
                     className="form-input"
                     value={editingField.type}
                     onChange={(e) => updateEditingField((f) => ({ ...f, type: e.target.value as any }))}
-                    style={{ background: "rgba(0,0,0,0.4)", height: "42px", padding: "4px 8px" }}
+                    style={{ height: "42px", padding: "4px 8px" }}
                   >
                     <option value="text">Text Input</option>
                     <option value="date">Date Picker</option>
@@ -931,6 +940,7 @@ export default function DesignCanvas({
                     <option value="signature">Signature</option>
                     <option value="signer_name">Signer Name</option>
                     <option value="signer_email">Signer Email</option>
+                    <option value="custom_email">Custom Email (e.g. Parent)</option>
                     <option value="dob">Date of Birth</option>
                     <option value="age">Age (Calculated)</option>
                     <option value="todays_date">Today's Date</option>
@@ -943,7 +953,7 @@ export default function DesignCanvas({
                     className="form-input"
                     value={String(editingField.required)}
                     onChange={(e) => updateEditingField((f) => ({ ...f, required: e.target.value === "true" }))}
-                    style={{ background: "rgba(0,0,0,0.4)", height: "42px", padding: "4px 8px" }}
+                    style={{ height: "42px", padding: "4px 8px" }}
                   >
                     <option value="true">Required</option>
                     <option value="false">Optional</option>
@@ -976,7 +986,7 @@ export default function DesignCanvas({
                 </label>
 
                 {editingField.conditional && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "10px", background: "rgba(0,0,0,0.2)", padding: "12px", borderRadius: "6px", border: "1px solid var(--border-color)", marginTop: "10px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px", background: "var(--bg-card-hover)", padding: "12px", borderRadius: "6px", border: "1px solid var(--border-color)", marginTop: "10px" }}>
                     <div className="form-group" style={{ margin: 0 }}>
                       <label className="form-label" style={{ fontSize: "11px" }}>Show if other Field ID</label>
                       <select
@@ -988,7 +998,6 @@ export default function DesignCanvas({
                             conditional: { ...f.conditional!, field: e.target.value },
                           }))
                         }
-                        style={{ background: "rgba(0,0,0,0.4)" }}
                       >
                         <option value="">-- Choose Field --</option>
                         {fields
@@ -1013,7 +1022,6 @@ export default function DesignCanvas({
                               conditional: { ...f.conditional!, operator: e.target.value as any },
                             }))
                           }
-                          style={{ background: "rgba(0,0,0,0.4)" }}
                         >
                           <option value="equals">Equals</option>
                           <option value="greater_than">Greater Than (&gt;)</option>

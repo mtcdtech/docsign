@@ -15,7 +15,7 @@ interface FieldMapping {
 interface FormField {
   id: string;
   label: string;
-  type: "text" | "date" | "number" | "checkbox" | "signature" | "signer_name" | "signer_email" | "dob" | "age" | "todays_date";
+  type: "text" | "date" | "number" | "checkbox" | "signature" | "signer_name" | "signer_email" | "dob" | "age" | "todays_date" | "custom_email";
   required: boolean;
   pdfMapping: FieldMapping;
   conditional?: {
@@ -32,6 +32,8 @@ interface SignFormProps {
     title: string;
     slug: string;
     fieldsJson: string;
+    emailUser: boolean;
+    emailLeader: boolean;
     organization: {
       name: string;
     };
@@ -441,12 +443,44 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
   };
 
   if (signedPdfUrl) {
+    const getConfirmationMessage = () => {
+      const baseMsg = "Your document has been successfully signed and processed.";
+      
+      // Check if there are custom email addresses filled out
+      const hasCustomEmails = fields.some(
+        (f) => f.type === "custom_email" && formData[f.id] && String(formData[f.id]).trim().includes("@")
+      );
+
+      const emailUser = template.emailUser ?? true;
+      const emailLeader = template.emailLeader ?? true;
+
+      if (emailUser && emailLeader) {
+        if (hasCustomEmails) {
+          return `${baseMsg} A copy has been emailed to you, the organization leader, and the additional email address(es) provided.`;
+        }
+        return `${baseMsg} A copy has been emailed to you and the organization leader.`;
+      }
+      
+      if (emailUser) {
+        if (hasCustomEmails) {
+          return `${baseMsg} A copy has been emailed to you and the additional email address(es) provided.`;
+        }
+        return `${baseMsg} A copy has been emailed to you.`;
+      }
+      
+      if (emailLeader) {
+        return `${baseMsg} A copy has been emailed to the organization leader.`;
+      }
+      
+      return baseMsg;
+    };
+
     return (
       <div className="card-glass" style={{ maxWidth: "600px", margin: "40px auto", textAlign: "center", padding: "40px" }}>
         <div style={{ fontSize: "48px", marginBottom: "16px" }}>🎉</div>
         <h2>Thank You!</h2>
         <p style={{ margin: "16px 0 24px" }}>
-          Your document has been successfully signed and processed. A copy has been emailed to you and the organization leader.
+          {getConfirmationMessage()}
         </p>
         <div style={{ display: "flex", gap: "16px", flexDirection: "column" }}>
           <a
