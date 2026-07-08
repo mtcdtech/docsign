@@ -25,6 +25,7 @@ interface FormField {
     fallbackValue?: string;
   };
   linkedFieldId?: string;
+  instanceId?: string;
 }
 
 interface DesignCanvasProps {
@@ -72,6 +73,24 @@ export default function DesignCanvas({
   });
 
   const renderedPagesRef = useRef<Set<number>>(new Set());
+
+  // Sidebar collapsible sections states
+  const [isToolboxExpanded, setIsToolboxExpanded] = useState(true);
+  const [isPropertiesExpanded, setIsPropertiesExpanded] = useState(false);
+  const [isPlacedVariablesExpanded, setIsPlacedVariablesExpanded] = useState(true);
+
+  // Auto-expand/collapse sidebar sections based on selection state
+  useEffect(() => {
+    if (selectedFieldId) {
+      setIsPropertiesExpanded(true);
+      setIsToolboxExpanded(false);
+      setIsPlacedVariablesExpanded(false);
+    } else {
+      setIsPropertiesExpanded(false);
+      setIsToolboxExpanded(true);
+      setIsPlacedVariablesExpanded(true);
+    }
+  }, [selectedFieldId]);
 
   // Load initial fields
   useEffect(() => {
@@ -246,7 +265,7 @@ export default function DesignCanvas({
     if (!activeAction || !draggedFieldId) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const fieldIndex = fields.findIndex((f) => f.id === draggedFieldId);
+      const fieldIndex = fields.findIndex((f) => (f.instanceId || f.id) === draggedFieldId);
       if (fieldIndex === -1) return;
 
       const field = fields[fieldIndex];
@@ -279,7 +298,7 @@ export default function DesignCanvas({
 
         setFields((prev) =>
           prev.map((f) =>
-            f.id === draggedFieldId
+            (f.instanceId || f.id) === draggedFieldId
               ? { ...f, pdfMapping: { ...f.pdfMapping, x: newX, y: newY } }
               : f
           )
@@ -293,7 +312,7 @@ export default function DesignCanvas({
 
         setFields((prev) =>
           prev.map((f) =>
-            f.id === draggedFieldId
+            (f.instanceId || f.id) === draggedFieldId
               ? { ...f, pdfMapping: { ...f.pdfMapping, width: newW, height: newH } }
               : f
           )
@@ -321,9 +340,9 @@ export default function DesignCanvas({
     field: FormField
   ) => {
     e.stopPropagation();
-    setSelectedFieldId(field.id);
+    setSelectedFieldId(field.instanceId || field.id);
     setActiveAction("moving");
-    setDraggedFieldId(field.id);
+    setDraggedFieldId(field.instanceId || field.id);
     dragStartCoords.current = {
       mouseX: e.clientX,
       mouseY: e.clientY,
@@ -340,9 +359,9 @@ export default function DesignCanvas({
     field: FormField
   ) => {
     e.stopPropagation();
-    setSelectedFieldId(field.id);
+    setSelectedFieldId(field.instanceId || field.id);
     setActiveAction("resizing");
-    setDraggedFieldId(field.id);
+    setDraggedFieldId(field.instanceId || field.id);
     dragStartCoords.current = {
       mouseX: e.clientX,
       mouseY: e.clientY,
@@ -406,6 +425,7 @@ export default function DesignCanvas({
     }
 
     const newField: FormField = {
+      instanceId: Math.random().toString(36).substring(2, 9),
       id,
       label,
       type: type as any,
@@ -420,11 +440,11 @@ export default function DesignCanvas({
     };
 
     setFields((prev) => [...prev, newField]);
-    setSelectedFieldId(id);
+    setSelectedFieldId(newField.instanceId!);
   };
 
   // Selected Field Properties Updates
-  const selectedField = fields.find((f) => f.id === selectedFieldId) || null;
+  const selectedField = fields.find((f) => (f.instanceId || f.id) === selectedFieldId) || null;
 
   const updateEditingField = (updater: (field: FormField) => FormField) => {
     setEditingField((prev) => (prev ? updater({ ...prev }) : null));
@@ -443,8 +463,19 @@ export default function DesignCanvas({
       return;
     }
 
-    // Check uniqueness
-    const isDuplicate = fields.some((f) => f.id === cleanId && f.id !== selectedFieldId);
+    // Check uniqueness (excluding linked fields)
+    const isDuplicate = fields.some((f) => {
+      const fKey = f.instanceId || f.id;
+      const editingKey = editingField.instanceId || editingField.id;
+      if (fKey === editingKey) return false;
+      if (editingField.linkedFieldId === fKey) return false;
+      if (f.linkedFieldId === editingKey) return false;
+      const isSignerType = editingField.type === "signer_name" || editingField.type === "signer_email";
+      if (isSignerType && f.type === editingField.type) return false;
+
+      return f.id === cleanId;
+    });
+
     if (isDuplicate) {
       setAlertState({
         title: "Duplicate ID",
@@ -459,44 +490,49 @@ export default function DesignCanvas({
     // Update fields array
     setFields((prev) =>
       prev.map((f) => {
+        const fKey = f.instanceId || f.id;
+
         // 1. Target field being directly edited
-        if (f.id === selectedFieldId) {
+        if (fKey === selectedFieldId) {
           return { ...editingField, id: cleanId };
         }
 
-        // 2. Signer name/email fields always sync globally by type
+        // 2. Signer name/email fields always sync globally by type (including variable name/id)
         if (isSignerType && f.type === editingField.type) {
           return {
             ...f,
+            id: cleanId,
             label: editingField.label,
             required: editingField.required,
             conditional: editingField.conditional,
           };
         }
 
-        // 3. Custom linked field copies the properties and links back
-        if (hasCustomLink && f.id === editingField.linkedFieldId) {
+        // 3. Custom linked field copies the properties (including variable name/id) and links back
+        if (hasCustomLink && fKey === editingField.linkedFieldId) {
           return {
             ...f,
+            id: cleanId,
             label: editingField.label,
             required: editingField.required,
             conditional: editingField.conditional,
-            linkedFieldId: cleanId, // link back to the edited field
+            linkedFieldId: editingField.instanceId || selectedFieldId, // link back to the edited field's unique key
           };
         }
 
         // 4. Clean up old link relations if it was linked to the edited field but now the link is cleared/pointing elsewhere
         if (!isSignerType && f.linkedFieldId === selectedFieldId) {
-          if (editingField.linkedFieldId !== f.id) {
+          if (editingField.linkedFieldId !== fKey) {
             return { ...f, linkedFieldId: undefined };
           } else {
             // Pointing to edited field's new cleanId
             return {
               ...f,
+              id: cleanId,
               label: editingField.label,
               required: editingField.required,
               conditional: editingField.conditional,
-              linkedFieldId: cleanId,
+              linkedFieldId: editingField.instanceId || selectedFieldId,
             };
           }
         }
@@ -505,16 +541,19 @@ export default function DesignCanvas({
       })
     );
 
-    setSelectedFieldId(cleanId);
+    // Save with the unique instanceId-based selection
+    setSelectedFieldId(editingField.instanceId || cleanId);
     setEditingField(null);
   };
 
-  const handleDeleteField = (id: string) => {
+  const handleDeleteField = (instanceKey: string) => {
+    const field = fields.find((f) => (f.instanceId || f.id) === instanceKey);
+    const label = field ? field.label : instanceKey;
     setConfirmState({
       title: "Delete Variable",
-      message: `Are you sure you want to remove the variable ID "${id}" from this template mapping?`,
+      message: `Are you sure you want to remove the variable "${label}" from this template mapping?`,
       onConfirm: () => {
-        setFields((prev) => prev.filter((f) => f.id !== id));
+        setFields((prev) => prev.filter((f) => (f.instanceId || f.id) !== instanceKey));
         setSelectedFieldId(null);
       },
     });
@@ -566,248 +605,287 @@ export default function DesignCanvas({
       <div style={{ display: "flex", gap: "24px", alignItems: "flex-start" }}>
         
         {/* Left Side: Drag Library & Configuration Panels */}
-        <div style={{ width: "360px", minWidth: "360px", maxWidth: "360px", flexShrink: 0, display: "flex", flexDirection: "column", gap: "20px", position: "sticky", top: "100px", maxHeight: "calc(100vh - 140px)", overflowY: "auto", overflowX: "hidden" }}>
+        <div style={{ width: "360px", minWidth: "360px", maxWidth: "360px", flexShrink: 0, display: "flex", flexDirection: "column", gap: "16px", position: "sticky", top: "100px", maxHeight: "calc(100vh - 140px)", overflowX: "hidden" }}>
           
-          {/* Section 1: Drag-and-Drop Elements Library */}
-          <div className="card-glass" style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px", flexShrink: 0 }}>
-            <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "bold" }}>Toolbox Library</h3>
-            <p style={{ margin: 0, fontSize: "11px", color: "var(--text-muted)" }}>
-              Drag elements onto the document pages to overlay variables.
-            </p>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <div style={{ fontSize: "11px", fontWeight: "bold", textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em", marginTop: "4px" }}>
-                Standard Fields
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                <div
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, "text")}
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500 }}
-                >
-                  📝 Text Input
-                </div>
-                <div
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, "date")}
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500 }}
-                >
-                  📅 Date Picker
-                </div>
-                <div
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, "number")}
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500 }}
-                >
-                  🔢 Number Input
-                </div>
-                <div
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, "checkbox")}
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500 }}
-                >
-                  ☑️ Checkbox
-                </div>
-                <div
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, "signature")}
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500, gridColumn: "span 2" }}
-                >
-                  ✍️ Signature Canvas
-                </div>
-                <div
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, "dob")}
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500, gridColumn: "span 2" }}
-                >
-                  👶 Date of Birth
-                </div>
-              </div>
-
-              <div style={{ fontSize: "11px", fontWeight: "bold", textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em", borderTop: "1px solid var(--border-color)", paddingTop: "10px", marginTop: "4px" }}>
-                Calculated Fields
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                <div
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, "age")}
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1.5px dashed #3b82f6", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 600 }}
-                  title="Calculated automatically based on Date of Birth field input"
-                >
-                  🧮 Age (Calculated)
-                </div>
-                <div
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, "todays_date")}
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1.5px dashed #3b82f6", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 600 }}
-                  title="Calculated automatically to today's date"
-                >
-                  📅 Today's Date
-                </div>
-              </div>
-
-              <div style={{ fontSize: "11px", fontWeight: "bold", textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em", borderTop: "1px solid var(--border-color)", paddingTop: "10px", marginTop: "4px" }}>
-                Signer Identity fields
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                <div
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, "signer_name")}
-                  style={{ background: "rgba(var(--primary-rgb), 0.05)", border: "1.5px dashed var(--primary-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 600, gridColumn: "span 2" }}
-                >
-                  👤 Signer Name
-                </div>
-                <div
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, "signer_email")}
-                  style={{ background: "rgba(var(--primary-rgb), 0.05)", border: "1.5px dashed var(--primary-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 600, gridColumn: "span 2" }}
-                >
-                  ✉️ Signer Email
-                </div>
-                <div
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, "custom_email")}
-                  style={{ background: "rgba(var(--primary-rgb), 0.05)", border: "1.5px dashed var(--primary-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 600, gridColumn: "span 2" }}
-                >
-                  ✉️ Custom Email (e.g. Parent)
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Section 2: Selected Field Properties Configuration Summary */}
-          <div className="card-glass" style={{ padding: "16px", minHeight: "120px", display: "flex", flexDirection: "column", gap: "12px", flexShrink: 0 }}>
-            <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "bold" }}>Properties Editor</h3>
+          {/* Scrollable sidebar cards container */}
+          <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "16px", paddingRight: "4px" }}>
             
-            {selectedField ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <div style={{ padding: "10px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-color)", borderRadius: "6px" }}>
-                  <div style={{ fontSize: "10px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>
-                    Selected Variable
-                  </div>
-                  <div style={{ fontSize: "13px", fontWeight: "bold", color: "var(--text-main)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {selectedField.label}
-                  </div>
-                  <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>
-                    ID: <code style={{ color: "var(--primary-color)", fontWeight: "bold" }}>{selectedField.id}</code>
-                  </div>
-                  <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-                    Type: <span style={{ color: "var(--text-main)" }}>{selectedField.type.replace(/_/g, " ")}</span>
-                  </div>
-                </div>
-                
-                <button
-                  onClick={() => setEditingField(selectedField)}
-                  className="btn btn-primary"
-                  style={{ width: "100%", padding: "10px", fontSize: "12px" }}
-                >
-                  ⚙️ Edit Properties
-                </button>
-                
-                <button
-                  onClick={() => handleDeleteField(selectedField.id)}
-                  className="btn btn-danger"
-                  style={{ width: "100%", padding: "10px", fontSize: "12px" }}
-                >
-                  Remove Variable
-                </button>
-              </div>
-            ) : (
-              <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: "12px", padding: "24px 0", flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                Click a placed field on the document to edit its details here.
-              </div>
-            )}
-          </div>
+            {/* Section 1: Drag-and-Drop Elements Library */}
+            <div className="card-glass" style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px", flexShrink: 0 }}>
+              <h3 
+                onClick={() => setIsToolboxExpanded(!isToolboxExpanded)} 
+                style={{ margin: 0, fontSize: "15px", fontWeight: "bold", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", userSelect: "none" }}
+              >
+                <span>🧰 Toolbox Library</span>
+                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>{isToolboxExpanded ? "▼" : "▶"}</span>
+              </h3>
+              
+              {isToolboxExpanded && (
+                <>
+                  <p style={{ margin: 0, fontSize: "11px", color: "var(--text-muted)" }}>
+                    Drag elements onto the document pages to overlay variables.
+                  </p>
 
-          {/* Section 3: Placed elements list & Action triggers */}
-          <div className="card-glass" style={{ padding: "16px", flex: 1, display: "flex", flexDirection: "column", gap: "16px", minHeight: "200px" }}>
-            <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "bold" }}>Placed Variables ({fields.length})</h3>
-            
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1, overflowY: "auto", maxHeight: "250px" }}>
-              {fields.length === 0 ? (
-                <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: "12px", padding: "10px" }}>
-                  No variables placed on this document yet.
-                </div>
-              ) : (
-                fields.map((f) => (
-                  <div
-                    key={f.id}
-                    onClick={() => setSelectedFieldId(f.id)}
-                    style={{
-                      background: f.id === selectedFieldId ? "var(--primary-glow)" : "rgba(255,255,255,0.01)",
-                      border: f.id === selectedFieldId ? "1px solid var(--primary-color)" : "1px solid var(--border-color)",
-                      borderRadius: "6px",
-                      padding: "8px 12px",
-                      fontSize: "12px",
-                      cursor: "pointer",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      width: "100%",
-                      boxSizing: "border-box"
-                    }}
-                  >
-                    <div style={{ overflow: "hidden", marginRight: "8px" }}>
-                      <div style={{ fontWeight: 600, color: "var(--text-main)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {f.label} {f.required && <span style={{ color: "#ef4444" }}>*</span>}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "bold", textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em", marginTop: "4px" }}>
+                      Standard Fields
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                      <div
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, "text")}
+                        style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500 }}
+                      >
+                        📝 Text Input
                       </div>
-                      <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>
-                        ID: {f.id} | Page {f.pdfMapping.page + 1}
+                      <div
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, "date")}
+                        style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500 }}
+                      >
+                        📅 Date Picker
+                      </div>
+                      <div
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, "number")}
+                        style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500 }}
+                      >
+                        🔢 Number Input
+                      </div>
+                      <div
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, "checkbox")}
+                        style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500 }}
+                      >
+                        ☑️ Checkbox
+                      </div>
+                      <div
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, "signature")}
+                        style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500, gridColumn: "span 2" }}
+                      >
+                        ✍️ Signature Canvas
+                      </div>
+                      <div
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, "dob")}
+                        style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500, gridColumn: "span 2" }}
+                      >
+                        👶 Date of Birth
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: "6px", alignItems: "center", flexShrink: 0 }}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedFieldId(f.id);
-                          setEditingField(f);
-                        }}
-                        title="Edit Properties"
-                        style={{
-                          background: "transparent",
-                          border: "none",
-                          color: "var(--text-muted)",
-                          cursor: "pointer",
-                          padding: "4px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: "14px"
-                        }}
+
+                    <div style={{ fontSize: "11px", fontWeight: "bold", textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em", borderTop: "1px solid var(--border-color)", paddingTop: "10px", marginTop: "4px" }}>
+                      Calculated Fields
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                      <div
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, "age")}
+                        style={{ background: "rgba(255,255,255,0.03)", border: "1.5px dashed #3b82f6", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 600 }}
+                        title="Calculated automatically based on Date of Birth field input"
                       >
-                        ⚙️
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteField(f.id);
-                        }}
-                        title="Delete Field"
-                        style={{
-                          background: "transparent",
-                          border: "none",
-                          color: "var(--text-muted)",
-                          cursor: "pointer",
-                          padding: "4px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: "14px"
-                        }}
+                        🧮 Age (Calculated)
+                      </div>
+                      <div
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, "todays_date")}
+                        style={{ background: "rgba(255,255,255,0.03)", border: "1.5px dashed #3b82f6", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 600 }}
+                        title="Calculated automatically to today's date"
                       >
-                        🗑️
-                      </button>
+                        📅 Today's Date
+                      </div>
+                    </div>
+
+                    <div style={{ fontSize: "11px", fontWeight: "bold", textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em", borderTop: "1px solid var(--border-color)", paddingTop: "10px", marginTop: "4px" }}>
+                      Signer Identity fields
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                      <div
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, "signer_name")}
+                        style={{ background: "rgba(var(--primary-rgb), 0.05)", border: "1.5px dashed var(--primary-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 600, gridColumn: "span 2" }}
+                      >
+                        👤 Signer Name
+                      </div>
+                      <div
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, "signer_email")}
+                        style={{ background: "rgba(var(--primary-rgb), 0.05)", border: "1.5px dashed var(--primary-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 600, gridColumn: "span 2" }}
+                      >
+                        ✉️ Signer Email
+                      </div>
+                      <div
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, "custom_email")}
+                        style={{ background: "rgba(var(--primary-rgb), 0.05)", border: "1.5px dashed var(--primary-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 600, gridColumn: "span 2" }}
+                      >
+                        ✉️ Custom Email (e.g. Parent)
+                      </div>
                     </div>
                   </div>
-                ))
+                </>
               )}
             </div>
 
+            {/* Section 2: Selected Field Properties Configuration Summary */}
+            <div className="card-glass" style={{ padding: "16px", minHeight: isPropertiesExpanded ? "120px" : "auto", display: "flex", flexDirection: "column", gap: "12px", flexShrink: 0 }}>
+              <h3 
+                onClick={() => setIsPropertiesExpanded(!isPropertiesExpanded)} 
+                style={{ margin: 0, fontSize: "15px", fontWeight: "bold", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", userSelect: "none" }}
+              >
+                <span>⚙️ Properties Editor</span>
+                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>{isPropertiesExpanded ? "▼" : "▶"}</span>
+              </h3>
+              
+              {isPropertiesExpanded && (
+                <>
+                  {selectedField ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                      <div style={{ padding: "10px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-color)", borderRadius: "6px" }}>
+                        <div style={{ fontSize: "10px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>
+                          Selected Variable
+                        </div>
+                        <div style={{ fontSize: "13px", fontWeight: "bold", color: "var(--text-main)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {selectedField.label}
+                        </div>
+                        <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>
+                          ID: <code style={{ color: "var(--primary-color)", fontWeight: "bold" }}>{selectedField.id}</code>
+                        </div>
+                        <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                          Type: <span style={{ color: "var(--text-main)" }}>{selectedField.type.replace(/_/g, " ")}</span>
+                        </div>
+                      </div>
+                      
+                      <button
+                        onClick={() => setEditingField(selectedField)}
+                        className="btn btn-primary"
+                        style={{ width: "100%", padding: "10px", fontSize: "12px" }}
+                      >
+                        ⚙️ Edit Properties
+                      </button>
+                      
+                      <button
+                        onClick={() => handleDeleteField(selectedField.instanceId || selectedField.id)}
+                        className="btn btn-danger"
+                        style={{ width: "100%", padding: "10px", fontSize: "12px" }}
+                      >
+                        Remove Variable
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: "12px", padding: "24px 0", flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      Click a placed field on the document to edit its details here.
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Section 3: Placed elements list & Action triggers */}
+            <div className="card-glass" style={{ padding: "16px", flex: 1, display: "flex", flexDirection: "column", gap: "16px", minHeight: isPlacedVariablesExpanded ? "200px" : "auto" }}>
+              <h3 
+                onClick={() => setIsPlacedVariablesExpanded(!isPlacedVariablesExpanded)} 
+                style={{ margin: 0, fontSize: "15px", fontWeight: "bold", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", userSelect: "none" }}
+              >
+                <span>📋 Placed Variables ({fields.length})</span>
+                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>{isPlacedVariablesExpanded ? "▼" : "▶"}</span>
+              </h3>
+              
+              {isPlacedVariablesExpanded && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1, overflowY: "auto", maxHeight: "250px" }}>
+                  {fields.length === 0 ? (
+                    <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: "12px", padding: "10px" }}>
+                      No variables placed on this document yet.
+                    </div>
+                  ) : (
+                    fields.map((f) => {
+                      const fKey = f.instanceId || f.id;
+                      return (
+                        <div
+                          key={fKey}
+                          onClick={() => setSelectedFieldId(fKey)}
+                          style={{
+                            background: fKey === selectedFieldId ? "var(--primary-glow)" : "rgba(255,255,255,0.01)",
+                            border: fKey === selectedFieldId ? "1px solid var(--primary-color)" : "1px solid var(--border-color)",
+                            borderRadius: "6px",
+                            padding: "8px 12px",
+                            fontSize: "12px",
+                            cursor: "pointer",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            width: "100%",
+                            boxSizing: "border-box"
+                          }}
+                        >
+                          <div style={{ overflow: "hidden", marginRight: "8px" }}>
+                            <div style={{ fontWeight: 600, color: "var(--text-main)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {f.label} {f.required && <span style={{ color: "#ef4444" }}>*</span>}
+                            </div>
+                            <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>
+                              ID: {f.id} | Page {f.pdfMapping.page + 1}
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", gap: "6px", alignItems: "center", flexShrink: 0 }}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedFieldId(fKey);
+                                setEditingField(f);
+                              }}
+                              title="Edit Properties"
+                              style={{
+                                background: "transparent",
+                                border: "none",
+                                color: "var(--text-muted)",
+                                cursor: "pointer",
+                                padding: "4px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "14px"
+                              }}
+                            >
+                              ⚙️
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteField(fKey);
+                              }}
+                              title="Delete Field"
+                              style={{
+                                background: "transparent",
+                                border: "none",
+                                color: "var(--text-muted)",
+                                cursor: "pointer",
+                                padding: "4px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "14px"
+                              }}
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Pinned Save button area at bottom of sidebar */}
+          <div style={{ flexShrink: 0, paddingTop: "12px", borderTop: "1px solid var(--border-color)", background: "transparent" }}>
             <button
               onClick={handleSaveSchema}
               disabled={saving}
               className="btn btn-primary"
-              style={{ width: "100%", padding: "14px", marginTop: "auto" }}
+              style={{ width: "100%", padding: "14px" }}
             >
               {saving ? "Saving Changes..." : "Save Fields Schema"}
             </button>

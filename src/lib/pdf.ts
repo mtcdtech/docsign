@@ -18,6 +18,7 @@ export interface FormField {
   required: boolean;
   pdfMapping: FieldMapping;
   linkedFieldId?: string;
+  instanceId?: string;
 }
 
 // Generate the finalized signed PDF by overlaying form inputs and signatures onto the template

@@ -25,6 +25,7 @@ interface FormField {
     fallbackValue?: string;
   };
   linkedFieldId?: string;
+  instanceId?: string;
 }
 
 interface SignFormProps {
