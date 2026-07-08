@@ -24,6 +24,7 @@ interface Template {
   fieldsJson: string;
   emailUser: boolean;
   emailLeader: boolean;
+  notificationEmails: string | null;
   saveSharepoint: boolean;
   sharepointFolderId: string | null;
   sharepointFolderName: string | null;
@@ -101,6 +102,48 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
     }
   };
 
+  // Delete individual submission
+  const handleDeleteSubmission = async (submissionId: string, templateId: string) => {
+    if (!window.confirm("Are you sure you want to delete this waiver submission from history? This will permanently delete the DB record and the signed PDF file.")) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/admin/submissions?templateId=${templateId}&submissionId=${submissionId}`, {
+        method: "DELETE"
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setSubmissions((prev) => prev.filter((s) => s.id !== submissionId));
+      } else {
+        alert(data.error || "Failed to delete submission.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("An unexpected error occurred while deleting the submission.");
+    }
+  };
+
+  // Clear all submissions for a template
+  const handleClearAllSubmissions = async (templateId: string) => {
+    if (!window.confirm("WARNING: Are you sure you want to delete ALL signed waiver submissions for this template? This will permanently delete all logs and all generated PDF files. This action cannot be undone.")) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/admin/submissions?templateId=${templateId}`, {
+        method: "DELETE"
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setSubmissions([]);
+      } else {
+        alert(data.error || "Failed to clear submissions.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("An unexpected error occurred while clearing submissions.");
+    }
+  };
+
   // Filter templates list
   const filteredTemplates = templates.filter((t) =>
     t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -173,7 +216,8 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
                     Organization {orgSortOrder === "asc" ? "▲" : orgSortOrder === "desc" ? "▼" : "↕"}
                   </th>
                   <th>Public Slug Link</th>
-                  <th>SharePoint Settings</th>
+                  <th>SharePoint</th>
+                  <th>Email Settings</th>
                   <th style={{ textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
@@ -193,12 +237,23 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
                         </td>
                         <td>
                           {tpl.saveSharepoint ? (
-                            <span style={{ color: "#22c55e", fontSize: "12px", background: "rgba(34, 197, 94, 0.1)", padding: "4px 8px", borderRadius: "4px" }}>
-                              Enabled ({tpl.sharepointFolderName || "Root"})
+                            <span
+                              title={`Folder: ${tpl.sharepointFolderName || "Root"}\nPath ID: ${tpl.sharepointFolderId || "N/A"}`}
+                              style={{ color: "#22c55e", fontSize: "12px", background: "rgba(34, 197, 94, 0.1)", padding: "4px 8px", borderRadius: "4px", cursor: "help" }}
+                            >
+                              Enabled
                             </span>
                           ) : (
                             <span style={{ color: "var(--text-muted)", fontSize: "12px" }}>Disabled</span>
                           )}
+                        </td>
+                        <td>
+                          <span
+                            title={`Signer Copy: ${tpl.emailUser ? "Enabled" : "Disabled"}\nLeader Copy: ${tpl.emailLeader ? "Enabled" : "Disabled"}${tpl.notificationEmails ? `\nRecipients: ${tpl.notificationEmails}` : ""}`}
+                            style={{ color: "var(--primary-color)", fontSize: "12px", background: "rgba(79, 70, 229, 0.1)", padding: "4px 8px", borderRadius: "4px", cursor: "help", fontWeight: "bold" }}
+                          >
+                            ✉️ Hover for Info
+                          </span>
                         </td>
                         <td style={{ textAlign: "right" }}>
                           <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
@@ -229,13 +284,25 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
                                 <span style={{ fontSize: "11px", color: "var(--primary-color)", fontWeight: "bold", textTransform: "uppercase" }}>
                                   Historic Submissions Log ({submissions.length} Total)
                                 </span>
-                                <button
-                                  className="btn btn-secondary"
-                                  onClick={() => setActiveTemplate(null)}
-                                  style={{ padding: "4px 8px", fontSize: "11px", width: "auto" }}
-                                >
-                                  ✕ Close
-                                </button>
+                                <div style={{ display: "flex", gap: "8px" }}>
+                                  {submissions.length > 0 && (
+                                    <button
+                                      type="button"
+                                      className="btn btn-secondary"
+                                      onClick={() => handleClearAllSubmissions(tpl.id)}
+                                      style={{ padding: "4px 8px", fontSize: "11px", width: "auto", background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", border: "1px solid rgba(239, 68, 68, 0.2)" }}
+                                    >
+                                      🗑️ Clear All
+                                    </button>
+                                  )}
+                                  <button
+                                    className="btn btn-secondary"
+                                    onClick={() => setActiveTemplate(null)}
+                                    style={{ padding: "4px 8px", fontSize: "11px", width: "auto" }}
+                                  >
+                                    ✕ Close
+                                  </button>
+                                </div>
                               </div>
 
                               <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
@@ -289,7 +356,7 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
                                           <th>Signer Name</th>
                                           <th>Signer Email</th>
                                           <th>Fields Payload</th>
-                                          <th style={{ textAlign: "right" }}>PDF</th>
+                                          <th style={{ textAlign: "right" }}>Actions</th>
                                         </tr>
                                       </thead>
                                       <tbody>
@@ -298,7 +365,7 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
                                           const formData = JSON.parse(doc.formDataJson);
                                           return (
                                             <tr key={doc.id}>
-                                              <td style={{ fontSize: "12px" }}>{date}</td>
+                                              <td style={{ fontSize: "12px" }} suppressHydrationWarning>{date}</td>
                                               <td style={{ fontWeight: 600 }}>{doc.signerName}</td>
                                               <td style={{ fontSize: "12px" }}>{doc.signerEmail}</td>
                                               <td>
@@ -314,15 +381,25 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
                                                 </details>
                                               </td>
                                               <td style={{ textAlign: "right" }}>
-                                                <a
-                                                  href={`/api/download/signed/${getFilename(doc.signedPdfPath)}`}
-                                                  target="_blank"
-                                                  rel="noopener noreferrer"
-                                                  className="btn btn-secondary"
-                                                  style={{ padding: "4px 8px", fontSize: "11px", width: "auto" }}
-                                                >
-                                                  View PDF
-                                                </a>
+                                                <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+                                                  <a
+                                                    href={`/api/download/signed/${getFilename(doc.signedPdfPath)}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="btn btn-secondary"
+                                                    style={{ padding: "4px 8px", fontSize: "11px", width: "auto" }}
+                                                  >
+                                                    View PDF
+                                                  </a>
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteSubmission(doc.id, tpl.id)}
+                                                    className="btn btn-secondary"
+                                                    style={{ padding: "4px 8px", fontSize: "11px", width: "auto", background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", border: "1px solid rgba(239, 68, 68, 0.2)" }}
+                                                  >
+                                                    🗑️ Delete
+                                                  </button>
+                                                </div>
                                               </td>
                                             </tr>
                                           );

@@ -148,7 +148,7 @@ export default async function AdminDashboard() {
                       </td>
                       <td>{doc.template.title}</td>
                       <td>{doc.template.organization.name}</td>
-                      <td>{new Date(doc.createdAt).toLocaleString()}</td>
+                      <td suppressHydrationWarning>{new Date(doc.createdAt).toLocaleString()}</td>
                       <td>
                         <div style={{ display: "flex", gap: "8px", fontSize: "11px" }}>
                           <span style={{ color: doc.emailedUser ? "#22c55e" : "#ef4444" }}>

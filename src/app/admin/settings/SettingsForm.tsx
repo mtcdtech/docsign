@@ -891,7 +891,7 @@ export default function SettingsForm({
                           {log.action}
                         </span>
                       </td>
-                      <td style={{ padding: "12px 8px", color: "var(--text-muted)" }}>
+                      <td style={{ padding: "12px 8px", color: "var(--text-muted)" }} suppressHydrationWarning>
                         {new Date(log.createdAt).toLocaleString()}
                       </td>
                     </tr>

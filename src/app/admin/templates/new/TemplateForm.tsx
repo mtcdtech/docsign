@@ -103,6 +103,7 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
   
   // SharePoint States
   const [saveSharepoint, setSaveSharepoint] = useState(template?.saveSharepoint ?? false);
+  const [isSharePointModalOpen, setIsSharePointModalOpen] = useState(false);
   const [siteSearch, setSiteSearch] = useState("");
   const [sites, setSites] = useState<SharePointItem[]>([]);
   const [selectedSiteId, setSelectedSiteId] = useState("");
@@ -210,6 +211,11 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
       }
     };
     fetchDrives();
+
+    // Clear folder browser navigation state on site change
+    setFolders([]);
+    setCurrentFolderId("root");
+    setFolderPath([]);
   }, [selectedSiteId]);
 
   // Fetch Folders when Drive changes
@@ -391,7 +397,6 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
           disabled={isEdit}
           value={organizationId}
           onChange={(e) => setOrganizationId(e.target.value)}
-          style={{ background: "rgba(0,0,0,0.4)" }}
         >
           {organizations.map((org) => (
             <option key={org.id} value={org.id}>
@@ -508,108 +513,168 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
           <input
             type="checkbox"
             checked={saveSharepoint}
-            onChange={(e) => setSaveSharepoint(e.target.checked)}
+            onChange={(e) => {
+              setSaveSharepoint(e.target.checked);
+              if (e.target.checked) {
+                setIsSharePointModalOpen(true);
+              }
+            }}
             style={{ width: "18px", height: "18px", accentColor: "var(--primary-color)" }}
           />
           Upload finalized PDF to SharePoint Folder
         </label>
+
+        {saveSharepoint && (
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", background: "rgba(255, 255, 255, 0.02)", padding: "10px 14px", borderRadius: "6px", border: "1px solid var(--border-color)", width: "fit-content", marginTop: "4px" }}>
+            <span style={{ fontSize: "13px", color: "var(--text-main)" }}>
+              SharePoint Target: <strong>{selectedFolderName || "Not configured"}</strong>
+            </span>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setIsSharePointModalOpen(true)}
+              style={{ padding: "6px 12px", fontSize: "12px", width: "auto" }}
+            >
+              ⚙️ Configure Folder
+            </button>
+          </div>
+        )}
       </div>
 
-      {saveSharepoint && (
-        <div style={{ background: "rgba(0,0,0,0.2)", border: "1px solid var(--border-color)", padding: "16px", borderRadius: "8px", marginTop: "8px", display: "flex", flexDirection: "column", gap: "16px" }}>
-          <h4>SharePoint Folder Configuration</h4>
-          
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label">Select SharePoint Site</label>
-            {sites.length === 0 ? (
-              <div style={{ fontSize: "13px", color: "var(--text-muted)", padding: "8px 0" }}>
-                ⏳ Loading tenant SharePoint sites...
-              </div>
-            ) : (
-              <select
-                className="form-input"
-                value={selectedSiteId}
-                onChange={(e) => setSelectedSiteId(e.target.value)}
-                style={{ background: "rgba(0,0,0,0.4)" }}
+      {/* SharePoint Configuration Modal */}
+      {saveSharepoint && isSharePointModalOpen && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0,0,0,0.85)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 99999,
+          padding: "20px",
+          backdropFilter: "blur(4px)",
+        }}>
+          <div className="card-glass" style={{
+            width: "100%",
+            maxWidth: "600px",
+            padding: "24px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "20px",
+            boxShadow: "0 20px 25px -5px rgba(0,0,0,0.5), 0 10px 10px -5px rgba(0,0,0,0.4)"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-color)", paddingBottom: "12px" }}>
+              <h3 style={{ margin: 0, fontSize: "18px", color: "var(--text-main)" }}>📁 SharePoint Folder Configuration</h3>
+              <button
+                type="button"
+                onClick={() => setIsSharePointModalOpen(false)}
+                style={{ background: "transparent", border: "none", color: "var(--text-muted)", fontSize: "20px", cursor: "pointer", padding: "0 4px" }}
               >
-                <option value="">-- Choose a SharePoint Site --</option>
-                {sites.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            )}
+                ×
+              </button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxHeight: "65vh", overflowY: "auto", paddingRight: "4px" }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">Select SharePoint Site</label>
+                {sites.length === 0 ? (
+                  <div style={{ fontSize: "13px", color: "var(--text-muted)", padding: "8px 0" }}>
+                    ⏳ Loading tenant SharePoint sites...
+                  </div>
+                ) : (
+                  <select
+                    className="form-input"
+                    value={selectedSiteId}
+                    onChange={(e) => setSelectedSiteId(e.target.value)}
+                  >
+                    <option value="">-- Choose a SharePoint Site --</option>
+                    {sites.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {drives.length > 0 && (
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label">Select Document Library (Drive)</label>
+                  <select
+                    className="form-input"
+                    value={selectedDriveId}
+                    onChange={(e) => setSelectedDriveId(e.target.value)}
+                  >
+                    {drives.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {selectedDriveId && (
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label">Navigate Folders</label>
+                  <div style={{ padding: "16px", background: "rgba(0,0,0,0.3)", border: "1px solid var(--border-color)", borderRadius: "8px" }}>
+                    {/* Breadcrumbs */}
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", fontSize: "12px", marginBottom: "12px", borderBottom: "1px solid var(--border-color)", paddingBottom: "8px" }}>
+                      <span onClick={() => navigateBreadcrumb(-1)} style={{ color: "var(--primary-color)", cursor: "pointer" }}>Root</span>
+                      {folderPath.map((f, i) => (
+                        <React.Fragment key={f.id}>
+                          <span style={{ color: "var(--text-muted)" }}>/</span>
+                          <span onClick={() => navigateBreadcrumb(i)} style={{ color: "var(--primary-color)", cursor: "pointer" }}>{f.name}</span>
+                        </React.Fragment>
+                      ))}
+                    </div>
+
+                    {/* Subfolders list */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", maxHeight: "180px", overflowY: "auto", paddingRight: "4px" }}>
+                      {folders.length === 0 ? (
+                        <div style={{ fontSize: "12px", color: "var(--text-muted)", padding: "10px" }}>No subfolders found.</div>
+                      ) : (
+                        folders.map((f) => (
+                          <div
+                            key={f.id}
+                            onClick={() => enterFolder(f)}
+                            style={{ padding: "8px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-color)", borderRadius: "4px", fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center" }}
+                          >
+                            📁 {f.name}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", borderTop: "1px solid var(--border-color)", paddingTop: "16px", marginTop: "8px" }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setIsSharePointModalOpen(false)}
+                style={{ width: "auto", padding: "10px 18px" }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  selectCurrentFolder();
+                  setIsSharePointModalOpen(false);
+                }}
+                style={{ width: "auto", padding: "10px 18px" }}
+              >
+                Confirm Folder
+              </button>
+            </div>
           </div>
-
-          {drives.length > 0 && (
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Select Document Library (Drive)</label>
-              <select
-                className="form-input"
-                value={selectedDriveId}
-                onChange={(e) => setSelectedDriveId(e.target.value)}
-                style={{ background: "rgba(0,0,0,0.4)" }}
-              >
-                {drives.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {selectedDriveId && (
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Navigate Folders</label>
-              <div style={{ padding: "12px", background: "rgba(0,0,0,0.3)", border: "1px solid var(--border-color)", borderRadius: "6px" }}>
-                {/* Breadcrumbs */}
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", fontSize: "12px", marginBottom: "12px", borderBottom: "1px solid var(--border-color)", paddingBottom: "8px" }}>
-                  <span onClick={() => navigateBreadcrumb(-1)} style={{ color: "var(--primary-color)", cursor: "pointer" }}>Root</span>
-                  {folderPath.map((f, i) => (
-                    <React.Fragment key={f.id}>
-                      <span style={{ color: "var(--text-muted)" }}>/</span>
-                      <span onClick={() => navigateBreadcrumb(i)} style={{ color: "var(--primary-color)", cursor: "pointer" }}>{f.name}</span>
-                    </React.Fragment>
-                  ))}
-                </div>
-
-                {/* Subfolders list */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px", maxHeight: "160px", overflowY: "auto", paddingRight: "4px" }}>
-                  {folders.length === 0 ? (
-                    <div style={{ fontSize: "12px", color: "var(--text-muted)", padding: "10px" }}>No subfolders found.</div>
-                  ) : (
-                    folders.map((f) => (
-                      <div
-                        key={f.id}
-                        onClick={() => enterFolder(f)}
-                        style={{ padding: "8px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-color)", borderRadius: "4px", fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center" }}
-                      >
-                        📁 {f.name}
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                {/* Confirm selection */}
-                <button
-                  type="button"
-                  onClick={selectCurrentFolder}
-                  className="btn btn-primary"
-                  style={{ width: "100%", padding: "10px", fontSize: "12px", marginTop: "12px" }}
-                >
-                  Select Current Folder
-                </button>
-              </div>
-            </div>
-          )}
-
-          {selectedFolderName && (
-            <div style={{ fontSize: "13px", color: "#22c55e", fontWeight: "bold" }}>
-              Selected folder: {selectedFolderName}
-            </div>
-          )}
         </div>
       )}
 
