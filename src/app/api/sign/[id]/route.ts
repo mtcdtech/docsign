@@ -52,22 +52,26 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     let sharepointUrl: string | null = null;
     let uploadSuccess = false;
 
-    if (template.saveSharepoint && template.sharepointFolderId) {
-      try {
-        const token = await getMsGraphToken();
-        const driveId = template.sharepointFolderId.split("/")[0] || "root";
-        const folderId = template.sharepointFolderId.split("/")[1] || "root";
-        
-        sharepointUrl = await uploadFileToSharepoint(
-          token,
-          driveId,
-          folderId,
-          outputPath,
-          outputFilename
-        );
-        uploadSuccess = true;
-      } catch (spErr) {
-        console.error("Failed to upload document to SharePoint during sign callback:", spErr);
+    if (template.saveSharepoint) {
+      if (template.sharepointFolderId && template.sharepointFolderId.trim() !== "") {
+        try {
+          const token = await getMsGraphToken();
+          const driveId = template.sharepointFolderId.split("/")[0] || "root";
+          const folderId = template.sharepointFolderId.split("/")[1] || "root";
+          
+          sharepointUrl = await uploadFileToSharepoint(
+            token,
+            driveId,
+            folderId,
+            outputPath,
+            outputFilename
+          );
+          uploadSuccess = true;
+        } catch (spErr) {
+          console.error("Failed to upload document to SharePoint during sign callback:", spErr);
+        }
+      } else {
+        console.warn("SharePoint upload skipped: saveSharepoint is enabled but sharepointFolderId is empty or not configured.");
       }
     }
 
@@ -170,13 +174,19 @@ export async function POST(req: Request, { params }: { params: { id: string } })
               ${sharepointUrl ? `<p>The file was also uploaded to SharePoint: <a href="${sharepointUrl}">${sharepointUrl}</a></p>` : ""}
             </div>
           `;
-          await sendEmail({
-            to: recipientEmails.join(","),
-            subject: `New Signature: ${template.title} - ${signerName}`,
-            html: htmlContent,
-            attachmentPath: outputPath,
-            attachmentName: `${template.title}_${cleanSignerName}.pdf`
-          });
+          for (const email of recipientEmails) {
+            try {
+              await sendEmail({
+                to: email,
+                subject: `New Signature: ${template.title} - ${signerName}`,
+                html: htmlContent,
+                attachmentPath: outputPath,
+                attachmentName: `${template.title}_${cleanSignerName}.pdf`
+              });
+            } catch (mailErr) {
+              console.error(`Failed to send notification email to leader ${email}:`, mailErr);
+            }
+          }
           emailedLeader = true;
         }
       } catch (mailErr) {

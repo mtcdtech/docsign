@@ -635,7 +635,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                             transition: "all 0.3s ease",
                           };
 
-                          const tabIdx = sortedAllFields.findIndex((sf) => sf.id === f.id) + 1;
+                          const tabIdx = sortedAllFields.findIndex((sf) => sf.id === f.id) + 3;
 
                           if (f.type === "signature") {
                             if (!isVisible) {
@@ -955,6 +955,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                       value={signerName}
                       onChange={(e) => setSignerName(e.target.value)}
                       placeholder="John Doe"
+                      tabIndex={1}
                     />
                   </div>
 
@@ -967,6 +968,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                       value={signerEmail}
                       onChange={(e) => setSignerEmail(e.target.value)}
                       placeholder="john.doe@example.com"
+                      tabIndex={2}
                     />
                   </div>
                 </div>
@@ -1045,6 +1047,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                   type="submit"
                   className="btn btn-primary"
                   disabled={isSubmitting}
+                  tabIndex={3 + fields.length}
                   style={{ width: "100%", padding: "14px", marginTop: "10px" }}
                 >
                   {isSubmitting ? "Signing & Processing..." : "Sign Document"}
@@ -1177,6 +1180,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
               className="btn btn-primary"
               disabled={isSubmitting}
               onClick={() => handleSubmit()}
+              tabIndex={3 + fields.length}
               style={{ width: "100%", padding: "14px", fontSize: "15px", fontWeight: "bold", margin: 0 }}
             >
               {isSubmitting ? "Signing & Processing..." : "Sign Document"}

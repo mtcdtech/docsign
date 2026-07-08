@@ -227,7 +227,16 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
       }
     };
     fetchFolders();
-  }, [selectedDriveId, currentFolderId]);
+
+    // Auto-prefill the folder selection to document library root if empty/not set yet
+    if (drives.length > 0) {
+      const activeDrive = drives.find((d) => d.id === selectedDriveId);
+      if (activeDrive && (!selectedFolderId || selectedFolderId.trim() === "")) {
+        setSelectedFolderId(`${selectedDriveId}/root`);
+        setSelectedFolderName(`${activeDrive.name} Root`);
+      }
+    }
+  }, [selectedDriveId, currentFolderId, drives, selectedFolderId]);
 
   const enterFolder = (folder: SharePointItem) => {
     setCurrentFolderId(folder.id);
@@ -262,6 +271,12 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (saveSharepoint && (!selectedFolderId || selectedFolderId.trim() === "")) {
+      setError("Please select a SharePoint site and document library to save signed documents.");
+      return;
+    }
+
     setLoading(true);
 
     const notificationEmailsList = [
