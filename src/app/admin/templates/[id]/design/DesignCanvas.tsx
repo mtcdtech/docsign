@@ -24,6 +24,7 @@ interface FormField {
     value: any;
     fallbackValue?: string;
   };
+  linkedFieldId?: string;
 }
 
 interface DesignCanvasProps {
@@ -452,10 +453,58 @@ export default function DesignCanvas({
       return;
     }
 
+    const isSignerType = editingField.type === "signer_name" || editingField.type === "signer_email";
+    const hasCustomLink = !isSignerType && editingField.linkedFieldId;
+
     // Update fields array
     setFields((prev) =>
-      prev.map((f) => (f.id === selectedFieldId ? { ...editingField, id: cleanId } : f))
+      prev.map((f) => {
+        // 1. Target field being directly edited
+        if (f.id === selectedFieldId) {
+          return { ...editingField, id: cleanId };
+        }
+
+        // 2. Signer name/email fields always sync globally by type
+        if (isSignerType && f.type === editingField.type) {
+          return {
+            ...f,
+            label: editingField.label,
+            required: editingField.required,
+            conditional: editingField.conditional,
+          };
+        }
+
+        // 3. Custom linked field copies the properties and links back
+        if (hasCustomLink && f.id === editingField.linkedFieldId) {
+          return {
+            ...f,
+            label: editingField.label,
+            required: editingField.required,
+            conditional: editingField.conditional,
+            linkedFieldId: cleanId, // link back to the edited field
+          };
+        }
+
+        // 4. Clean up old link relations if it was linked to the edited field but now the link is cleared/pointing elsewhere
+        if (!isSignerType && f.linkedFieldId === selectedFieldId) {
+          if (editingField.linkedFieldId !== f.id) {
+            return { ...f, linkedFieldId: undefined };
+          } else {
+            // Pointing to edited field's new cleanId
+            return {
+              ...f,
+              label: editingField.label,
+              required: editingField.required,
+              conditional: editingField.conditional,
+              linkedFieldId: cleanId,
+            };
+          }
+        }
+
+        return f;
+      })
     );
+
     setSelectedFieldId(cleanId);
     setEditingField(null);
   };
@@ -526,87 +575,102 @@ export default function DesignCanvas({
               Drag elements onto the document pages to overlay variables.
             </p>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-              <div
-                draggable
-                onDragStart={(e) => handleDragStart(e, "text")}
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500 }}
-              >
-                📝 Text Input
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div style={{ fontSize: "11px", fontWeight: "bold", textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em", marginTop: "4px" }}>
+                Standard Fields
               </div>
-              <div
-                draggable
-                onDragStart={(e) => handleDragStart(e, "date")}
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500 }}
-              >
-                📅 Date Picker
-              </div>
-              <div
-                draggable
-                onDragStart={(e) => handleDragStart(e, "number")}
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500 }}
-              >
-                🔢 Number Input
-              </div>
-              <div
-                draggable
-                onDragStart={(e) => handleDragStart(e, "checkbox")}
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500 }}
-              >
-                ☑️ Checkbox
-              </div>
-              <div
-                draggable
-                onDragStart={(e) => handleDragStart(e, "signature")}
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500, gridColumn: "span 2" }}
-              >
-                ✍️ Signature Canvas
-              </div>
-              
-              
-              <div
-                draggable
-                onDragStart={(e) => handleDragStart(e, "dob")}
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500 }}
-              >
-                👶 Date of Birth
-              </div>
-              <div
-                draggable
-                onDragStart={(e) => handleDragStart(e, "age")}
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500 }}
-              >
-                🧮 Age (Calculated)
-              </div>
-              <div
-                draggable
-                onDragStart={(e) => handleDragStart(e, "todays_date")}
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500, gridColumn: "span 2" }}
-              >
-                📅 Today's Date
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                <div
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, "text")}
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500 }}
+                >
+                  📝 Text Input
+                </div>
+                <div
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, "date")}
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500 }}
+                >
+                  📅 Date Picker
+                </div>
+                <div
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, "number")}
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500 }}
+                >
+                  🔢 Number Input
+                </div>
+                <div
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, "checkbox")}
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500 }}
+                >
+                  ☑️ Checkbox
+                </div>
+                <div
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, "signature")}
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500, gridColumn: "span 2" }}
+                >
+                  ✍️ Signature Canvas
+                </div>
+                <div
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, "dob")}
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed var(--border-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 500, gridColumn: "span 2" }}
+                >
+                  👶 Date of Birth
+                </div>
               </div>
 
-              {/* Discreet Draggable Signer Fields */}
-              <div
-                draggable
-                onDragStart={(e) => handleDragStart(e, "signer_name")}
-                style={{ background: "rgba(var(--primary-rgb), 0.05)", border: "1.5px dashed var(--primary-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 600, gridColumn: "span 2" }}
-              >
-                👤 Draggable Signer Name
+              <div style={{ fontSize: "11px", fontWeight: "bold", textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em", borderTop: "1px solid var(--border-color)", paddingTop: "10px", marginTop: "4px" }}>
+                Calculated Fields
               </div>
-              <div
-                draggable
-                onDragStart={(e) => handleDragStart(e, "signer_email")}
-                style={{ background: "rgba(var(--primary-rgb), 0.05)", border: "1.5px dashed var(--primary-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 600, gridColumn: "span 2" }}
-              >
-                ✉️ Draggable Signer Email
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                <div
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, "age")}
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1.5px dashed #3b82f6", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 600 }}
+                  title="Calculated automatically based on Date of Birth field input"
+                >
+                  🧮 Age (Calculated)
+                </div>
+                <div
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, "todays_date")}
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1.5px dashed #3b82f6", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 600 }}
+                  title="Calculated automatically to today's date"
+                >
+                  📅 Today's Date
+                </div>
               </div>
-              <div
-                draggable
-                onDragStart={(e) => handleDragStart(e, "custom_email")}
-                style={{ background: "rgba(var(--primary-rgb), 0.05)", border: "1.5px dashed var(--primary-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 600, gridColumn: "span 2" }}
-              >
-                ✉️ Custom Email Field (e.g., Parent)
+
+              <div style={{ fontSize: "11px", fontWeight: "bold", textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em", borderTop: "1px solid var(--border-color)", paddingTop: "10px", marginTop: "4px" }}>
+                Signer Identity fields
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                <div
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, "signer_name")}
+                  style={{ background: "rgba(var(--primary-rgb), 0.05)", border: "1.5px dashed var(--primary-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 600, gridColumn: "span 2" }}
+                >
+                  👤 Signer Name
+                </div>
+                <div
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, "signer_email")}
+                  style={{ background: "rgba(var(--primary-rgb), 0.05)", border: "1.5px dashed var(--primary-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 600, gridColumn: "span 2" }}
+                >
+                  ✉️ Signer Email
+                </div>
+                <div
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, "custom_email")}
+                  style={{ background: "rgba(var(--primary-rgb), 0.05)", border: "1.5px dashed var(--primary-color)", padding: "10px", borderRadius: "6px", fontSize: "12px", textAlign: "center", cursor: "grab", fontWeight: 600, gridColumn: "span 2" }}
+                >
+                  ✉️ Custom Email (e.g. Parent)
+                </div>
               </div>
             </div>
           </div>
@@ -807,8 +871,14 @@ export default function DesignCanvas({
                           top: `${f.pdfMapping.y}%`,
                           width: `${f.pdfMapping.width}px`,
                           height: `${f.pdfMapping.height}px`,
-                          border: isSelected ? "2px solid var(--primary-color)" : "1px solid var(--text-muted)",
-                          background: "var(--bg-glass)",
+                          border: isSelected 
+                            ? "2px solid var(--primary-color)" 
+                            : (f.type === "age" || f.type === "todays_date" 
+                              ? "1.5px dashed var(--primary-color)" 
+                              : "1px solid var(--text-muted)"),
+                          background: f.type === "age" || f.type === "todays_date" 
+                            ? "rgba(59, 130, 246, 0.05)" 
+                            : "var(--bg-glass)",
                           borderRadius: "4px",
                           color: "var(--text-main)",
                           fontSize: "10px",
@@ -825,7 +895,13 @@ export default function DesignCanvas({
                         }}
                       >
                         <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: "6px" }}>
-                          {f.label} {f.required && <span style={{ color: "#ef4444", marginLeft: "2px" }}>*</span>}
+                          {f.label}
+                          {(f.type === "age" || f.type === "todays_date") && (
+                            <span style={{ color: "#3b82f6", fontSize: "9px", marginLeft: "4px", fontStyle: "italic" }}>
+                              (Auto)
+                            </span>
+                          )}
+                          {f.required && <span style={{ color: "#ef4444", marginLeft: "2px" }}>*</span>}
                         </span>
 
                         {/* Drag Resize Corner Handle */}
@@ -960,6 +1036,64 @@ export default function DesignCanvas({
                   </select>
                 </div>
               </div>
+
+              {/* Variable Linking (Custom Fields) */}
+              {editingField.type !== "signer_name" && editingField.type !== "signer_email" && (
+                <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: "16px", marginTop: "4px" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: "bold", cursor: "pointer", userSelect: "none" }}>
+                    <input
+                      type="checkbox"
+                      checked={!!editingField.linkedFieldId}
+                      onChange={(e) => {
+                        updateEditingField((f) => {
+                          if (e.target.checked) {
+                            const other = fields.find((x) => x.id !== selectedFieldId);
+                            return {
+                              ...f,
+                              linkedFieldId: other ? other.id : "",
+                            };
+                          } else {
+                            const { linkedFieldId, ...rest } = f;
+                            return rest as FormField;
+                          }
+                        });
+                      }}
+                      style={{ accentColor: "var(--primary-color)", width: "16px", height: "16px" }}
+                    />
+                    Link to another field (sync properties)
+                  </label>
+
+                  {editingField.linkedFieldId !== undefined && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "10px", background: "var(--bg-card-hover)", padding: "12px", borderRadius: "6px", border: "1px solid var(--border-color)", marginTop: "10px" }}>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: "11px" }}>Select Field to Link With</label>
+                        <select
+                          className="form-input"
+                          value={editingField.linkedFieldId}
+                          onChange={(e) =>
+                            updateEditingField((f) => ({
+                              ...f,
+                              linkedFieldId: e.target.value,
+                            }))
+                          }
+                        >
+                          <option value="">-- Choose Field --</option>
+                          {fields
+                            .filter((x) => x.id !== selectedFieldId)
+                            .map((x) => (
+                              <option key={x.id} value={x.id}>
+                                {x.label} ({x.id})
+                              </option>
+                            ))}
+                        </select>
+                        <span style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "4px" }}>
+                          Once linked, changing Display Name, Validation, or Conditional rules on one field will update both simultaneously.
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Conditional Logic Section */}
               <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: "16px", marginTop: "4px" }}>

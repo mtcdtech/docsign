@@ -24,6 +24,7 @@ interface FormField {
     value: any;
     fallbackValue?: string;
   };
+  linkedFieldId?: string;
 }
 
 interface SignFormProps {
@@ -832,27 +833,25 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                 readOnly
                                 disabled={!isVisible}
                                 tabIndex={isVisible ? tabIdx : -1}
-                                placeholder="Auto Age"
+                                placeholder="Auto-Calculated Age"
                                 style={{
                                   ...style,
-                                  background: "rgba(255, 255, 255, 0.05)",
-                                  color: "var(--text-main)",
+                                  background: "rgba(255, 255, 255, 0.02)",
+                                  color: "var(--text-muted)",
                                   fontSize: isMobile ? "16px" : "11px",
                                   padding: "2px 6px",
                                   borderRadius: "4px",
                                   border: isHighlighted
                                     ? "3px solid #f59e0b"
                                     : val
-                                    ? "1.5px solid #10b981"
-                                    : f.required && isVisible
-                                    ? "2.5px solid var(--primary-color)"
-                                    : "1.5px solid var(--border-color)",
+                                    ? "1.5px dashed #10b981"
+                                    : "1.5px dashed var(--border-color)",
                                   outline: "none",
                                   height: `${mapping.height}px`,
                                   cursor: "not-allowed",
                                   boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                 }}
-                                title={isVisible ? "Calculated automatically based on Date of Birth" : "Condition not met"}
+                                title={isVisible ? "Calculated automatically based on Date of Birth field input" : "Condition not met"}
                               />
                             );
                           }
@@ -867,26 +866,25 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                 readOnly
                                 disabled={!isVisible}
                                 tabIndex={isVisible ? tabIdx : -1}
+                                placeholder="Auto Today's Date"
                                 style={{
                                   ...style,
-                                  background: "rgba(255, 255, 255, 0.05)",
-                                  color: "var(--text-main)",
+                                  background: "rgba(255, 255, 255, 0.02)",
+                                  color: "var(--text-muted)",
                                   fontSize: isMobile ? "16px" : "11px",
                                   padding: "2px 6px",
                                   borderRadius: "4px",
                                   border: isHighlighted
                                     ? "3px solid #f59e0b"
                                     : val
-                                    ? "1.5px solid #10b981"
-                                    : f.required && isVisible
-                                    ? "2.5px solid var(--primary-color)"
-                                    : "1.5px solid var(--border-color)",
+                                    ? "1.5px dashed #10b981"
+                                    : "1.5px dashed var(--border-color)",
                                   outline: "none",
                                   height: `${mapping.height}px`,
                                   cursor: "not-allowed",
                                   boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                 }}
-                                title={isVisible ? "Today's Date" : "Condition not met"}
+                                title={isVisible ? "Auto-populated with Today's Date" : "Condition not met"}
                               />
                             );
                           }

@@ -17,6 +17,7 @@ export interface FormField {
   type: "text" | "date" | "number" | "checkbox" | "signature" | "signer_name" | "signer_email" | "dob" | "age" | "todays_date" | "custom_email";
   required: boolean;
   pdfMapping: FieldMapping;
+  linkedFieldId?: string;
 }
 
 // Generate the finalized signed PDF by overlaying form inputs and signatures onto the template
