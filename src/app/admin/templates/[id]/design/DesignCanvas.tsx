@@ -424,12 +424,21 @@ export default function DesignCanvas({
       defaultHeight = 18;
     }
 
+    const isSignerType = type === "signer_name" || type === "signer_email";
+    const existingField = isSignerType ? fields.find((f) => f.type === type) : null;
+
+    const finalId = existingField ? existingField.id : id;
+    const finalLabel = existingField ? existingField.label : label;
+    const finalRequired = existingField ? existingField.required : true;
+    const finalConditional = existingField ? existingField.conditional : undefined;
+
     const newField: FormField = {
       instanceId: Math.random().toString(36).substring(2, 9),
-      id,
-      label,
+      id: finalId,
+      label: finalLabel,
       type: type as any,
-      required: true,
+      required: finalRequired,
+      conditional: finalConditional,
       pdfMapping: {
         page: pageIdx,
         x,
@@ -792,90 +801,102 @@ export default function DesignCanvas({
                 <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>{isPlacedVariablesExpanded ? "▼" : "▶"}</span>
               </h3>
               
-              {isPlacedVariablesExpanded && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1, overflowY: "auto", maxHeight: "250px" }}>
-                  {fields.length === 0 ? (
-                    <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: "12px", padding: "10px" }}>
-                      No variables placed on this document yet.
-                    </div>
-                  ) : (
-                    fields.map((f) => {
-                      const fKey = f.instanceId || f.id;
-                      return (
-                        <div
-                          key={fKey}
-                          onClick={() => setSelectedFieldId(fKey)}
-                          style={{
-                            background: fKey === selectedFieldId ? "var(--primary-glow)" : "rgba(255,255,255,0.01)",
-                            border: fKey === selectedFieldId ? "1px solid var(--primary-color)" : "1px solid var(--border-color)",
-                            borderRadius: "6px",
-                            padding: "8px 12px",
-                            fontSize: "12px",
-                            cursor: "pointer",
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            width: "100%",
-                            boxSizing: "border-box"
-                          }}
-                        >
-                          <div style={{ overflow: "hidden", marginRight: "8px" }}>
-                            <div style={{ fontWeight: 600, color: "var(--text-main)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {f.label} {f.required && <span style={{ color: "#ef4444" }}>*</span>}
+              {isPlacedVariablesExpanded && (() => {
+                const sortedFields = [...fields].sort((a, b) => {
+                  if (a.pdfMapping.page !== b.pdfMapping.page) {
+                    return a.pdfMapping.page - b.pdfMapping.page;
+                  }
+                  if (a.pdfMapping.y !== b.pdfMapping.y) {
+                    return a.pdfMapping.y - b.pdfMapping.y;
+                  }
+                  return a.pdfMapping.x - b.pdfMapping.x;
+                });
+
+                return (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1, overflowY: "auto", maxHeight: "250px" }}>
+                    {sortedFields.length === 0 ? (
+                      <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: "12px", padding: "10px" }}>
+                        No variables placed on this document yet.
+                      </div>
+                    ) : (
+                      sortedFields.map((f) => {
+                        const fKey = f.instanceId || f.id;
+                        return (
+                          <div
+                            key={fKey}
+                            onClick={() => setSelectedFieldId(fKey)}
+                            style={{
+                              background: fKey === selectedFieldId ? "var(--primary-glow)" : "rgba(255,255,255,0.01)",
+                              border: fKey === selectedFieldId ? "1px solid var(--primary-color)" : "1px solid var(--border-color)",
+                              borderRadius: "6px",
+                              padding: "8px 12px",
+                              fontSize: "12px",
+                              cursor: "pointer",
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              width: "100%",
+                              boxSizing: "border-box"
+                            }}
+                          >
+                            <div style={{ overflow: "hidden", marginRight: "8px" }}>
+                              <div style={{ fontWeight: 600, color: "var(--text-main)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {f.label} {f.required && <span style={{ color: "#ef4444" }}>*</span>}
+                              </div>
+                              <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>
+                                ID: {f.id} | Page {f.pdfMapping.page + 1}
+                              </div>
                             </div>
-                            <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>
-                              ID: {f.id} | Page {f.pdfMapping.page + 1}
+                            <div style={{ display: "flex", gap: "6px", alignItems: "center", flexShrink: 0 }}>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedFieldId(fKey);
+                                  setEditingField(f);
+                                }}
+                                title="Edit Properties"
+                                style={{
+                                  background: "transparent",
+                                  border: "none",
+                                  color: "var(--text-muted)",
+                                  cursor: "pointer",
+                                  padding: "4px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: "14px"
+                                }}
+                              >
+                                ⚙️
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteField(fKey);
+                                }}
+                                title="Delete Field"
+                                style={{
+                                  background: "transparent",
+                                  border: "none",
+                                  color: "var(--text-muted)",
+                                  cursor: "pointer",
+                                  padding: "4px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: "14px"
+                                }}
+                              >
+                                🗑️
+                              </button>
                             </div>
                           </div>
-                          <div style={{ display: "flex", gap: "6px", alignItems: "center", flexShrink: 0 }}>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedFieldId(fKey);
-                                setEditingField(f);
-                              }}
-                              title="Edit Properties"
-                              style={{
-                                background: "transparent",
-                                border: "none",
-                                color: "var(--text-muted)",
-                                cursor: "pointer",
-                                padding: "4px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: "14px"
-                              }}
-                            >
-                              ⚙️
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteField(fKey);
-                              }}
-                              title="Delete Field"
-                              style={{
-                                background: "transparent",
-                                border: "none",
-                                color: "var(--text-muted)",
-                                cursor: "pointer",
-                                padding: "4px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: "14px"
-                              }}
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              )}
+                        );
+                      })
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
@@ -920,6 +941,7 @@ export default function DesignCanvas({
               
               {/* Placement & Interactivity Overlay Container */}
               <div
+                onClick={() => setSelectedFieldId(null)}
                 style={{
                   position: "absolute",
                   top: 0,
@@ -933,15 +955,19 @@ export default function DesignCanvas({
                 {fields
                   .filter((f) => f.pdfMapping.page === pageIdx)
                   .map((f) => {
-                    const isSelected = f.id === selectedFieldId;
+                    const fKey = f.instanceId || f.id;
+                    const isSelected = fKey === selectedFieldId;
                     
                     return (
                       <div
-                        key={f.id}
+                        key={fKey}
                         onMouseDown={(e) => handleStartMove(e, f)}
                         onDoubleClick={(e) => {
                           e.stopPropagation();
                           setEditingField(f);
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent background click deselection
                         }}
                         style={{
                           position: "absolute",
@@ -1123,18 +1149,29 @@ export default function DesignCanvas({
                       type="checkbox"
                       checked={!!editingField.linkedFieldId}
                       onChange={(e) => {
-                        updateEditingField((f) => {
-                          if (e.target.checked) {
-                            const other = fields.find((x) => x.id !== selectedFieldId);
-                            return {
+                        if (e.target.checked) {
+                          const other = fields.find((x) => (x.instanceId || x.id) !== selectedFieldId);
+                          if (other) {
+                            updateEditingField((f) => ({
                               ...f,
-                              linkedFieldId: other ? other.id : "",
-                            };
+                              id: other.id,
+                              label: other.label,
+                              required: other.required,
+                              conditional: other.conditional,
+                              linkedFieldId: other.instanceId || other.id,
+                            }));
                           } else {
+                            updateEditingField((f) => ({
+                              ...f,
+                              linkedFieldId: "",
+                            }));
+                          }
+                        } else {
+                          updateEditingField((f) => {
                             const { linkedFieldId, ...rest } = f;
                             return rest as FormField;
-                          }
-                        });
+                          });
+                        }
                       }}
                       style={{ accentColor: "var(--primary-color)", width: "16px", height: "16px" }}
                     />
@@ -1148,21 +1185,37 @@ export default function DesignCanvas({
                         <select
                           className="form-input"
                           value={editingField.linkedFieldId}
-                          onChange={(e) =>
-                            updateEditingField((f) => ({
-                              ...f,
-                              linkedFieldId: e.target.value,
-                            }))
-                          }
+                          onChange={(e) => {
+                            const targetId = e.target.value;
+                            const other = fields.find((x) => (x.instanceId || x.id) === targetId);
+                            if (other) {
+                              updateEditingField((f) => ({
+                                ...f,
+                                id: other.id,
+                                label: other.label,
+                                required: other.required,
+                                conditional: other.conditional,
+                                linkedFieldId: targetId,
+                              }));
+                            } else {
+                              updateEditingField((f) => ({
+                                ...f,
+                                linkedFieldId: targetId,
+                              }));
+                            }
+                          }}
                         >
                           <option value="">-- Choose Field --</option>
                           {fields
-                            .filter((x) => x.id !== selectedFieldId)
-                            .map((x) => (
-                              <option key={x.id} value={x.id}>
-                                {x.label} ({x.id})
-                              </option>
-                            ))}
+                            .filter((x) => (x.instanceId || x.id) !== selectedFieldId)
+                            .map((x) => {
+                              const xKey = x.instanceId || x.id;
+                              return (
+                                <option key={xKey} value={xKey}>
+                                  {x.label} ({x.id})
+                                </option>
+                              );
+                            })}
                         </select>
                         <span style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "4px" }}>
                           Once linked, changing Display Name, Validation, or Conditional rules on one field will update both simultaneously.
