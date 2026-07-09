@@ -78,6 +78,12 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
 
   // Field highlight tracking
   const [highlightedFieldId, setHighlightedFieldId] = useState<string | null>(null);
+  const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+
+  // Responsive dimensions and scrolling references
+  const viewerScrollContainerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+  const [pageDimensions, setPageDimensions] = useState<{[key: number]: {width: number, height: number}}>({});
 
   // Mobile layout detection & navigation states
   const [isMobile, setIsMobile] = useState(false);
@@ -116,6 +122,19 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Responsive container observer
+  useEffect(() => {
+    if (!viewerScrollContainerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+    observer.observe(viewerScrollContainerRef.current);
+    setContainerWidth(viewerScrollContainerRef.current.clientWidth);
+    return () => observer.disconnect();
   }, []);
 
   // Lock document vertical scroll completely on mobile
@@ -199,6 +218,10 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
           const viewport = page.getViewport({ scale: 1.2 });
           canvas.width = viewport.width;
           canvas.height = viewport.height;
+          setPageDimensions((prev) => ({
+            ...prev,
+            [pageNum - 1]: { width: viewport.width, height: viewport.height }
+          }));
 
           // Set overlay size to match canvas dimensions
           const overlay = document.getElementById(`pdf-preview-overlay-${pageNum - 1}`);
@@ -316,32 +339,6 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
     }
   }, [formData, fields]);
 
-  const handleInputChange = (fieldId: string, value: any) => {
-    setFormData((prev) => {
-      const next = { ...prev, [fieldId]: value };
-      return next;
-    });
-  };
-
-  // Click remaining checklist fields to scroll, focus & highlight
-  const handleChecklistItemClick = (fieldId: string) => {
-    setHighlightedFieldId(fieldId);
-    setTimeout(() => {
-      setHighlightedFieldId(null);
-    }, 2000); // Highlight duration: 2 seconds
-
-    const element = document.getElementById(`field-input-box-${fieldId}`);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "center" });
-      element.focus();
-    }
-
-    const field = fields.find((f) => f.id === fieldId);
-    if (field?.type === "signature") {
-      setActiveSignatureFieldId(fieldId);
-    }
-  };
-
   // Calculate required fields status in real-time
   const visibleFields = fields.filter(isFieldVisible);
   const remainingRequiredFields = visibleFields.filter((f) => {
@@ -368,6 +365,52 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
   });
 
   const remainingCount = sortedRequiredFields.length;
+
+  const handleInputChange = (fieldId: string, value: any) => {
+    setFormData((prev) => {
+      const next = { ...prev, [fieldId]: value };
+      return next;
+    });
+  };
+
+  // Click remaining checklist fields to scroll, focus & highlight
+  const handleChecklistItemClick = (fieldId: string) => {
+    setHighlightedFieldId(fieldId);
+    setSelectedFieldId(fieldId);
+    setTimeout(() => {
+      setHighlightedFieldId(null);
+    }, 2000); // Pulse highlight effect
+
+    // Sync mobile navigation index if found in sortedRequiredFields
+    const idx = sortedRequiredFields.findIndex((sf) => sf.id === fieldId);
+    if (idx !== -1) {
+      setMobileActiveIdx(idx);
+    }
+
+    const element = document.getElementById(`field-input-box-${fieldId}`);
+    const container = viewerScrollContainerRef.current;
+    if (container && element) {
+      const containerRect = container.getBoundingClientRect();
+      const elementRect = element.getBoundingClientRect();
+      // Scroll target relative to container scrolling position
+      const offsetTop = elementRect.top - containerRect.top + container.scrollTop;
+      const targetScrollTop = offsetTop - (container.clientHeight * 0.15); // Place it 15% down from top
+      
+      container.scrollTo({
+        top: Math.max(0, targetScrollTop),
+        behavior: "smooth"
+      });
+      element.focus();
+    } else if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+      element.focus();
+    }
+
+    const field = fields.find((f) => f.id === fieldId);
+    if (field?.type === "signature") {
+      setActiveSignatureFieldId(fieldId);
+    }
+  };
 
   // Handle next/prev arrow navigation on mobile
   const handleNavigateChecklist = (direction: "next" | "prev") => {
@@ -560,7 +603,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
         <div style={{ display: "flex", gap: "32px", alignItems: "stretch", flexWrap: "wrap" }}>
           
           {/* Left Side: PDF Document Viewer with Overlay Interactive Inputs */}
-          <div style={{ flex: "1.2", minWidth: "320px", display: "flex", flexDirection: "column", gap: "16px", maxHeight: "calc(100vh - 160px)", overflowY: "auto", border: "1px solid var(--border-color)", borderRadius: "8px", padding: "16px", background: "rgba(0,0,0,0.2)" }}>
+          <div ref={viewerScrollContainerRef} style={{ flex: "1.2", minWidth: "320px", display: "flex", flexDirection: "column", gap: "16px", maxHeight: "calc(100vh - 160px)", overflowY: "auto", border: "1px solid var(--border-color)", borderRadius: "8px", padding: "16px", background: "rgba(0,0,0,0.2)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-color)", paddingBottom: "10px" }}>
               <h3 style={{ margin: 0, fontSize: "15px" }}>Document Preview</h3>
               <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
@@ -574,55 +617,72 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", alignItems: "stretch" }}>
-                {Array.from({ length: numPages }).map((_, pageIdx) => (
-                  <div
-                    key={pageIdx}
-                    style={{
-                      width: "100%",
-                      overflowX: "auto",
-                      WebkitOverflowScrolling: "touch",
-                      display: "flex",
-                      justifyContent: isMobile ? "flex-start" : "center",
-                      background: "rgba(0,0,0,0.05)",
-                      paddingBottom: "8px"
-                    }}
-                  >
-                    <div
-                      id={`pdf-preview-overlay-${pageIdx}`}
-                      style={{
-                        position: "relative",
-                        border: "1px solid var(--border-color)",
-                        borderRadius: "4px",
-                        background: "#000",
-                        flexShrink: 0
-                      }}
-                    >
-                      <canvas
-                        id={`pdf-preview-canvas-${pageIdx}`}
-                        style={{ display: "block" }}
-                      />
-                    
-                    {/* Absolute Overlay Fields */}
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        width: "100%",
-                        height: "100%",
-                        zIndex: 10,
-                      }}
-                    >
-                      {fields
-                        .filter((f) => f.pdfMapping.page === pageIdx)
-                        .map((f) => {
-                          const isVisible = isFieldVisible(f);
-                          const hasFallback = f.conditional?.fallbackValue !== undefined && f.conditional?.fallbackValue !== null && f.conditional?.fallbackValue !== "";
-                          if (!isVisible && !hasFallback) return null;
+                {Array.from({ length: numPages }).map((_, pageIdx) => {
+                  const dims = pageDimensions[pageIdx];
+                  const originalWidth = dims?.width || 800;
+                  const originalHeight = dims?.height || 1100;
+                  const paddingAdjustment = 34; // scrollbar and card padding
+                  const availableWidth = containerWidth - paddingAdjustment;
+                  const scale = (isMobile && availableWidth > 0 && availableWidth < originalWidth)
+                    ? (availableWidth / originalWidth)
+                    : 1;
 
-                          const mapping = f.pdfMapping;
-                          const val = isVisible ? (formData[f.id] || "") : (f.conditional?.fallbackValue || "");
-                          const isHighlighted = f.id === highlightedFieldId;
+                  return (
+                    <div
+                      key={pageIdx}
+                      style={{
+                        width: "100%",
+                        height: scale < 1 ? `${originalHeight * scale}px` : "auto",
+                        overflow: "hidden",
+                        position: "relative",
+                        display: "flex",
+                        justifyContent: "center",
+                        background: "rgba(0,0,0,0.05)",
+                        paddingBottom: "8px"
+                      }}
+                    >
+                      <div
+                        id={`pdf-preview-overlay-${pageIdx}`}
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: "50%",
+                          width: `${originalWidth}px`,
+                          height: `${originalHeight}px`,
+                          transform: `translate(-50%, 0) scale(${scale})`,
+                          transformOrigin: "top center",
+                          border: "1px solid var(--border-color)",
+                          borderRadius: "4px",
+                          background: "#000",
+                          flexShrink: 0
+                        }}
+                      >
+                        <canvas
+                          id={`pdf-preview-canvas-${pageIdx}`}
+                          style={{ display: "block" }}
+                        />
+                      
+                      {/* Absolute Overlay Fields */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          height: "100%",
+                          zIndex: 10,
+                        }}
+                      >
+                        {fields
+                          .filter((f) => f.pdfMapping.page === pageIdx)
+                          .map((f) => {
+                            const isVisible = isFieldVisible(f);
+                            const hasFallback = f.conditional?.fallbackValue !== undefined && f.conditional?.fallbackValue !== null && f.conditional?.fallbackValue !== "";
+                            if (!isVisible && !hasFallback) return null;
+
+                            const mapping = f.pdfMapping;
+                            const val = isVisible ? (formData[f.id] || "") : (f.conditional?.fallbackValue || "");
+                            const isHighlighted = f.id === highlightedFieldId || f.id === selectedFieldId;
 
                           const style: React.CSSProperties = {
                             position: "absolute",
@@ -665,7 +725,9 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                               <div
                                 key={f.id}
                                 id={`field-input-box-${f.id}`}
-                                onClick={() => setActiveSignatureFieldId(f.id)}
+                                onClick={() => {
+                                  handleChecklistItemClick(f.id);
+                                }}
                                 tabIndex={tabIdx}
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter" || e.key === " ") {
@@ -712,6 +774,8 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                 disabled={!isVisible}
                                 tabIndex={isVisible ? tabIdx : -1}
                                 onChange={(e) => isVisible && handleInputChange(f.id, e.target.checked)}
+                                onFocus={() => handleChecklistItemClick(f.id)}
+                                onClick={() => handleChecklistItemClick(f.id)}
                                 style={{
                                   ...style,
                                   accentColor: "var(--primary-color)",
@@ -734,6 +798,8 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                 readOnly={!isVisible}
                                 tabIndex={isVisible ? tabIdx : -1}
                                 onChange={(e) => isVisible && setSignerName(e.target.value)}
+                                onFocus={() => handleChecklistItemClick(f.id)}
+                                onClick={() => handleChecklistItemClick(f.id)}
                                 placeholder="Signer Name"
                                 style={{
                                   ...style,
@@ -767,6 +833,8 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                 readOnly={!isVisible}
                                 tabIndex={isVisible ? tabIdx : -1}
                                 onChange={(e) => isVisible && setSignerEmail(e.target.value)}
+                                onFocus={() => handleChecklistItemClick(f.id)}
+                                onClick={() => handleChecklistItemClick(f.id)}
                                 placeholder="Signer Email"
                                 style={{
                                   ...style,
@@ -800,6 +868,8 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                 readOnly={!isVisible}
                                 tabIndex={isVisible ? tabIdx : -1}
                                 onChange={(e) => isVisible && handleInputChange(f.id, e.target.value)}
+                                onFocus={() => handleChecklistItemClick(f.id)}
+                                onClick={() => handleChecklistItemClick(f.id)}
                                 style={{
                                   ...style,
                                   background: isVisible ? "var(--bg-card)" : "rgba(255, 255, 255, 0.05)",
@@ -834,6 +904,8 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                 readOnly
                                 disabled={!isVisible}
                                 tabIndex={isVisible ? tabIdx : -1}
+                                onFocus={() => handleChecklistItemClick(f.id)}
+                                onClick={() => handleChecklistItemClick(f.id)}
                                 placeholder="Auto-Calculated Age"
                                 style={{
                                   ...style,
@@ -867,6 +939,8 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                 readOnly
                                 disabled={!isVisible}
                                 tabIndex={isVisible ? tabIdx : -1}
+                                onFocus={() => handleChecklistItemClick(f.id)}
+                                onClick={() => handleChecklistItemClick(f.id)}
                                 placeholder="Auto Today's Date"
                                 style={{
                                   ...style,
@@ -901,6 +975,8 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                               readOnly={!isVisible}
                               tabIndex={isVisible ? tabIdx : -1}
                               onChange={(e) => isVisible && handleInputChange(f.id, e.target.value)}
+                              onFocus={() => handleChecklistItemClick(f.id)}
+                              onClick={() => handleChecklistItemClick(f.id)}
                               placeholder={isVisible ? (f.required ? `${f.label} *` : f.label) : "Condition not met"}
                               style={{
                                 ...style,
@@ -928,7 +1004,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                     </div>
                   </div>
                 </div>
-              ))}
+              )})}
               </div>
             )}
           </div>
