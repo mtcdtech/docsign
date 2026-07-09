@@ -44,7 +44,7 @@ export default async function TemplatesListPage() {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
         <div>
-          <h1>Form TemplatesLog</h1>
+          <h1>Form Templates</h1>
           <p>Create, sort, and inspect submissions history logs for your church waivers.</p>
         </div>
       </div>

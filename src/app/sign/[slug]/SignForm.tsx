@@ -97,12 +97,12 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
   const formatDateString = (value: string): string => {
     // Strip all non-digits
     const digits = value.replace(/\D/g, "");
-    if (digits.length <= 4) {
+    if (digits.length <= 2) {
       return digits;
-    } else if (digits.length <= 6) {
-      return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+    } else if (digits.length <= 4) {
+      return `${digits.slice(0, 2)}-${digits.slice(2)}`;
     } else {
-      return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`;
+      return `${digits.slice(0, 2)}-${digits.slice(2, 4)}-${digits.slice(4, 8)}`;
     }
   };
 
@@ -1031,7 +1031,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                   id={`field-input-box-${f.instanceId || f.id}`}
                                   type={dateInputTypes[f.id] || "text"}
                                   value={val}
-                                  placeholder={isVisible ? (f.required ? `${f.label} (YYYY-MM-DD) *` : `${f.label} (YYYY-MM-DD)`) : ""}
+                                  placeholder={isVisible ? (f.required ? `${f.label} (MM-DD-YYYY) *` : `${f.label} (MM-DD-YYYY)`) : ""}
                                   disabled={!isVisible}
                                   readOnly={!isVisible}
                                   tabIndex={isVisible ? tabIdx : -1}
@@ -1051,6 +1051,8 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                   style={{
                                     width: "100%",
                                     height: "100%",
+                                    maxWidth: "100%",
+                                    minWidth: "0px",
                                     background: isVisible ? "rgba(253, 224, 71, 0.15)" : "rgba(255, 255, 255, 0.05)",
                                     color: "var(--text-main)",
                                     fontSize: isMobile ? "16px" : "11px",
@@ -1174,7 +1176,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                   id={`field-input-box-${f.instanceId || f.id}`}
                                   type={dateInputTypes[f.id] || "text"}
                                   value={val}
-                                  placeholder={isVisible ? (f.required ? `${f.label} (YYYY-MM-DD) *` : `${f.label} (YYYY-MM-DD)`) : ""}
+                                  placeholder={isVisible ? (f.required ? `${f.label} (MM-DD-YYYY) *` : `${f.label} (MM-DD-YYYY)`) : ""}
                                   disabled={!isVisible}
                                   readOnly={!isVisible}
                                   tabIndex={isVisible ? tabIdx : -1}
@@ -1194,6 +1196,8 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                   style={{
                                     width: "100%",
                                     height: "100%",
+                                    maxWidth: "100%",
+                                    minWidth: "0px",
                                     background: isVisible ? "rgba(253, 224, 71, 0.15)" : "rgba(255, 255, 255, 0.05)",
                                     color: "var(--text-main)",
                                     fontSize: isMobile ? "16px" : "11px",
@@ -1448,7 +1452,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                             Selected Field: {selectedField.label}
                           </div>
                           <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: "1.4" }}>
-                            You can type directly into the date field on the document in YYYY-MM-DD format, or launch the calendar selector below:
+                            You can type directly into the date field on the document in MM-DD-YYYY format, or launch the calendar selector below:
                           </div>
                           <button
                             type="button"

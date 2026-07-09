@@ -291,17 +291,17 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
               No templates found.
             </div>
           ) : (
-            <table>
+            <table style={{ tableLayout: "auto", width: "100%" }}>
               <thead>
                 <tr>
-                  <th>Template Name</th>
-                  <th style={{ cursor: "pointer" }} onClick={handleSortByOrganization}>
+                  <th style={{ width: "20%", whiteSpace: "nowrap" }}>Template Name</th>
+                  <th style={{ width: "15%", whiteSpace: "nowrap", cursor: "pointer" }} onClick={handleSortByOrganization}>
                     Organization {orgSortOrder === "asc" ? "▲" : orgSortOrder === "desc" ? "▼" : "↕"}
                   </th>
-                  <th>Public Slug Link</th>
-                  <th>SharePoint</th>
-                  <th>Email Settings</th>
-                  <th style={{ textAlign: "right" }}>Actions</th>
+                  <th style={{ width: "20%", whiteSpace: "nowrap" }}>Public Slug Link</th>
+                  <th style={{ width: "10%", whiteSpace: "nowrap" }}>SharePoint</th>
+                  <th style={{ width: "15%", whiteSpace: "nowrap" }}>Email Settings</th>
+                  <th style={{ width: "20%", whiteSpace: "nowrap", textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -312,8 +312,8 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
                     <React.Fragment key={tpl.id}>
                       <tr style={{ background: isExpanded ? "rgba(255, 255, 255, 0.03)" : "none" }}>
                         <td style={{ fontWeight: 600, color: "var(--text-main)" }}>{tpl.title}</td>
-                        <td>{tpl.organization.name}</td>
-                        <td>
+                        <td style={{ whiteSpace: "nowrap" }}>{tpl.organization.name}</td>
+                        <td style={{ whiteSpace: "nowrap" }}>
                           {tpl.isArchived ? (
                             <span style={{ color: "var(--text-muted)", fontStyle: "italic", fontSize: "13px" }}>
                               Archived (Link Disabled)
@@ -324,7 +324,7 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
                             </a>
                           )}
                         </td>
-                        <td>
+                        <td style={{ whiteSpace: "nowrap" }}>
                           {tpl.saveSharepoint ? (
                             <span
                               title={`Folder: ${tpl.sharepointFolderName || "Root"}\nClick to open in SharePoint`}
@@ -340,8 +340,8 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
                             <span style={{ color: "var(--text-muted)", fontSize: "12px" }}>Disabled</span>
                           )}
                         </td>
-                        <td>
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                        <td style={{ whiteSpace: "nowrap" }}>
+                          <div style={{ display: "flex", gap: "6px" }}>
                             {tpl.emailUser && (
                               <span
                                 title={`Signer Copy: Enabled\nLeader Copy: ${tpl.emailLeader ? "Enabled" : "Disabled"}${tpl.notificationEmails ? `\nRecipients: ${tpl.notificationEmails}` : ""}`}
@@ -363,7 +363,7 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
                             )}
                           </div>
                         </td>
-                        <td style={{ textAlign: "right" }}>
+                        <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
                           <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
                             <button
                               type="button"

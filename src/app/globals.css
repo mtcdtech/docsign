@@ -280,3 +280,14 @@ tr:hover td {
     width: 100%;
   }
 }
+
+/* Hide WebKit/iOS Safari native input clear buttons */
+input::-webkit-clear-button,
+input::-webkit-search-cancel-button,
+input::-webkit-search-decoration,
+input::-webkit-search-results-button,
+input::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none !important;
+}
