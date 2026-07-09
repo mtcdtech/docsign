@@ -374,20 +374,23 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
   };
 
   // Click remaining checklist fields to scroll, focus & highlight
-  const handleChecklistItemClick = (fieldId: string) => {
-    setHighlightedFieldId(fieldId);
-    setSelectedFieldId(fieldId);
+  const handleChecklistItemClick = (targetId: string) => {
+    const field = fields.find((f) => (f.instanceId || f.id) === targetId);
+    if (!field) return;
+
+    setHighlightedFieldId(field.id);
+    setSelectedFieldId(targetId);
     setTimeout(() => {
       setHighlightedFieldId(null);
     }, 2000); // Pulse highlight effect
 
     // Sync mobile navigation index if found in sortedRequiredFields
-    const idx = sortedRequiredFields.findIndex((sf) => sf.id === fieldId);
+    const idx = sortedRequiredFields.findIndex((sf) => (sf.instanceId || sf.id) === targetId);
     if (idx !== -1) {
       setMobileActiveIdx(idx);
     }
 
-    const element = document.getElementById(`field-input-box-${fieldId}`);
+    const element = document.getElementById(`field-input-box-${targetId}`);
     const container = viewerScrollContainerRef.current;
     if (container && element) {
       const containerRect = container.getBoundingClientRect();
@@ -400,15 +403,17 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
         top: Math.max(0, targetScrollTop),
         behavior: "smooth"
       });
-      element.focus();
+
+      const isPopup = field.type === "date" || field.type === "dob" || field.type === "signature";
+      if (!isMobile || !isPopup) {
+        element.focus();
+      }
     } else if (element) {
       element.scrollIntoView({ behavior: "smooth", block: "center" });
-      element.focus();
-    }
-
-    const field = fields.find((f) => f.id === fieldId);
-    if (field?.type === "signature") {
-      setActiveSignatureFieldId(fieldId);
+      const isPopup = field.type === "date" || field.type === "dob" || field.type === "signature";
+      if (!isMobile || !isPopup) {
+        element.focus();
+      }
     }
   };
 
@@ -422,8 +427,8 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
       nextIdx = mobileActiveIdx > 0 ? mobileActiveIdx - 1 : sortedRequiredFields.length - 1;
     }
     setMobileActiveIdx(nextIdx);
-    const fieldId = sortedRequiredFields[nextIdx].id;
-    handleChecklistItemClick(fieldId);
+    const targetId = sortedRequiredFields[nextIdx].instanceId || sortedRequiredFields[nextIdx].id;
+    handleChecklistItemClick(targetId);
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -723,15 +728,17 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                             }
                             return (
                               <div
-                                key={f.id}
-                                id={`field-input-box-${f.id}`}
+                                key={f.instanceId || f.id}
+                                id={`field-input-box-${f.instanceId || f.id}`}
                                 onClick={() => {
-                                  handleChecklistItemClick(f.id);
+                                  handleChecklistItemClick(f.instanceId || f.id);
+                                  setActiveSignatureFieldId(f.id);
                                 }}
                                 tabIndex={tabIdx}
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter" || e.key === " ") {
                                     e.preventDefault();
+                                    handleChecklistItemClick(f.instanceId || f.id);
                                     setActiveSignatureFieldId(f.id);
                                   }
                                 }}
@@ -767,15 +774,15 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                           if (f.type === "checkbox") {
                             return (
                               <input
-                                key={f.id}
-                                id={`field-input-box-${f.id}`}
+                                key={f.instanceId || f.id}
+                                id={`field-input-box-${f.instanceId || f.id}`}
                                 type="checkbox"
                                 checked={val === true || val === "true" || val === "on"}
                                 disabled={!isVisible}
                                 tabIndex={isVisible ? tabIdx : -1}
                                 onChange={(e) => isVisible && handleInputChange(f.id, e.target.checked)}
-                                onFocus={() => handleChecklistItemClick(f.id)}
-                                onClick={() => handleChecklistItemClick(f.id)}
+                                onFocus={() => handleChecklistItemClick(f.instanceId || f.id)}
+                                onClick={() => handleChecklistItemClick(f.instanceId || f.id)}
                                 style={{
                                   ...style,
                                   accentColor: "var(--primary-color)",
@@ -790,16 +797,16 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                           if (f.type === "signer_name") {
                             return (
                               <input
-                                key={f.id}
-                                id={`field-input-box-${f.id}`}
+                                key={f.instanceId || f.id}
+                                id={`field-input-box-${f.instanceId || f.id}`}
                                 type="text"
                                 value={isVisible ? signerName : val}
                                 disabled={!isVisible}
                                 readOnly={!isVisible}
                                 tabIndex={isVisible ? tabIdx : -1}
                                 onChange={(e) => isVisible && setSignerName(e.target.value)}
-                                onFocus={() => handleChecklistItemClick(f.id)}
-                                onClick={() => handleChecklistItemClick(f.id)}
+                                onFocus={() => handleChecklistItemClick(f.instanceId || f.id)}
+                                onClick={() => handleChecklistItemClick(f.instanceId || f.id)}
                                 placeholder="Signer Name"
                                 style={{
                                   ...style,
@@ -825,16 +832,16 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                           if (f.type === "signer_email") {
                             return (
                               <input
-                                key={f.id}
-                                id={`field-input-box-${f.id}`}
+                                key={f.instanceId || f.id}
+                                id={`field-input-box-${f.instanceId || f.id}`}
                                 type="text"
                                 value={isVisible ? signerEmail : val}
                                 disabled={!isVisible}
                                 readOnly={!isVisible}
                                 tabIndex={isVisible ? tabIdx : -1}
                                 onChange={(e) => isVisible && setSignerEmail(e.target.value)}
-                                onFocus={() => handleChecklistItemClick(f.id)}
-                                onClick={() => handleChecklistItemClick(f.id)}
+                                onFocus={() => handleChecklistItemClick(f.instanceId || f.id)}
+                                onClick={() => handleChecklistItemClick(f.instanceId || f.id)}
                                 placeholder="Signer Email"
                                 style={{
                                   ...style,
@@ -859,53 +866,86 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
 
                           if (f.type === "dob") {
                             return (
-                              <input
-                                key={f.id}
-                                id={`field-input-box-${f.id}`}
-                                type="date"
-                                value={val}
-                                disabled={!isVisible}
-                                readOnly={!isVisible}
-                                tabIndex={isVisible ? tabIdx : -1}
-                                onChange={(e) => isVisible && handleInputChange(f.id, e.target.value)}
-                                onFocus={() => handleChecklistItemClick(f.id)}
-                                onClick={() => handleChecklistItemClick(f.id)}
-                                style={{
-                                  ...style,
-                                  background: isVisible ? "var(--bg-card)" : "rgba(255, 255, 255, 0.05)",
-                                  color: "var(--text-main)",
-                                  fontSize: isMobile ? "16px" : "11px",
-                                  padding: "2px 6px",
-                                  borderRadius: "4px",
-                                  border: isHighlighted
-                                    ? "3px solid #f59e0b"
-                                    : val
-                                    ? "1.5px solid #10b981"
-                                    : f.required && isVisible
-                                    ? "2.5px solid var(--primary-color)"
-                                    : "1.5px solid var(--border-color)",
-                                  outline: "none",
-                                  height: `${mapping.height}px`,
-                                  colorScheme: theme,
-                                  cursor: isVisible ? "text" : "not-allowed",
-                                  boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
-                                }}
-                              />
+                              <div key={f.instanceId || f.id} style={{ ...style, position: "absolute" }}>
+                                <input
+                                  id={`field-input-box-${f.instanceId || f.id}`}
+                                  type="date"
+                                  value={val}
+                                  disabled={!isVisible}
+                                  readOnly={!isVisible}
+                                  tabIndex={isVisible ? tabIdx : -1}
+                                  onChange={(e) => isVisible && handleInputChange(f.id, e.target.value)}
+                                  onFocus={() => handleChecklistItemClick(f.instanceId || f.id)}
+                                  onClick={() => handleChecklistItemClick(f.instanceId || f.id)}
+                                  style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    background: isVisible ? "var(--bg-card)" : "rgba(255, 255, 255, 0.05)",
+                                    color: "var(--text-main)",
+                                    fontSize: isMobile ? "16px" : "11px",
+                                    padding: "2px 6px",
+                                    paddingRight: val ? "24px" : "6px",
+                                    borderRadius: "4px",
+                                    border: isHighlighted
+                                      ? "3px solid #f59e0b"
+                                      : val
+                                      ? "1.5px solid #10b981"
+                                      : f.required && isVisible
+                                      ? "2.5px solid var(--primary-color)"
+                                      : "1.5px solid var(--border-color)",
+                                    outline: "none",
+                                    colorScheme: theme,
+                                    cursor: isVisible ? "text" : "not-allowed",
+                                    boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
+                                  }}
+                                />
+                                {val && isVisible && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                      handleInputChange(f.id, "");
+                                    }}
+                                    style={{
+                                      position: "absolute",
+                                      right: "4px",
+                                      top: "50%",
+                                      transform: "translateY(-50%)",
+                                      background: "var(--bg-card)",
+                                      border: "none",
+                                      color: "#ef4444",
+                                      fontSize: "14px",
+                                      cursor: "pointer",
+                                      padding: "2px 6px",
+                                      zIndex: 30,
+                                      fontWeight: "bold",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      borderRadius: "50%"
+                                    }}
+                                    title="Reset Date"
+                                  >
+                                    ✕
+                                  </button>
+                                )}
+                              </div>
                             );
                           }
 
                           if (f.type === "age") {
                             return (
                               <input
-                                key={f.id}
-                                id={`field-input-box-${f.id}`}
+                                key={f.instanceId || f.id}
+                                id={`field-input-box-${f.instanceId || f.id}`}
                                 type="text"
                                 value={val}
                                 readOnly
                                 disabled={!isVisible}
                                 tabIndex={isVisible ? tabIdx : -1}
-                                onFocus={() => handleChecklistItemClick(f.id)}
-                                onClick={() => handleChecklistItemClick(f.id)}
+                                onFocus={() => handleChecklistItemClick(f.instanceId || f.id)}
+                                onClick={() => handleChecklistItemClick(f.instanceId || f.id)}
                                 placeholder="Auto-Calculated Age"
                                 style={{
                                   ...style,
@@ -932,15 +972,15 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                           if (f.type === "todays_date") {
                             return (
                               <input
-                                key={f.id}
-                                id={`field-input-box-${f.id}`}
+                                key={f.instanceId || f.id}
+                                id={`field-input-box-${f.instanceId || f.id}`}
                                 type="text"
                                 value={val}
                                 readOnly
                                 disabled={!isVisible}
                                 tabIndex={isVisible ? tabIdx : -1}
-                                onFocus={() => handleChecklistItemClick(f.id)}
-                                onClick={() => handleChecklistItemClick(f.id)}
+                                onFocus={() => handleChecklistItemClick(f.instanceId || f.id)}
+                                onClick={() => handleChecklistItemClick(f.instanceId || f.id)}
                                 placeholder="Auto Today's Date"
                                 style={{
                                   ...style,
@@ -964,19 +1004,89 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                             );
                           }
 
-                          // Default: text, date, number inputs matching theme
+                          if (f.type === "date") {
+                            return (
+                              <div key={f.instanceId || f.id} style={{ ...style, position: "absolute" }}>
+                                <input
+                                  id={`field-input-box-${f.instanceId || f.id}`}
+                                  type="date"
+                                  value={val}
+                                  disabled={!isVisible}
+                                  readOnly={!isVisible}
+                                  tabIndex={isVisible ? tabIdx : -1}
+                                  onChange={(e) => isVisible && handleInputChange(f.id, e.target.value)}
+                                  onFocus={() => handleChecklistItemClick(f.instanceId || f.id)}
+                                  onClick={() => handleChecklistItemClick(f.instanceId || f.id)}
+                                  style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    background: isVisible ? "var(--bg-card)" : "rgba(255, 255, 255, 0.05)",
+                                    color: "var(--text-main)",
+                                    fontSize: isMobile ? "16px" : "11px",
+                                    padding: "2px 6px",
+                                    paddingRight: val ? "24px" : "6px",
+                                    borderRadius: "4px",
+                                    border: isHighlighted
+                                      ? "3px solid #f59e0b"
+                                      : val
+                                      ? "1.5px solid #10b981"
+                                      : f.required && isVisible
+                                      ? "2.5px solid var(--primary-color)"
+                                      : "1.5px solid var(--border-color)",
+                                    outline: "none",
+                                    colorScheme: theme,
+                                    cursor: isVisible ? "text" : "not-allowed",
+                                    boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
+                                  }}
+                                />
+                                {val && isVisible && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                      handleInputChange(f.id, "");
+                                    }}
+                                    style={{
+                                      position: "absolute",
+                                      right: "4px",
+                                      top: "50%",
+                                      transform: "translateY(-50%)",
+                                      background: "var(--bg-card)",
+                                      border: "none",
+                                      color: "#ef4444",
+                                      fontSize: "14px",
+                                      cursor: "pointer",
+                                      padding: "2px 6px",
+                                      zIndex: 30,
+                                      fontWeight: "bold",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      borderRadius: "50%"
+                                    }}
+                                    title="Reset Date"
+                                  >
+                                    ✕
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          }
+
+                          // Default: text, number inputs matching theme
                           return (
                             <input
-                              key={f.id}
-                              id={`field-input-box-${f.id}`}
-                              type={f.type === "date" ? "date" : f.type === "number" ? "number" : "text"}
+                              key={f.instanceId || f.id}
+                              id={`field-input-box-${f.instanceId || f.id}`}
+                              type={f.type === "number" ? "number" : "text"}
                               value={val}
                               disabled={!isVisible}
                               readOnly={!isVisible}
                               tabIndex={isVisible ? tabIdx : -1}
                               onChange={(e) => isVisible && handleInputChange(f.id, e.target.value)}
-                              onFocus={() => handleChecklistItemClick(f.id)}
-                              onClick={() => handleChecklistItemClick(f.id)}
+                              onFocus={() => handleChecklistItemClick(f.instanceId || f.id)}
+                              onClick={() => handleChecklistItemClick(f.instanceId || f.id)}
                               placeholder={isVisible ? (f.required ? `${f.label} *` : f.label) : "Condition not met"}
                               style={{
                                 ...style,
@@ -1080,8 +1190,8 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                       <div style={{ fontSize: "11px", fontWeight: "bold", color: "var(--text-muted)" }}>Remaining Fields Checklist:</div>
                       {sortedRequiredFields.map((f) => (
                         <div
-                          key={f.id}
-                          onClick={() => handleChecklistItemClick(f.id)}
+                          key={f.instanceId || f.id}
+                          onClick={() => handleChecklistItemClick(f.instanceId || f.id)}
                           style={{
                             background: "rgba(255, 255, 255, 0.03)",
                             border: "1px solid var(--border-color)",
@@ -1158,6 +1268,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
 
             <SignaturePad
               strokeColor="#000000"
+              defaultValue={activeSignatureFieldId ? (formData[activeSignatureFieldId] || null) : null}
               onChange={(val) => {
                 handleInputChange(activeSignatureFieldId, val);
               }}
@@ -1227,8 +1338,12 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
 
               <div
                 onClick={() => {
-                  if (sortedRequiredFields[mobileActiveIdx]) {
-                    handleChecklistItemClick(sortedRequiredFields[mobileActiveIdx].id);
+                  const activeField = sortedRequiredFields[mobileActiveIdx];
+                  if (activeField) {
+                    handleChecklistItemClick(activeField.instanceId || activeField.id);
+                    if (activeField.type === "signature") {
+                      setActiveSignatureFieldId(activeField.id);
+                    }
                   }
                 }}
                 style={{ textAlign: "center", flex: 1, padding: "0 8px", cursor: "pointer" }}

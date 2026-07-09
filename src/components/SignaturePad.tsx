@@ -5,9 +5,10 @@ import React, { useRef, useState, useEffect } from "react";
 interface SignaturePadProps {
   onChange: (base64Png: string | null) => void;
   strokeColor?: string;
+  defaultValue?: string | null;
 }
 
-export default function SignaturePad({ onChange, strokeColor = "#000000" }: SignaturePadProps) {
+export default function SignaturePad({ onChange, strokeColor = "#000000", defaultValue }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
@@ -28,7 +29,17 @@ export default function SignaturePad({ onChange, strokeColor = "#000000" }: Sign
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.strokeStyle = strokeColor;
-  }, [strokeColor]);
+
+    // Draw existing signature if editing
+    if (defaultValue) {
+      const img = new Image();
+      img.src = defaultValue;
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, rect.width, rect.height);
+        setHasDrawn(true);
+      };
+    }
+  }, [strokeColor, defaultValue]);
 
   // Redraw when resized (e.g. mobile rotation)
   const handleResize = () => {
