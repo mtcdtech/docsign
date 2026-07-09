@@ -557,28 +557,28 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
         
         {/* Compressed Header and Brand next to logo with Exit triggers */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", paddingBottom: "16px", borderBottom: "1px solid var(--border-color)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px", minWidth: 0, flex: 1 }}>
             {portalLogo && (
               <img
                 src={portalLogo}
                 alt="Logo"
-                style={{ maxHeight: "40px", maxWidth: "150px", objectFit: "contain" }}
+                style={{ maxHeight: "40px", maxWidth: "150px", objectFit: "contain", flexShrink: 0 }}
               />
             )}
-            <div style={{ borderLeft: portalLogo ? "1px solid var(--border-color)" : "none", paddingLeft: portalLogo ? "16px" : 0 }}>
-              <span style={{ fontSize: "11px", color: "var(--primary-color)", fontWeight: "bold", textTransform: "uppercase", display: "block", lineHeight: "1" }}>
+            <div style={{ borderLeft: portalLogo ? "1px solid var(--border-color)" : "none", paddingLeft: portalLogo ? "16px" : 0, minWidth: 0 }}>
+              <span style={{ fontSize: "11px", color: "var(--primary-color)", fontWeight: "bold", textTransform: "uppercase", display: "block", lineHeight: "1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {template.organization.name}
               </span>
-              <h2 style={{ margin: "4px 0 0 0", fontSize: "18px", lineHeight: "1.2" }}>{template.title}</h2>
+              <h2 style={{ margin: "4px 0 0 0", fontSize: "18px", lineHeight: "1.2", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={template.title}>{template.title}</h2>
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center", flexShrink: 0 }}>
             <button
               type="button"
               onClick={toggleTheme}
               className="btn btn-secondary"
-              style={{ width: "36px", height: "36px", borderRadius: "50%", padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
+              style={{ width: "36px", height: "36px", borderRadius: "4px", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, minWidth: "36px" }}
               title="Toggle Theme"
             >
               {theme === "dark" ? (
@@ -596,10 +596,10 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
               type="button"
               onClick={() => window.location.href = "/"}
               className="btn btn-secondary"
-              style={{ padding: "0 16px", height: "36px", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px" }}
+              style={{ width: isMobile ? "36px" : "auto", minWidth: "36px", flexShrink: 0, height: "36px", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "13px", padding: isMobile ? "0" : "0 16px" }}
               title="Exit signing workspace"
             >
-              ✕ Exit
+              {isMobile ? "✕" : "✕ Exit"}
             </button>
           </div>
         </div>
@@ -628,16 +628,39 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                   const originalHeight = dims?.height || 1100;
                   const paddingAdjustment = 34; // scrollbar and card padding
                   const availableWidth = containerWidth - paddingAdjustment;
-                  const scale = (availableWidth > 0 && availableWidth < originalWidth)
+                  let scale = (availableWidth > 0 && availableWidth < originalWidth)
                     ? (availableWidth / originalWidth)
                     : 1;
+
+                  // Check if there is an active focused field on this page
+                  const focusedField = fields.find((f) => (f.instanceId || f.id) === selectedFieldId);
+                  const isFocusedPage = focusedField && focusedField.pdfMapping.page === pageIdx;
+
+                  let leftStyle = "50%";
+                  let transformStyle = `translate(-50%, 0) scale(${scale})`;
+                  let transformOriginStyle = "top center";
+
+                  if (isMobile && isFocusedPage && focusedField) {
+                    const fieldWidth = focusedField.pdfMapping.width || 120;
+                    // Zoom so the field fits the viewport with 24px space on either side (48px total padding)
+                    const targetZoomScale = availableWidth / (fieldWidth + 48);
+                    if (targetZoomScale > scale) {
+                      scale = targetZoomScale;
+                      // Center the field horizontally in the available width
+                      const fieldCenterX = originalWidth * (focusedField.pdfMapping.x / 100) + (fieldWidth / 2);
+                      const translateX = (availableWidth / 2) - (fieldCenterX * scale);
+                      leftStyle = "0";
+                      transformStyle = `translate(${translateX}px, 0) scale(${scale})`;
+                      transformOriginStyle = "top left";
+                    }
+                  }
 
                   return (
                     <div
                       key={pageIdx}
                       style={{
                         width: "100%",
-                        height: scale < 1 ? `${originalHeight * scale}px` : "auto",
+                        height: `${originalHeight * scale}px`,
                         overflow: "hidden",
                         position: "relative",
                         display: "flex",
@@ -651,15 +674,16 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                         style={{
                           position: "absolute",
                           top: 0,
-                          left: "50%",
+                          left: leftStyle,
                           width: `${originalWidth}px`,
                           height: `${originalHeight}px`,
-                          transform: `translate(-50%, 0) scale(${scale})`,
-                          transformOrigin: "top center",
+                          transform: transformStyle,
+                          transformOrigin: transformOriginStyle,
                           border: "1px solid var(--border-color)",
                           borderRadius: "4px",
                           background: "#000",
-                          flexShrink: 0
+                          flexShrink: 0,
+                          transition: "all 0.3s ease-out"
                         }}
                       >
                         <canvas
