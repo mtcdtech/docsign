@@ -24,6 +24,23 @@ export default async function SignPage({ params }: SignPageProps) {
     notFound();
   }
 
+  if (template.isArchived) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "80vh", padding: "20px" }}>
+        <div className="card-glass" style={{ maxWidth: "480px", width: "100%", padding: "40px", textAlign: "center", display: "flex", flexDirection: "column", gap: "20px" }}>
+          <div style={{ fontSize: "48px" }}>📁</div>
+          <h2 style={{ margin: 0, fontSize: "22px", fontWeight: "bold" }}>Template Archived</h2>
+          <p style={{ margin: 0, fontSize: "14px", color: "var(--text-muted)", lineHeight: "1.6" }}>
+            This waiver template has been archived and is no longer accepting public submissions. Please contact the administrator if you believe this is in error.
+          </p>
+          <a href="/" className="btn btn-secondary" style={{ marginTop: "10px" }}>
+            Return Home
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   let portalTitle = "DocSign Portal";
   let portalLogo = "";
   try {

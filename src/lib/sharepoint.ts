@@ -164,3 +164,28 @@ export async function uploadFileToSharepoint(
   const data = await res.json();
   return data.webUrl || "";
 }
+
+// Fetch details for a specific drive item
+export async function getDriveItemDetails(token: string, driveId: string, itemId: string = "root"): Promise<{ id: string; name: string; webUrl: string }> {
+  const url = itemId === "root" || itemId.endsWith("/root")
+    ? `https://graph.microsoft.com/v1.0/drives/${driveId}/root`
+    : `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${itemId}`;
+
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to get drive item details: ${res.statusText}`);
+  }
+
+  const data = await res.json();
+  return {
+    id: data.id,
+    name: data.name,
+    webUrl: data.webUrl,
+  };
+}

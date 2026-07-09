@@ -29,6 +29,7 @@ interface Template {
   sharepointFolderId: string | null;
   sharepointFolderName: string | null;
   organizationId: string;
+  isArchived: boolean;
   createdAt: any;
   organization: Organization;
 }
@@ -51,6 +52,47 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
   const [templates, setTemplates] = useState<Template[]>(initialTemplates);
   const [searchQuery, setSearchQuery] = useState("");
   const [orgSortOrder, setOrgSortOrder] = useState<"asc" | "desc" | null>(null);
+  const [currentTab, setCurrentTab] = useState<"active" | "archived">("active");
+
+  const handleSharePointTagClick = async (folderId: string) => {
+    try {
+      const res = await fetch(`/api/admin/sharepoint/folder-link?folderId=${encodeURIComponent(folderId)}`);
+      const data = await res.json();
+      if (data.ok && data.webUrl) {
+        window.open(data.webUrl, "_blank", "noopener,noreferrer");
+      } else {
+        alert(`Unable to open SharePoint folder: ${data.error || "Unknown error"}`);
+      }
+    } catch (e: any) {
+      console.error("Error launching folder:", e);
+      alert("Error fetching SharePoint folder details.");
+    }
+  };
+
+  const handleToggleArchive = async (tpl: Template) => {
+    try {
+      const nextArchivedState = !tpl.isArchived;
+      const res = await fetch(`/api/admin/templates/${tpl.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ isArchived: nextArchivedState }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setTemplates((prev) =>
+          prev.map((t) => (t.id === tpl.id ? { ...t, isArchived: nextArchivedState } : t))
+        );
+      } else {
+        alert(`Failed to update template status: ${data.error || "Unknown error"}`);
+      }
+    } catch (e: any) {
+      console.error("Error toggling template archive status:", e);
+      alert("Error updating template archive status.");
+    }
+  };
 
   // History Expandable States
   const [activeTemplate, setActiveTemplate] = useState<Template | null>(null);
@@ -143,10 +185,15 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
   };
 
   // Filter templates list
-  const filteredTemplates = templates.filter((t) =>
-    t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.organization.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTemplates = templates.filter((t) => {
+    const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.organization.name.toLowerCase().includes(searchQuery.toLowerCase());
+    if (currentTab === "active") {
+      return matchesSearch && !t.isArchived;
+    } else {
+      return matchesSearch && t.isArchived;
+    }
+  });
 
   // Filter & sort submissions list
   const filteredSubmissions = submissions
@@ -198,6 +245,44 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
         </Link>
       </div>
 
+      {/* Tabs navigation */}
+      <div style={{ display: "flex", borderBottom: "1px solid var(--border-color)", marginBottom: "20px", gap: "8px" }}>
+        <button
+          type="button"
+          onClick={() => setCurrentTab("active")}
+          style={{
+            background: "none",
+            border: "none",
+            borderBottom: currentTab === "active" ? "2px solid var(--primary-color)" : "none",
+            color: currentTab === "active" ? "var(--primary-color)" : "var(--text-muted)",
+            padding: "10px 16px",
+            fontSize: "14px",
+            fontWeight: "bold",
+            cursor: "pointer",
+            transition: "all var(--transition-fast)"
+          }}
+        >
+          Active Templates ({templates.filter(t => !t.isArchived).length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setCurrentTab("archived")}
+          style={{
+            background: "none",
+            border: "none",
+            borderBottom: currentTab === "archived" ? "2px solid var(--primary-color)" : "none",
+            color: currentTab === "archived" ? "var(--primary-color)" : "var(--text-muted)",
+            padding: "10px 16px",
+            fontSize: "14px",
+            fontWeight: "bold",
+            cursor: "pointer",
+            transition: "all var(--transition-fast)"
+          }}
+        >
+          Archived Templates ({templates.filter(t => t.isArchived).length})
+        </button>
+      </div>
+
       {/* Main templates list table */}
       <div className="card-glass" style={{ padding: "0px", overflow: "hidden" }}>
         <div className="table-container" style={{ border: "none", borderRadius: 0 }}>
@@ -229,17 +314,27 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
                         <td style={{ fontWeight: 600, color: "var(--text-main)" }}>{tpl.title}</td>
                         <td>{tpl.organization.name}</td>
                         <td>
-                          <a href={publicUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--primary-color)", textDecoration: "none" }}>
-                            /{tpl.slug}
-                          </a>
+                          {tpl.isArchived ? (
+                            <span style={{ color: "var(--text-muted)", fontStyle: "italic", fontSize: "13px" }}>
+                              Archived (Link Disabled)
+                            </span>
+                          ) : (
+                            <a href={publicUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--primary-color)", textDecoration: "none" }}>
+                              /{tpl.slug}
+                            </a>
+                          )}
                         </td>
                         <td>
                           {tpl.saveSharepoint ? (
                             <span
-                              title={`Folder: ${tpl.sharepointFolderName || "Root"}\nPath ID: ${tpl.sharepointFolderId || "N/A"}`}
-                              style={{ color: "#22c55e", fontSize: "12px", background: "rgba(34, 197, 94, 0.1)", padding: "4px 8px", borderRadius: "4px", cursor: "help" }}
+                              title={`Folder: ${tpl.sharepointFolderName || "Root"}\nClick to open in SharePoint`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (tpl.sharepointFolderId) handleSharePointTagClick(tpl.sharepointFolderId);
+                              }}
+                              style={{ color: "#22c55e", fontSize: "12px", background: "rgba(34, 197, 94, 0.1)", padding: "4px 8px", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}
                             >
-                              Enabled
+                              Enabled 🔗
                             </span>
                           ) : (
                             <span style={{ color: "var(--text-muted)", fontSize: "12px" }}>Disabled</span>
@@ -284,6 +379,14 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
                             <Link href={`/admin/templates/${tpl.id}/edit`} className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "12px", width: "auto" }}>
                               Settings
                             </Link>
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              onClick={() => handleToggleArchive(tpl)}
+                              style={{ padding: "6px 12px", fontSize: "12px", width: "auto", border: "1px dashed var(--border-color)" }}
+                            >
+                              {tpl.isArchived ? "📁 Restore" : "📁 Archive"}
+                            </button>
                           </div>
                         </td>
                       </tr>

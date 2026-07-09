@@ -157,11 +157,22 @@ export default async function AdminDashboard() {
                           <span style={{ color: doc.emailedLeader ? "#22c55e" : "#ef4444" }}>
                             {doc.emailedLeader ? "✓ Leader Email" : "✗ Leader Email"}
                           </span>
-                          {doc.template.saveSharepoint && (
-                            <span style={{ color: doc.sharepointUrl ? "#22c55e" : "#ef4444" }}>
-                              {doc.sharepointUrl ? "✓ SharePoint" : "✗ SharePoint"}
-                            </span>
-                          )}
+                           {doc.template.saveSharepoint && (
+                             doc.sharepointUrl ? (
+                               <a
+                                 href={doc.sharepointUrl}
+                                 target="_blank"
+                                 rel="noopener noreferrer"
+                                 style={{ color: "#22c55e", textDecoration: "none", cursor: "pointer", fontWeight: "bold" }}
+                               >
+                                 ✓ SharePoint 🔗
+                               </a>
+                             ) : (
+                               <span style={{ color: "#ef4444" }}>
+                                 ✗ SharePoint
+                               </span>
+                             )
+                           )}
                         </div>
                       </td>
                       <td style={{ textAlign: "right" }}>

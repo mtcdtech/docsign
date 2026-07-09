@@ -94,6 +94,17 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
 
   const [dateInputTypes, setDateInputTypes] = useState<Record<string, "text" | "date">>({});
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const formatDateString = (value: string): string => {
+    // Strip all non-digits
+    const digits = value.replace(/\D/g, "");
+    if (digits.length <= 4) {
+      return digits;
+    } else if (digits.length <= 6) {
+      return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+    } else {
+      return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`;
+    }
+  };
 
   const getSubmissionDestinations = () => {
     const destinations: string[] = [];
@@ -1024,7 +1035,12 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                   disabled={!isVisible}
                                   readOnly={!isVisible}
                                   tabIndex={isVisible ? tabIdx : -1}
-                                  onChange={(e) => isVisible && handleInputChange(f.id, e.target.value)}
+                                  onChange={(e) => {
+                                    if (isVisible) {
+                                      const formatted = formatDateString(e.target.value);
+                                      handleInputChange(f.id, formatted);
+                                    }
+                                  }}
                                   onFocus={() => handleChecklistItemClick(f.instanceId || f.id)}
                                   onClick={() => handleChecklistItemClick(f.instanceId || f.id)}
                                   onBlur={() => {
@@ -1050,43 +1066,6 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                     boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                   }}
                                 />
-                                {isHighlighted && isVisible && (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                      setDateInputTypes(prev => ({ ...prev, [f.id]: "date" }));
-                                      setTimeout(() => {
-                                        const input = document.getElementById(`field-input-box-${f.instanceId || f.id}`) as HTMLInputElement;
-                                        if (input) {
-                                          if (typeof input.showPicker === "function") {
-                                            input.showPicker();
-                                          } else {
-                                            input.focus();
-                                          }
-                                        }
-                                      }, 50);
-                                    }}
-                                    style={{
-                                      position: "absolute",
-                                      right: val ? "28px" : "4px",
-                                      top: "50%",
-                                      transform: "translateY(-50%)",
-                                      background: "var(--primary-color)",
-                                      border: "none",
-                                      color: "#ffffff",
-                                      fontSize: "10px",
-                                      fontWeight: "bold",
-                                      borderRadius: "4px",
-                                      padding: "2px 6px",
-                                      cursor: "pointer",
-                                      zIndex: 40,
-                                    }}
-                                  >
-                                    📅 Open
-                                  </button>
-                                )}
                                 {val && isVisible && (
                                   <button
                                     type="button"
@@ -1199,7 +1178,12 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                   disabled={!isVisible}
                                   readOnly={!isVisible}
                                   tabIndex={isVisible ? tabIdx : -1}
-                                  onChange={(e) => isVisible && handleInputChange(f.id, e.target.value)}
+                                  onChange={(e) => {
+                                    if (isVisible) {
+                                      const formatted = formatDateString(e.target.value);
+                                      handleInputChange(f.id, formatted);
+                                    }
+                                  }}
                                   onFocus={() => handleChecklistItemClick(f.instanceId || f.id)}
                                   onClick={() => handleChecklistItemClick(f.instanceId || f.id)}
                                   onBlur={() => {
@@ -1225,43 +1209,6 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                     boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                   }}
                                 />
-                                {isHighlighted && isVisible && (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                      setDateInputTypes(prev => ({ ...prev, [f.id]: "date" }));
-                                      setTimeout(() => {
-                                        const input = document.getElementById(`field-input-box-${f.instanceId || f.id}`) as HTMLInputElement;
-                                        if (input) {
-                                          if (typeof input.showPicker === "function") {
-                                            input.showPicker();
-                                          } else {
-                                            input.focus();
-                                          }
-                                        }
-                                      }, 50);
-                                    }}
-                                    style={{
-                                      position: "absolute",
-                                      right: val ? "28px" : "4px",
-                                      top: "50%",
-                                      transform: "translateY(-50%)",
-                                      background: "var(--primary-color)",
-                                      border: "none",
-                                      color: "#ffffff",
-                                      fontSize: "10px",
-                                      fontWeight: "bold",
-                                      borderRadius: "4px",
-                                      padding: "2px 6px",
-                                      cursor: "pointer",
-                                      zIndex: 40,
-                                    }}
-                                  >
-                                    📅 Open
-                                  </button>
-                                )}
                                 {val && isVisible && (
                                   <button
                                     type="button"
