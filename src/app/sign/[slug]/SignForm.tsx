@@ -1057,7 +1057,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                     color: "var(--text-main)",
                                     fontSize: isMobile ? "16px" : "11px",
                                     padding: "2px 6px",
-                                    paddingRight: val ? "24px" : "6px",
+                                    paddingRight: "6px",
                                     borderRadius: "4px",
                                     border: isHighlighted
                                       ? "3px solid #f59e0b"
@@ -1068,37 +1068,6 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                     boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                   }}
                                 />
-                                {val && isVisible && (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                      handleInputChange(f.id, "");
-                                    }}
-                                    style={{
-                                      position: "absolute",
-                                      right: "4px",
-                                      top: "50%",
-                                      transform: "translateY(-50%)",
-                                      background: "var(--bg-card)",
-                                      border: "none",
-                                      color: "#ef4444",
-                                      fontSize: "14px",
-                                      cursor: "pointer",
-                                      padding: "2px 6px",
-                                      zIndex: 30,
-                                      fontWeight: "bold",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                      borderRadius: "50%"
-                                    }}
-                                    title="Reset Date"
-                                  >
-                                    ✕
-                                  </button>
-                                )}
                               </div>
                             );
                           }
@@ -1202,7 +1171,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                     color: "var(--text-main)",
                                     fontSize: isMobile ? "16px" : "11px",
                                     padding: "2px 6px",
-                                    paddingRight: val ? "24px" : "6px",
+                                    paddingRight: "6px",
                                     borderRadius: "4px",
                                     border: isHighlighted
                                       ? "3px solid #f59e0b"
@@ -1213,37 +1182,6 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                     boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                   }}
                                 />
-                                {val && isVisible && (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                      handleInputChange(f.id, "");
-                                    }}
-                                    style={{
-                                      position: "absolute",
-                                      right: "4px",
-                                      top: "50%",
-                                      transform: "translateY(-50%)",
-                                      background: "var(--bg-card)",
-                                      border: "none",
-                                      color: "#ef4444",
-                                      fontSize: "14px",
-                                      cursor: "pointer",
-                                      padding: "2px 6px",
-                                      zIndex: 30,
-                                      fontWeight: "bold",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                      borderRadius: "50%"
-                                    }}
-                                    title="Reset Date"
-                                  >
-                                    ✕
-                                  </button>
-                                )}
                               </div>
                             );
                           }
