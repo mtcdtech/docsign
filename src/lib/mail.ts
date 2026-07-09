@@ -20,6 +20,7 @@ export async function sendEmail({
   // Default fallback user/pass to the Office 365 account from the other app
   const user = process.env.SMTP_USER || "announcements@mtcd.org";
   const pass = process.env.SMTP_PASS || "T#613178294935us";
+  const mailFrom = process.env.SMTP_FROM || "docsign@mtcd.org";
 
   const transporter = nodemailer.createTransport({
     host,
@@ -44,7 +45,7 @@ export async function sendEmail({
   }
 
   const mailOptions = {
-    from: `"DocSign Portal" <${user}>`,
+    from: `"DocSign Portal" <${mailFrom}>`,
     to,
     subject,
     html,

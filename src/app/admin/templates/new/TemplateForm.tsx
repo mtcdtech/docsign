@@ -620,7 +620,7 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
               {selectedDriveId && (
                 <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label">Navigate Folders</label>
-                  <div style={{ padding: "16px", background: "rgba(0,0,0,0.3)", border: "1px solid var(--border-color)", borderRadius: "8px" }}>
+                  <div style={{ padding: "16px", background: "var(--bg-card-hover)", border: "1px solid var(--border-color)", borderRadius: "8px" }}>
                     {/* Breadcrumbs */}
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", fontSize: "12px", marginBottom: "12px", borderBottom: "1px solid var(--border-color)", paddingBottom: "8px" }}>
                       <span onClick={() => navigateBreadcrumb(-1)} style={{ color: "var(--primary-color)", cursor: "pointer" }}>Root</span>
@@ -641,7 +641,7 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
                           <div
                             key={f.id}
                             onClick={() => enterFolder(f)}
-                            style={{ padding: "8px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-color)", borderRadius: "4px", fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center" }}
+                            style={{ padding: "8px 12px", background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "4px", fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center" }}
                           >
                             📁 {f.name}
                           </div>
