@@ -114,7 +114,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
       }
     }
     if (template.saveSharepoint) {
-      destinations.push(`Uploaded to SharePoint Cloud Folder: ${template.sharepointFolderName || "Root Library"}`);
+      destinations.push("Upload to SharePoint Cloud");
     }
     if (destinations.length === 0) {
       destinations.push("Saved securely to the document vault");
@@ -765,8 +765,9 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                             const mapping = f.pdfMapping;
                             const val = isVisible ? (formData[f.id] || "") : (f.conditional?.fallbackValue || "");
                             const isHighlighted = f.id === highlightedFieldId || f.id === selectedFieldId;
+                            const tabIdx = sortedAllFields.findIndex((sf) => sf.id === f.id) + 3;
 
-                          const style: React.CSSProperties = {
+                            const style: React.CSSProperties = {
                             position: "absolute",
                             left: `${mapping.x}%`,
                             top: `${mapping.y}%`,
@@ -777,7 +778,84 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                             transition: "all 0.3s ease",
                           };
 
-                          const tabIdx = sortedAllFields.findIndex((sf) => sf.id === f.id) + 3;
+                          if (isPreviewMode) {
+                            if (f.type === "checkbox") {
+                              const isChecked = val === true || val === "true" || val === "on";
+                              return (
+                                <div
+                                  key={f.instanceId || f.id}
+                                  style={{
+                                    ...style,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontSize: `${mapping.height * 0.8}px`,
+                                    fontWeight: "bold",
+                                    color: "#000000",
+                                    background: "transparent",
+                                    border: "none",
+                                  }}
+                                >
+                                  {isChecked ? "✓" : ""}
+                                </div>
+                              );
+                            }
+
+                            if (f.type === "signature") {
+                              return (
+                                <div
+                                  key={f.instanceId || f.id}
+                                  style={{
+                                    ...style,
+                                    background: "transparent",
+                                    border: "none",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    overflow: "hidden"
+                                  }}
+                                >
+                                  {val ? (
+                                    <img src={val} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                                  ) : (
+                                    <span style={{ fontSize: "10px", color: "var(--text-muted)", fontStyle: "italic" }}>
+                                      Unsigned
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            }
+
+                            let displayVal = val || "";
+                            if (f.type === "signer_name" && !val) {
+                              displayVal = signerName;
+                            } else if (f.type === "signer_email" && !val) {
+                              displayVal = signerEmail;
+                            }
+
+                            return (
+                              <div
+                                key={f.instanceId || f.id}
+                                style={{
+                                  ...style,
+                                  background: "transparent",
+                                  border: "none",
+                                  color: "#000000",
+                                  fontSize: isMobile ? "16px" : "11px",
+                                  padding: "2px 6px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "flex-start",
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  fontWeight: 500
+                                }}
+                              >
+                                {displayVal}
+                              </div>
+                            );
+                          }
 
                           if (f.type === "signature") {
                             if (!isVisible) {
@@ -940,14 +1018,20 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                               <div key={f.instanceId || f.id} style={{ ...style, position: "absolute" }}>
                                 <input
                                   id={`field-input-box-${f.instanceId || f.id}`}
-                                  type="date"
+                                  type={dateInputTypes[f.id] || "text"}
                                   value={val}
+                                  placeholder={isVisible ? (f.required ? `${f.label} (YYYY-MM-DD) *` : `${f.label} (YYYY-MM-DD)`) : ""}
                                   disabled={!isVisible}
                                   readOnly={!isVisible}
                                   tabIndex={isVisible ? tabIdx : -1}
                                   onChange={(e) => isVisible && handleInputChange(f.id, e.target.value)}
                                   onFocus={() => handleChecklistItemClick(f.instanceId || f.id)}
                                   onClick={() => handleChecklistItemClick(f.instanceId || f.id)}
+                                  onBlur={() => {
+                                    setTimeout(() => {
+                                      setDateInputTypes(prev => ({ ...prev, [f.id]: "text" }));
+                                    }, 300);
+                                  }}
                                   style={{
                                     width: "100%",
                                     height: "100%",
@@ -966,6 +1050,43 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                     boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                   }}
                                 />
+                                {isHighlighted && isVisible && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                      setDateInputTypes(prev => ({ ...prev, [f.id]: "date" }));
+                                      setTimeout(() => {
+                                        const input = document.getElementById(`field-input-box-${f.instanceId || f.id}`) as HTMLInputElement;
+                                        if (input) {
+                                          if (typeof input.showPicker === "function") {
+                                            input.showPicker();
+                                          } else {
+                                            input.focus();
+                                          }
+                                        }
+                                      }, 50);
+                                    }}
+                                    style={{
+                                      position: "absolute",
+                                      right: val ? "28px" : "4px",
+                                      top: "50%",
+                                      transform: "translateY(-50%)",
+                                      background: "var(--primary-color)",
+                                      border: "none",
+                                      color: "#ffffff",
+                                      fontSize: "10px",
+                                      fontWeight: "bold",
+                                      borderRadius: "4px",
+                                      padding: "2px 6px",
+                                      cursor: "pointer",
+                                      zIndex: 40,
+                                    }}
+                                  >
+                                    📅 Open
+                                  </button>
+                                )}
                                 {val && isVisible && (
                                   <button
                                     type="button"
@@ -1072,14 +1193,20 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                               <div key={f.instanceId || f.id} style={{ ...style, position: "absolute" }}>
                                 <input
                                   id={`field-input-box-${f.instanceId || f.id}`}
-                                  type="date"
+                                  type={dateInputTypes[f.id] || "text"}
                                   value={val}
+                                  placeholder={isVisible ? (f.required ? `${f.label} (YYYY-MM-DD) *` : `${f.label} (YYYY-MM-DD)`) : ""}
                                   disabled={!isVisible}
                                   readOnly={!isVisible}
                                   tabIndex={isVisible ? tabIdx : -1}
                                   onChange={(e) => isVisible && handleInputChange(f.id, e.target.value)}
                                   onFocus={() => handleChecklistItemClick(f.instanceId || f.id)}
                                   onClick={() => handleChecklistItemClick(f.instanceId || f.id)}
+                                  onBlur={() => {
+                                    setTimeout(() => {
+                                      setDateInputTypes(prev => ({ ...prev, [f.id]: "text" }));
+                                    }, 300);
+                                  }}
                                   style={{
                                     width: "100%",
                                     height: "100%",
@@ -1098,6 +1225,43 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                                     boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                   }}
                                 />
+                                {isHighlighted && isVisible && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                      setDateInputTypes(prev => ({ ...prev, [f.id]: "date" }));
+                                      setTimeout(() => {
+                                        const input = document.getElementById(`field-input-box-${f.instanceId || f.id}`) as HTMLInputElement;
+                                        if (input) {
+                                          if (typeof input.showPicker === "function") {
+                                            input.showPicker();
+                                          } else {
+                                            input.focus();
+                                          }
+                                        }
+                                      }, 50);
+                                    }}
+                                    style={{
+                                      position: "absolute",
+                                      right: val ? "28px" : "4px",
+                                      top: "50%",
+                                      transform: "translateY(-50%)",
+                                      background: "var(--primary-color)",
+                                      border: "none",
+                                      color: "#ffffff",
+                                      fontSize: "10px",
+                                      fontWeight: "bold",
+                                      borderRadius: "4px",
+                                      padding: "2px 6px",
+                                      cursor: "pointer",
+                                      zIndex: 40,
+                                    }}
+                                  >
+                                    📅 Open
+                                  </button>
+                                )}
                                 {val && isVisible && (
                                   <button
                                     type="button"
@@ -1327,6 +1491,41 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                         ))}
                       </div>
                     )}
+                    {/* Contextual Date Picker Button for Desktop Sidebar */}
+                    {(() => {
+                      const selectedField = fields.find((f) => (f.instanceId || f.id) === selectedFieldId);
+                      if (!selectedField || (selectedField.type !== "date" && selectedField.type !== "dob")) return null;
+                      return (
+                        <div style={{ marginTop: "16px", padding: "12px", borderRadius: "6px", background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-color)", display: "flex", flexDirection: "column", gap: "8px" }}>
+                          <div style={{ fontSize: "11px", fontWeight: "bold", color: "var(--primary-color)" }}>
+                            Selected Field: {selectedField.label}
+                          </div>
+                          <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: "1.4" }}>
+                            You can type directly into the date field on the document in YYYY-MM-DD format, or launch the calendar selector below:
+                          </div>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => {
+                              setDateInputTypes(prev => ({ ...prev, [selectedField.id]: "date" }));
+                              setTimeout(() => {
+                                const input = document.getElementById(`field-input-box-${selectedField.instanceId || selectedField.id}`) as HTMLInputElement;
+                                if (input) {
+                                  if (typeof input.showPicker === "function") {
+                                    input.showPicker();
+                                  } else {
+                                    input.focus();
+                                  }
+                                }
+                              }, 50);
+                            }}
+                            style={{ fontSize: "12px", padding: "8px 12px", width: "100%" }}
+                          >
+                            📅 Open Date Picker
+                          </button>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {submitError && (
