@@ -36,6 +36,9 @@ interface SignFormProps {
     fieldsJson: string;
     emailUser: boolean;
     emailLeader: boolean;
+    notificationEmails?: string | null;
+    saveSharepoint?: boolean;
+    sharepointFolderName?: string | null;
     organization: {
       name: string;
     };
@@ -88,6 +91,36 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
   // Mobile layout detection & navigation states
   const [isMobile, setIsMobile] = useState(false);
   const [mobileActiveIdx, setMobileActiveIdx] = useState(0);
+
+  const [dateInputTypes, setDateInputTypes] = useState<Record<string, "text" | "date">>({});
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+
+  const getSubmissionDestinations = () => {
+    const destinations: string[] = [];
+    if (template.emailUser && signerEmail) {
+      destinations.push(`Emailed to you at: ${signerEmail}`);
+    }
+    const customEmailFields = fields.filter(f => f.type === "custom_email" || f.id === "parent_email");
+    customEmailFields.forEach(f => {
+      const val = formData[f.id];
+      if (val && String(val).trim()) {
+        destinations.push(`Emailed to copy recipient (${f.label}): ${val}`);
+      }
+    });
+    if (template.emailLeader) {
+      destinations.push("Emailed to organization leaders");
+      if (template.notificationEmails) {
+        destinations.push(`Additional copy to: ${template.notificationEmails}`);
+      }
+    }
+    if (template.saveSharepoint) {
+      destinations.push(`Uploaded to SharePoint Cloud Folder: ${template.sharepointFolderName || "Root Library"}`);
+    }
+    if (destinations.length === 0) {
+      destinations.push("Saved securely to the document vault");
+    }
+    return destinations;
+  };
 
   // Load progress from browser localStorage if available
   useEffect(() => {
@@ -603,6 +636,26 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
             </button>
           </div>
         </div>
+
+        {/* Preview Mode Alert Banner */}
+        {isPreviewMode && (
+          <div className="card-glass" style={{ padding: "16px 24px", marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderLeft: "4px solid var(--primary-color)", gap: "16px" }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "bold" }}>Document Preview & Verification</h3>
+              <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.4" }}>
+                You are in preview mode. Please review the pre-filled values directly on the document below. If everything is correct, confirm and submit.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setIsPreviewMode(false)}
+              style={{ width: "auto", padding: "8px 16px", fontSize: "13px", fontWeight: "bold", whiteSpace: "nowrap", flexShrink: 0 }}
+            >
+              ← Back to Edit
+            </button>
+          </div>
+        )}
 
         {/* Split screen signing workspace */}
         <div style={{ display: "flex", gap: "32px", alignItems: "stretch", flexWrap: "wrap" }}>
@@ -1123,126 +1176,188 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
 
           {/* Right Side: Signer Form Credentials & Validation checklist */}
           {!isMobile && (
-            <div className="card-glass" style={{ flex: "1", minWidth: "320px", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", maxHeight: "calc(100vh - 160px)", overflowY: "auto" }}>
-              <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                
+            isPreviewMode ? (
+              <div className="card-glass" style={{ flex: "1", minWidth: "320px", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", maxHeight: "calc(100vh - 160px)", overflowY: "auto" }}>
                 <div>
-                  <h3 style={{ margin: 0 }}>1. Signer Information</h3>
-                  <p style={{ margin: "4px 0 0", fontSize: "11px", color: "var(--text-muted)" }}>
-                    Enter your credentials below to authenticate the signature. These will automatically populate your name/email fields on the document.
+                  <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "bold" }}>Document Routing</h3>
+                  <p style={{ margin: "4px 0 0", fontSize: "11px", color: "var(--text-muted)", lineHeight: "1.4" }}>
+                    Please review where this document will be securely routed upon submission:
                   </p>
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label">Full Name *</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      required
-                      value={signerName}
-                      onChange={(e) => setSignerName(e.target.value)}
-                      placeholder="John Doe"
-                      tabIndex={1}
-                    />
-                  </div>
-
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label">Email Address *</label>
-                    <input
-                      type="email"
-                      className="form-input"
-                      required
-                      value={signerEmail}
-                      onChange={(e) => setSignerEmail(e.target.value)}
-                      placeholder="john.doe@example.com"
-                      tabIndex={2}
-                    />
-                  </div>
-                </div>
-
-                {/* Progress Checklist Bar (Only display list if NOT on mobile) */}
-                <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: "20px" }}>
-                  <h3 style={{ margin: 0 }}>2. Document Completion</h3>
-                  <p style={{ margin: "4px 0 0", fontSize: "11px", color: "var(--text-muted)" }}>
-                    Fill in all required fields highlighted directly on the document on the left.
-                  </p>
-                  
-                  <div style={{ marginTop: "12px", padding: "12px", borderRadius: "6px", background: remainingCount > 0 ? "rgba(239, 68, 68, 0.08)" : "rgba(16, 185, 129, 0.08)", border: remainingCount > 0 ? "1px solid rgba(239, 68, 68, 0.2)" : "1px solid rgba(16, 185, 129, 0.2)", fontSize: "13px", fontWeight: "bold", display: "flex", alignItems: "center", gap: "8px" }}>
-                    {remainingCount > 0 ? (
-                      <>
-                        <span style={{ color: "#ef4444" }}>⚠️</span>
-                        <span style={{ color: "var(--text-main)" }}>
-                          {remainingCount} required field(s) remaining
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <span style={{ color: "#10b981" }}>✅</span>
-                        <span style={{ color: "var(--text-main)" }}>
-                          All required fields completed! Ready to sign.
-                        </span>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Clickable checklist of remaining fields (Hidden on mobile screens to save layout space) */}
-                  {!isMobile && remainingCount > 0 && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "16px" }}>
-                      <div style={{ fontSize: "11px", fontWeight: "bold", color: "var(--text-muted)" }}>Remaining Fields Checklist:</div>
-                      {sortedRequiredFields.map((f) => (
-                        <div
-                          key={f.instanceId || f.id}
-                          onClick={() => handleChecklistItemClick(f.instanceId || f.id)}
-                          style={{
-                            background: "rgba(255, 255, 255, 0.03)",
-                            border: "1px solid var(--border-color)",
-                            borderRadius: "6px",
-                            padding: "8px 12px",
-                            fontSize: "12px",
-                            cursor: "pointer",
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            transition: "all var(--transition-fast)"
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = "rgba(255, 255, 255, 0.06)";
-                            e.currentTarget.style.borderColor = "var(--primary-color)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
-                            e.currentTarget.style.borderColor = "var(--border-color)";
-                          }}
-                        >
-                          <span style={{ fontWeight: 600 }}>{f.label}</span>
-                          <span style={{ fontSize: "9px", padding: "2px 6px", borderRadius: "4px", background: "var(--primary-glow)", color: "var(--primary-color)", fontWeight: "bold" }}>
-                            {f.required ? "Required *" : "Optional"}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px", background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-color)", borderRadius: "8px", padding: "16px" }}>
+                  <h4 style={{ margin: 0, fontSize: "12px", fontWeight: "bold", textTransform: "uppercase", color: "var(--primary-color)" }}>
+                    Routing Destinations
+                  </h4>
+                  <ul style={{ margin: "6px 0 0 0", paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "10px", fontSize: "13px", color: "var(--text-main)", lineHeight: "1.4" }}>
+                    {getSubmissionDestinations().map((dest, idx) => (
+                      <li key={idx} style={{ listStyleType: "disc" }}>
+                        {dest}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
                 {submitError && (
-                  <div style={{ color: "#ef4444", fontSize: "13px", fontWeight: "bold", background: "rgba(239, 68, 68, 0.1)", padding: "12px", borderRadius: "6px", border: "1px solid rgba(239, 68, 68, 0.2)", marginTop: "10px" }}>
+                  <div style={{ color: "#ef4444", fontSize: "13px", fontWeight: "bold", background: "rgba(239, 68, 68, 0.1)", padding: "12px", borderRadius: "6px", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
                     ⚠️ {submitError}
                   </div>
                 )}
 
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={isSubmitting}
-                  tabIndex={3 + fields.length}
-                  style={{ width: "100%", padding: "14px", marginTop: "10px" }}
-                >
-                  {isSubmitting ? "Signing & Processing..." : "Sign Document"}
-                </button>
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "12px" }}>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    disabled={isSubmitting}
+                    onClick={() => handleSubmit()}
+                    style={{ width: "100%", padding: "14px", fontWeight: "bold", fontSize: "15px" }}
+                  >
+                    {isSubmitting ? "Submitting Document..." : "Confirm & Submit"}
+                  </button>
 
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    disabled={isSubmitting}
+                    onClick={() => setIsPreviewMode(false)}
+                    style={{ width: "100%", padding: "10px" }}
+                  >
+                    Go Back to Edit
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={(e) => { e.preventDefault(); setIsPreviewMode(true); }} style={{ flex: "1", minWidth: "320px", display: "flex", flexDirection: "column" }}>
+                <div className="card-glass" style={{ width: "100%", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", maxHeight: "calc(100vh - 160px)", overflowY: "auto" }}>
+                  
+                  <div>
+                    <h3 style={{ margin: 0 }}>1. Signer Information</h3>
+                    <p style={{ margin: "4px 0 0", fontSize: "11px", color: "var(--text-muted)" }}>
+                      Enter your credentials below to authenticate the signature. These will automatically populate your name/email fields on the document.
+                    </p>
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Full Name *</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        required
+                        value={signerName}
+                        onChange={(e) => setSignerName(e.target.value)}
+                        placeholder="John Doe"
+                        tabIndex={1}
+                      />
+                    </div>
+
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Email Address *</label>
+                      <input
+                        type="email"
+                        className="form-input"
+                        required
+                        value={signerEmail}
+                        onChange={(e) => setSignerEmail(e.target.value)}
+                        placeholder="john.doe@example.com"
+                        tabIndex={2}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Progress Checklist Bar (Only display list if NOT on mobile) */}
+                  <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: "20px" }}>
+                    <h3 style={{ margin: 0 }}>2. Document Completion</h3>
+                    <p style={{ margin: "4px 0 0", fontSize: "11px", color: "var(--text-muted)" }}>
+                      Fill in all required fields highlighted directly on the document on the left.
+                    </p>
+                    
+                    <div style={{ marginTop: "12px", padding: "12px", borderRadius: "6px", background: remainingCount > 0 ? "rgba(239, 68, 68, 0.08)" : "rgba(16, 185, 129, 0.08)", border: remainingCount > 0 ? "1px solid rgba(239, 68, 68, 0.2)" : "1px solid rgba(16, 185, 129, 0.2)", fontSize: "13px", fontWeight: "bold", display: "flex", alignItems: "center", gap: "8px" }}>
+                      {remainingCount > 0 ? (
+                        <>
+                          <span style={{ color: "#ef4444" }}>⚠️</span>
+                          <span style={{ color: "var(--text-main)" }}>
+                            {remainingCount} required field(s) remaining
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span style={{ color: "#10b981" }}>✅</span>
+                          <span style={{ color: "var(--text-main)" }}>
+                            All required fields completed! Ready to preview.
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Clickable checklist of remaining fields (Hidden on mobile screens to save layout space) */}
+                    {!isMobile && remainingCount > 0 && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "16px" }}>
+                        <div style={{ fontSize: "11px", fontWeight: "bold", color: "var(--text-muted)" }}>Remaining Fields Checklist:</div>
+                        {sortedRequiredFields.map((f) => (
+                          <div
+                            key={f.instanceId || f.id}
+                            onClick={() => handleChecklistItemClick(f.instanceId || f.id)}
+                            style={{
+                              background: "rgba(255, 255, 255, 0.03)",
+                              border: "1px solid var(--border-color)",
+                              borderRadius: "6px",
+                              padding: "8px 12px",
+                              fontSize: "12px",
+                              cursor: "pointer",
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              transition: "all var(--transition-fast)"
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = "rgba(255, 255, 255, 0.06)";
+                              e.currentTarget.style.borderColor = "var(--primary-color)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
+                              e.currentTarget.style.borderColor = "var(--border-color)";
+                            }}
+                          >
+                            <span style={{ fontWeight: 600 }}>{f.label}</span>
+                            <span style={{ fontSize: "9px", padding: "2px 6px", borderRadius: "4px", background: "var(--primary-glow)", color: "var(--primary-color)", fontWeight: "bold" }}>
+                              {f.required ? "Required *" : "Optional"}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {submitError && (
+                    <div style={{ color: "#ef4444", fontSize: "13px", fontWeight: "bold", background: "rgba(239, 68, 68, 0.1)", padding: "12px", borderRadius: "6px", border: "1px solid rgba(239, 68, 68, 0.2)", marginTop: "10px" }}>
+                      ⚠️ {submitError}
+                    </div>
+                  )}
+
+                  {remainingCount > 0 ? (
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      disabled
+                      style={{ width: "100%", padding: "14px", marginTop: "10px", opacity: 0.6, cursor: "not-allowed" }}
+                    >
+                      Fill Required Fields to Preview
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      tabIndex={3 + fields.length}
+                      style={{ width: "100%", padding: "14px", marginTop: "10px", fontWeight: "bold" }}
+                    >
+                      Preview Document
+                    </button>
+                  )}
+
+                </div>
               </form>
-            </div>
+            )
           )}
 
         </div>
