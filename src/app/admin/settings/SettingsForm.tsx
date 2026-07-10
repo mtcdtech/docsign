@@ -87,6 +87,10 @@ export default function SettingsForm({
   const [userSortBy, setUserSortBy] = useState<"name" | "email" | "role">("name");
   const [userSortOrder, setUserSortOrder] = useState<"asc" | "desc">("asc");
 
+  // User directory navigation and collapse states
+  const [collapsedDepts, setCollapsedDepts] = useState<Record<string, boolean>>({});
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+
   const handleUserSort = (field: "name" | "email" | "role") => {
     if (userSortBy === field) {
       setUserSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -733,112 +737,266 @@ export default function SettingsForm({
               <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
                 No users in directory. Click "Sync Directory" to fetch from central registry.
               </div>
-            ) : (
-              Object.entries(usersByDept)
-                .sort(([a], [b]) => a.localeCompare(b))
-                .map(([dept, deptUsers]) => {
-                  const sortedDeptUsers = getSortedUsers(deptUsers);
-                  return (
-                    <div key={dept} style={{ marginBottom: "32px", border: "1px solid var(--border-color)", borderRadius: "8px", padding: "16px", background: "rgba(255,255,255,0.01)" }}>
-                      <h3 style={{ margin: "0 0 16px 0", paddingBottom: "8px", borderBottom: "1px solid var(--border-color)", color: "var(--primary-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span>📁 {dept}</span>
-                        <span style={{ fontSize: "12px", background: "rgba(255,255,255,0.05)", padding: "2px 8px", borderRadius: "10px", color: "var(--text-muted)" }}>
-                          {deptUsers.length} {deptUsers.length === 1 ? "User" : "Users"}
+            ) : (() => {
+              const sortedDepts = Object.entries(usersByDept)
+                .sort(([a], [b]) => a.localeCompare(b));
+
+              // Helper function to create DOM element IDs safely
+              const getDeptId = (name: string) => `dept-section-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+
+              // Helper function to handle scrolling to department
+              const scrollToDept = (deptName: string) => {
+                // Ensure the department is expanded
+                setCollapsedDepts(prev => ({ ...prev, [deptName]: false }));
+                setIsMobileDrawerOpen(false);
+
+                // Scroll to target element
+                setTimeout(() => {
+                  const el = document.getElementById(getDeptId(deptName));
+                  if (el) {
+                    el.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }
+                }, 100);
+              };
+
+              // Side navigation lists JSX component
+              const renderNavLinks = () => (
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: "bold", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", padding: "0 4px 8px 4px", borderBottom: "1px solid var(--border-color)", marginBottom: "8px" }}>
+                    Departments
+                  </span>
+                  {sortedDepts.map(([dept, deptUsers]) => {
+                    const isCollapsed = !!collapsedDepts[dept];
+                    return (
+                      <div
+                        key={`nav-${dept}`}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "8px 10px",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          transition: "all var(--transition-fast)",
+                          background: "transparent",
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                        onClick={() => scrollToDept(dept)}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "calc(100% - 30px)" }}>
+                          <span style={{ fontSize: "14px", color: isCollapsed ? "var(--text-muted)" : "var(--primary-color)" }}>
+                            {isCollapsed ? "📁" : "📂"}
+                          </span>
+                          <span style={{ fontSize: "13px", color: isCollapsed ? "var(--text-muted)" : "var(--text-main)", fontWeight: isCollapsed ? "400" : "600", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {dept}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: "11px", background: "rgba(255,255,255,0.06)", padding: "2px 6px", borderRadius: "10px", color: "var(--text-muted)", flexShrink: 0 }}>
+                          {deptUsers.length}
                         </span>
-                      </h3>
-                      <div style={{ overflowX: "auto" }}>
-                        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px" }}>
-                          <thead>
-                            <tr style={{ borderBottom: "1px solid var(--border-color)", color: "var(--text-muted)" }}>
-                              <th style={{ padding: "12px 8px", cursor: "pointer", userSelect: "none" }} onClick={() => handleUserSort("name")}>
-                                Name {userSortBy === "name" ? (userSortOrder === "asc" ? " ▲" : " ▼") : " ↕"}
-                              </th>
-                              <th style={{ padding: "12px 8px", cursor: "pointer", userSelect: "none" }} onClick={() => handleUserSort("email")}>
-                                Email {userSortBy === "email" ? (userSortOrder === "asc" ? " ▲" : " ▼") : " ↕"}
-                              </th>
-                              <th style={{ padding: "12px 8px" }}>Organizations</th>
-                              <th style={{ padding: "12px 8px", cursor: "pointer", userSelect: "none" }} onClick={() => handleUserSort("role")}>
-                                Assigned Role {userSortBy === "role" ? (userSortOrder === "asc" ? " ▲" : " ▼") : " ↕"}
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {sortedDeptUsers.map((u) => (
-                              <tr
-                                key={u.id}
-                                style={{
-                                  borderBottom: "1px solid rgba(255, 255, 255, 0.03)",
-                                  transition: "background var(--transition-fast)",
-                                }}
-                                onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.015)")}
-                                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                              >
-                                <td style={{ padding: "12px 8px", fontWeight: "500" }}>{u.name || "—"}</td>
-                                <td style={{ padding: "12px 8px", fontFamily: "monospace", color: "var(--text-muted)" }}>
-                                  {u.email}
-                                </td>
-                                <td style={{ padding: "12px 8px" }}>
-                                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                                    {u.organizations.length === 0 ? (
-                                      <span style={{ fontSize: "12px", padding: "2px 8px", background: "rgba(255,255,255,0.05)", borderRadius: "4px", color: "var(--text-muted)" }}>
-                                        General Access
-                                      </span>
-                                    ) : (
-                                      u.organizations.map((org) => (
-                                        <span
-                                          key={org.id}
-                                          style={{
-                                            fontSize: "12px",
-                                            padding: "2px 8px",
-                                            background: "rgba(79, 70, 229, 0.1)",
-                                            border: "1px solid rgba(79, 70, 229, 0.2)",
-                                            color: "var(--primary-color)",
-                                            borderRadius: "4px",
-                                          }}
-                                        >
-                                          {org.name}
-                                        </span>
-                                      ))
-                                    )}
-                                  </div>
-                                </td>
-                                <td style={{ padding: "12px 8px" }}>
-                                  <span
-                                    style={{
-                                      fontSize: "12px",
-                                      padding: "3px 8px",
-                                      borderRadius: "4px",
-                                      fontWeight: "600",
-                                      background:
-                                        u.role === "Admin"
-                                          ? "rgba(239, 68, 68, 0.15)"
-                                          : u.role === "OrgLeader"
-                                          ? "rgba(234, 179, 8, 0.15)"
-                                          : "rgba(255, 255, 255, 0.05)",
-                                      color:
-                                        u.role === "Admin"
-                                          ? "#f87171"
-                                          : u.role === "OrgLeader"
-                                          ? "#facc15"
-                                          : "var(--text-main)",
-                                    }}
-                                  >
-                                    {u.role}
-                                  </span>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+
+              return (
+                <div>
+                  {/* Mobile Hamburger Button */}
+                  <button
+                    type="button"
+                    className="directory-mobile-hamburger-btn"
+                    onClick={() => setIsMobileDrawerOpen(true)}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="3" y1="12" x2="21" y2="12" />
+                      <line x1="3" y1="6" x2="21" y2="6" />
+                      <line x1="3" y1="18" x2="21" y2="18" />
+                    </svg>
+                    <span>Departments ({sortedDepts.length})</span>
+                  </button>
+
+                  {/* Mobile Slide-out Drawer */}
+                  {isMobileDrawerOpen && (
+                    <div className="drawer-backdrop" onClick={() => setIsMobileDrawerOpen(false)}>
+                      <div className="drawer-panel" onClick={(e) => e.stopPropagation()}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-color)", paddingBottom: "12px", marginBottom: "12px" }}>
+                          <h3 style={{ fontSize: "16px", fontWeight: "bold", margin: 0 }}>Directory Menu</h3>
+                          <button
+                            type="button"
+                            onClick={() => setIsMobileDrawerOpen(false)}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              color: "var(--text-muted)",
+                              fontSize: "18px",
+                              cursor: "pointer",
+                              padding: "4px 8px"
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <div style={{ flex: 1, overflowY: "auto" }}>
+                          {renderNavLinks()}
+                        </div>
                       </div>
                     </div>
-                  );
-                })
-            )}
+                  )}
+
+                  <div className="directory-layout">
+                    {/* Desktop Sidebar Navigation */}
+                    <div className="directory-sidebar">
+                      {renderNavLinks()}
+                    </div>
+
+                    {/* Directory Main List Content */}
+                    <div className="directory-content">
+                      {sortedDepts.map(([dept, deptUsers]) => {
+                        const sortedDeptUsers = getSortedUsers(deptUsers);
+                        const isCollapsed = !!collapsedDepts[dept];
+                        const cleanId = getDeptId(dept);
+
+                        return (
+                          <div
+                            key={dept}
+                            id={cleanId}
+                            style={{
+                              marginBottom: "32px",
+                              border: "1px solid var(--border-color)",
+                              borderRadius: "8px",
+                              padding: "16px",
+                              background: "rgba(255,255,255,0.01)",
+                              transition: "all 0.3s ease"
+                            }}
+                          >
+                            {/* Collapsible Header */}
+                            <h3
+                              onClick={() => setCollapsedDepts(prev => ({ ...prev, [dept]: !prev[dept] }))}
+                              style={{
+                                margin: 0,
+                                paddingBottom: "12px",
+                                borderBottom: isCollapsed ? "none" : "1px solid var(--border-color)",
+                                color: "var(--primary-color)",
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                cursor: "pointer",
+                                userSelect: "none"
+                              }}
+                            >
+                              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                <span style={{ transition: "transform 0.2s ease", transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)", display: "inline-block" }}>
+                                  ▼
+                                </span>
+                                <span>📁 {dept}</span>
+                              </div>
+                              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                <span style={{ fontSize: "12px", background: "rgba(255,255,255,0.05)", padding: "2px 8px", borderRadius: "10px", color: "var(--text-muted)" }}>
+                                  {deptUsers.length} {deptUsers.length === 1 ? "User" : "Users"}
+                                </span>
+                                <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                                  {isCollapsed ? "Click to Expand" : "Click to Collapse"}
+                                </span>
+                              </div>
+                            </h3>
+
+                            {/* Collapsible Table Content */}
+                            {!isCollapsed && (
+                              <div style={{ overflowX: "auto", marginTop: "16px", animation: "fadeIn 0.25s ease-out" }}>
+                                <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px" }}>
+                                  <thead>
+                                    <tr style={{ borderBottom: "1px solid var(--border-color)", color: "var(--text-muted)" }}>
+                                      <th style={{ padding: "12px 8px", cursor: "pointer", userSelect: "none" }} onClick={() => handleUserSort("name")}>
+                                        Name {userSortBy === "name" ? (userSortOrder === "asc" ? " ▲" : " ▼") : " ↕"}
+                                      </th>
+                                      <th style={{ padding: "12px 8px", cursor: "pointer", userSelect: "none" }} onClick={() => handleUserSort("email")}>
+                                        Email {userSortBy === "email" ? (userSortOrder === "asc" ? " ▲" : " ▼") : " ↕"}
+                                      </th>
+                                      <th style={{ padding: "12px 8px" }}>Organizations</th>
+                                      <th style={{ padding: "12px 8px", cursor: "pointer", userSelect: "none" }} onClick={() => handleUserSort("role")}>
+                                        Assigned Role {userSortBy === "role" ? (userSortOrder === "asc" ? " ▲" : " ▼") : " ↕"}
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {sortedDeptUsers.map((u) => (
+                                      <tr
+                                        key={u.id}
+                                        style={{
+                                          borderBottom: "1px solid rgba(255, 255, 255, 0.03)",
+                                          transition: "background var(--transition-fast)",
+                                        }}
+                                        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.015)")}
+                                        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                                      >
+                                        <td style={{ padding: "12px 8px", fontWeight: "500" }}>{u.name || "—"}</td>
+                                        <td style={{ padding: "12px 8px", fontFamily: "monospace", color: "var(--text-muted)" }}>
+                                          {u.email}
+                                        </td>
+                                        <td style={{ padding: "12px 8px" }}>
+                                          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                                            {u.organizations.length === 0 ? (
+                                              <span style={{ fontSize: "11px", color: "var(--text-muted)", fontStyle: "italic" }}>None</span>
+                                            ) : (
+                                              u.organizations.map((org: any) => (
+                                                <span
+                                                  key={org.id}
+                                                  style={{
+                                                    fontSize: "11px",
+                                                    background: "rgba(255, 255, 255, 0.04)",
+                                                    padding: "2px 6px",
+                                                    borderRadius: "4px",
+                                                  }}
+                                                >
+                                                  {org.name}
+                                                </span>
+                                              ))
+                                            )}
+                                          </div>
+                                        </td>
+                                        <td style={{ padding: "12px 8px" }}>
+                                          <span
+                                            style={{
+                                              fontSize: "12px",
+                                              padding: "3px 8px",
+                                              borderRadius: "4px",
+                                              fontWeight: "600",
+                                              background:
+                                                u.role === "Admin"
+                                                  ? "rgba(239, 68, 68, 0.15)"
+                                                  : u.role === "OrgLeader"
+                                                  ? "rgba(234, 179, 8, 0.15)"
+                                                  : "rgba(255, 255, 255, 0.05)",
+                                              color:
+                                                u.role === "Admin"
+                                                  ? "#f87171"
+                                                  : u.role === "OrgLeader"
+                                                  ? "#facc15"
+                                                  : "var(--text-main)",
+                                            }}
+                                          >
+                                            {u.role}
+                                          </span>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         );
       })()}
-
       {activeTab === "audit" && (
         <div className="card-glass">
           <h2 style={{ marginBottom: "8px" }}>Login Audit History</h2>
