@@ -67,7 +67,8 @@ export async function POST(req: Request) {
             if (!u.email) continue;
             const emailLower = u.email.toLowerCase();
             const depts = (u.department || "").split(" / ").map((d: string) => d.trim()).filter(Boolean);
-            const orgsToConnect = currentOrgs.filter(org => depts.includes(org.name));
+            const deptsLower = depts.map(d => d.toLowerCase());
+            const orgsToConnect = currentOrgs.filter(org => deptsLower.includes(org.name.trim().toLowerCase()));
 
             const existing = await prisma.user.findUnique({ where: { email: emailLower } });
             let dbUser;

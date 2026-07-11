@@ -30,6 +30,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "Missing required fields." }, { status: 400 });
     }
 
+    // Verify template creation permissions for non-Admin users (OrgLeaders must belong to target org)
+    const user = session.user as any;
+    if (user.role !== "Admin") {
+      if (user.role !== "OrgLeader") {
+        return new NextResponse("Forbidden", { status: 403 });
+      }
+      
+      const isLeader = await prisma.organization.findFirst({
+        where: {
+          id: organizationId,
+          users: { some: { id: user.id } }
+        }
+      });
+      if (!isLeader) {
+        return new NextResponse("Forbidden", { status: 403 });
+      }
+    }
+
     const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
 
     // Verify slug uniqueness

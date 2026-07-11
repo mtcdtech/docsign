@@ -125,10 +125,11 @@ export const authOptions: NextAuthOptions = {
         }
         
         // Sync organization links
-        const depts = (extractedDept || "").split(" / ");
+        const depts = (extractedDept || "").split(" / ").map((d: string) => d.trim()).filter(Boolean);
         if (depts.length > 0) {
+          const deptsLower = depts.map(d => d.toLowerCase());
           const syncedOrgs = await prisma.organization.findMany();
-          const orgsToConnect = syncedOrgs.filter(org => depts.includes(org.name));
+          const orgsToConnect = syncedOrgs.filter(org => deptsLower.includes(org.name.trim().toLowerCase()));
           if (orgsToConnect.length > 0) {
              dbUser = await prisma.user.update({
                 where: { id: dbUser.id },
