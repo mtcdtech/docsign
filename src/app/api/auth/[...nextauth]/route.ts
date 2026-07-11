@@ -198,6 +198,7 @@ export const authOptions: NextAuthOptions = {
                             token.name = impUser.name;
                             token.department = impUser.department;
                             token.impersonatedUserId = impUser.id;
+                            token.sub = impUser.id;
                         } else {
                             // Target user not found, clear impersonation
                             await prisma.user.update({
@@ -209,6 +210,7 @@ export const authOptions: NextAuthOptions = {
                             token.name = dbUser.name;
                             token.department = dbUser.department;
                             token.impersonatedUserId = null;
+                            token.sub = dbUser.id;
                         }
                     } else {
                         // Standard session data
@@ -217,6 +219,7 @@ export const authOptions: NextAuthOptions = {
                         token.name = dbUser.name;
                         token.department = dbUser.department;
                         token.impersonatedUserId = null;
+                        token.sub = dbUser.id;
                     }
                 }
             } catch (e) {
