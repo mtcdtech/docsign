@@ -56,8 +56,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       if (template.sharepointFolderId && template.sharepointFolderId.trim() !== "") {
         try {
           const token = await getMsGraphToken();
-          const driveId = template.sharepointFolderId.split("/")[0] || "root";
-          const folderId = template.sharepointFolderId.split("/")[1] || "root";
+          const parts = template.sharepointFolderId.split("/");
+          const driveId = parts[0] || "root";
+          const folderId = parts.slice(1).join("/") || "root";
           
           sharepointUrl = await uploadFileToSharepoint(
             token,

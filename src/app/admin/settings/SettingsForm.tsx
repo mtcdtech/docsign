@@ -13,6 +13,7 @@ interface User {
   email: string;
   name: string | null;
   role: string;
+  roleOverride?: boolean;
   department: string | null;
   organizations: Organization[];
 }
@@ -90,6 +91,114 @@ export default function SettingsForm({
   // User directory navigation and collapse states
   const [collapsedDepts, setCollapsedDepts] = useState<Record<string, boolean>>({});
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+
+  // Local state for interactive users list
+  const [usersList, setUsersList] = useState<User[]>(initialUsers);
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    setUsersList(initialUsers);
+  }, [initialUsers]);
+
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    setUpdatingUserId(userId);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: newRole, roleOverride: true })
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setUsersList(prev => prev.map(u => u.id === userId ? { ...u, role: newRole, roleOverride: true } : u));
+        router.refresh();
+      } else {
+        alert(`Failed to update user role: ${data.error || "Unknown error"}`);
+      }
+    } catch (e: any) {
+      console.error("Failed to update user role manually:", e);
+      alert("Error updating user role.");
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const handleResetOverride = async (userId: string) => {
+    setUpdatingUserId(userId);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roleOverride: false })
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setUsersList(prev => prev.map(u => u.id === userId ? { ...u, roleOverride: false } : u));
+        router.refresh();
+      } else {
+        alert(`Failed to clear manual override: ${data.error || "Unknown error"}`);
+      }
+    } catch (e: any) {
+      console.error("Failed to reset manual override:", e);
+      alert("Error resetting manual override.");
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  const triggerDeleteConfirm = (userId: string) => {
+    setDeleteConfirmId(userId);
+    // Reset after 5 seconds if not confirmed
+    setTimeout(() => {
+      setDeleteConfirmId(prev => prev === userId ? null : prev);
+    }, 5000);
+  };
+
+  const handleImpersonate = async (userId: string) => {
+    setUpdatingUserId(userId);
+    try {
+      const res = await fetch("/api/admin/impersonate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId })
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        window.location.reload();
+      } else {
+        alert(`Failed to impersonate user: ${data.error || "Unknown error"}`);
+      }
+    } catch (e: any) {
+      console.error(e);
+      alert("Error starting impersonation.");
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    setUpdatingUserId(userId);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: "DELETE"
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setUsersList(prev => prev.filter(u => u.id !== userId));
+        router.refresh();
+      } else {
+        alert(`Failed to delete user: ${data.error || "Unknown error"}`);
+      }
+    } catch (e: any) {
+      console.error(e);
+      alert("Error deleting user.");
+    } finally {
+      setUpdatingUserId(null);
+      setDeleteConfirmId(null);
+    }
+  };
 
   const handleUserSort = (field: "name" | "email" | "role") => {
     if (userSortBy === field) {
@@ -661,7 +770,7 @@ export default function SettingsForm({
 
       {activeTab === "users" && (() => {
         // Group users by department
-        const usersByDept = initialUsers.reduce((acc, user) => {
+        const usersByDept = usersList.reduce((acc, user) => {
           const dept = user.department?.trim() || "Unassigned Department";
           if (!acc[dept]) {
             acc[dept] = [];
@@ -733,7 +842,7 @@ export default function SettingsForm({
               </div>
             )}
 
-            {initialUsers.length === 0 ? (
+            {usersList.length === 0 ? (
               <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
                 No users in directory. Click "Sync Directory" to fetch from central registry.
               </div>
@@ -906,83 +1015,174 @@ export default function SettingsForm({
                             {!isCollapsed && (
                               <div style={{ overflowX: "auto", marginTop: "16px", animation: "fadeIn 0.25s ease-out" }}>
                                 <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px" }}>
-                                  <thead>
-                                    <tr style={{ borderBottom: "1px solid var(--border-color)", color: "var(--text-muted)" }}>
-                                      <th style={{ padding: "12px 8px", cursor: "pointer", userSelect: "none" }} onClick={() => handleUserSort("name")}>
-                                        Name {userSortBy === "name" ? (userSortOrder === "asc" ? " ▲" : " ▼") : " ↕"}
-                                      </th>
-                                      <th style={{ padding: "12px 8px", cursor: "pointer", userSelect: "none" }} onClick={() => handleUserSort("email")}>
-                                        Email {userSortBy === "email" ? (userSortOrder === "asc" ? " ▲" : " ▼") : " ↕"}
-                                      </th>
-                                      <th style={{ padding: "12px 8px" }}>Organizations</th>
-                                      <th style={{ padding: "12px 8px", cursor: "pointer", userSelect: "none" }} onClick={() => handleUserSort("role")}>
-                                        Assigned Role {userSortBy === "role" ? (userSortOrder === "asc" ? " ▲" : " ▼") : " ↕"}
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {sortedDeptUsers.map((u) => (
-                                      <tr
-                                        key={u.id}
-                                        style={{
-                                          borderBottom: "1px solid rgba(255, 255, 255, 0.03)",
-                                          transition: "background var(--transition-fast)",
-                                        }}
-                                        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.015)")}
-                                        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                                      >
-                                        <td style={{ padding: "12px 8px", fontWeight: "500" }}>{u.name || "—"}</td>
-                                        <td style={{ padding: "12px 8px", fontFamily: "monospace", color: "var(--text-muted)" }}>
-                                          {u.email}
-                                        </td>
-                                        <td style={{ padding: "12px 8px" }}>
-                                          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                                            {u.organizations.length === 0 ? (
-                                              <span style={{ fontSize: "11px", color: "var(--text-muted)", fontStyle: "italic" }}>None</span>
+                                    <thead>
+                                      <tr style={{ borderBottom: "1px solid var(--border-color)", color: "var(--text-muted)" }}>
+                                        <th style={{ padding: "12px 8px", cursor: "pointer", userSelect: "none" }} onClick={() => handleUserSort("name")}>
+                                          Name {userSortBy === "name" ? (userSortOrder === "asc" ? " ▲" : " ▼") : " ↕"}
+                                        </th>
+                                        <th style={{ padding: "12px 8px", cursor: "pointer", userSelect: "none" }} onClick={() => handleUserSort("email")}>
+                                          Email {userSortBy === "email" ? (userSortOrder === "asc" ? " ▲" : " ▼") : " ↕"}
+                                        </th>
+                                        <th style={{ padding: "12px 8px" }}>Organizations</th>
+                                        <th style={{ padding: "12px 8px", cursor: "pointer", userSelect: "none" }} onClick={() => handleUserSort("role")}>
+                                          Assigned Role {userSortBy === "role" ? (userSortOrder === "asc" ? " ▲" : " ▼") : " ↕"}
+                                        </th>
+                                        <th style={{ padding: "12px 8px" }}>Override Status</th>
+                                        <th style={{ padding: "12px 8px", textAlign: "right" }}>Actions</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {sortedDeptUsers.map((u) => (
+                                        <tr
+                                          key={u.id}
+                                          style={{
+                                            borderBottom: "1px solid rgba(255, 255, 255, 0.03)",
+                                            transition: "background var(--transition-fast)",
+                                          }}
+                                          onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.015)")}
+                                          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                                        >
+                                          <td style={{ padding: "12px 8px", fontWeight: "500" }}>{u.name || "—"}</td>
+                                          <td style={{ padding: "12px 8px", fontFamily: "monospace", color: "var(--text-muted)" }}>
+                                            {u.email}
+                                          </td>
+                                          <td style={{ padding: "12px 8px" }}>
+                                            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                                              {u.organizations.length === 0 ? (
+                                                <span style={{ fontSize: "11px", color: "var(--text-muted)", fontStyle: "italic" }}>None</span>
+                                              ) : (
+                                                u.organizations.map((org: any) => (
+                                                  <span
+                                                    key={org.id}
+                                                    style={{
+                                                      fontSize: "11px",
+                                                      background: "rgba(255, 255, 255, 0.04)",
+                                                      padding: "2px 6px",
+                                                      borderRadius: "4px",
+                                                    }}
+                                                  >
+                                                    {org.name}
+                                                  </span>
+                                                ))
+                                              )}
+                                            </div>
+                                          </td>
+                                          <td style={{ padding: "12px 8px" }}>
+                                            <select
+                                              value={u.role}
+                                              disabled={updatingUserId === u.id}
+                                              onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                                              style={{
+                                                background: "rgba(255, 255, 255, 0.05)",
+                                                border: "1px solid rgba(255, 255, 255, 0.1)",
+                                                borderRadius: "4px",
+                                                color: u.role === "Admin" ? "#f87171" : u.role === "OrgLeader" ? "#facc15" : "var(--text-main)",
+                                                padding: "4px 8px",
+                                                fontSize: "13px",
+                                                cursor: "pointer",
+                                                outline: "none",
+                                                fontWeight: "600",
+                                              }}
+                                            >
+                                              <option value="Admin" style={{ background: "#1e1e2e", color: "#f87171" }}>Admin</option>
+                                              <option value="OrgLeader" style={{ background: "#1e1e2e", color: "#facc15" }}>OrgLeader</option>
+                                              <option value="User" style={{ background: "#1e1e2e", color: "var(--text-main)" }}>User</option>
+                                            </select>
+                                          </td>
+                                          <td style={{ padding: "12px 8px" }}>
+                                            {u.roleOverride ? (
+                                              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                                <span style={{ fontSize: "11px", background: "rgba(59, 130, 246, 0.15)", color: "#60a5fa", padding: "2px 6px", borderRadius: "4px", fontWeight: "bold" }}>
+                                                  Manual
+                                                </span>
+                                                <button
+                                                  disabled={updatingUserId === u.id}
+                                                  onClick={() => handleResetOverride(u.id)}
+                                                  className="btn btn-secondary"
+                                                  style={{ padding: "2px 6px", fontSize: "11px", width: "auto" }}
+                                                >
+                                                  Reset
+                                                </button>
+                                              </div>
                                             ) : (
-                                              u.organizations.map((org: any) => (
-                                                <span
-                                                  key={org.id}
+                                              <span style={{ fontSize: "11px", color: "var(--text-muted)", fontStyle: "italic" }}>
+                                                Auto (SSO)
+                                              </span>
+                                            )}
+                                          </td>
+                                          <td style={{ padding: "12px 8px", textAlign: "right" }}>
+                                            <div style={{ display: "inline-flex", gap: "8px", alignItems: "center", justifyContent: "flex-end" }}>
+                                              <button
+                                                disabled={updatingUserId === u.id || u.role === "Admin"}
+                                                onClick={() => handleImpersonate(u.id)}
+                                                className="btn btn-secondary"
+                                                style={{
+                                                  padding: "4px 8px",
+                                                  fontSize: "12px",
+                                                  borderRadius: "4px",
+                                                  width: "auto",
+                                                  background: "rgba(139, 92, 246, 0.1)",
+                                                  color: "#a78bfa",
+                                                  border: "1px solid rgba(139, 92, 246, 0.2)",
+                                                }}
+                                              >
+                                                👁 Impersonate
+                                              </button>
+
+                                              {deleteConfirmId === u.id ? (
+                                                <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                                                  <button
+                                                    onClick={() => handleDeleteUser(u.id)}
+                                                    disabled={updatingUserId === u.id}
+                                                    className="btn"
+                                                    style={{
+                                                      padding: "4px 8px",
+                                                      fontSize: "12px",
+                                                      borderRadius: "4px",
+                                                      width: "auto",
+                                                      background: "#ef4444",
+                                                      color: "#ffffff",
+                                                      border: "none",
+                                                    }}
+                                                  >
+                                                    Confirm
+                                                  </button>
+                                                  <button
+                                                    onClick={() => setDeleteConfirmId(null)}
+                                                    className="btn btn-secondary"
+                                                    style={{
+                                                      padding: "4px 8px",
+                                                      fontSize: "12px",
+                                                      borderRadius: "4px",
+                                                      width: "auto",
+                                                    }}
+                                                  >
+                                                    Cancel
+                                                  </button>
+                                                </div>
+                                              ) : (
+                                                <button
+                                                  disabled={updatingUserId === u.id || u.role === "Admin"}
+                                                  onClick={() => triggerDeleteConfirm(u.id)}
+                                                  className="btn"
                                                   style={{
-                                                    fontSize: "11px",
-                                                    background: "rgba(255, 255, 255, 0.04)",
-                                                    padding: "2px 6px",
+                                                    padding: "4px 8px",
+                                                    fontSize: "12px",
                                                     borderRadius: "4px",
+                                                    width: "auto",
+                                                    background: "rgba(239, 68, 68, 0.1)",
+                                                    color: "#f87171",
+                                                    border: "1px solid rgba(239, 68, 68, 0.2)",
                                                   }}
                                                 >
-                                                  {org.name}
-                                                </span>
-                                              ))
-                                            )}
-                                          </div>
-                                        </td>
-                                        <td style={{ padding: "12px 8px" }}>
-                                          <span
-                                            style={{
-                                              fontSize: "12px",
-                                              padding: "3px 8px",
-                                              borderRadius: "4px",
-                                              fontWeight: "600",
-                                              background:
-                                                u.role === "Admin"
-                                                  ? "rgba(239, 68, 68, 0.15)"
-                                                  : u.role === "OrgLeader"
-                                                  ? "rgba(234, 179, 8, 0.15)"
-                                                  : "rgba(255, 255, 255, 0.05)",
-                                              color:
-                                                u.role === "Admin"
-                                                  ? "#f87171"
-                                                  : u.role === "OrgLeader"
-                                                  ? "#facc15"
-                                                  : "var(--text-main)",
-                                            }}
-                                          >
-                                            {u.role}
-                                          </span>
-                                        </td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
+                                                  Delete
+                                                </button>
+                                              )}
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
                                 </table>
                               </div>
                             )}

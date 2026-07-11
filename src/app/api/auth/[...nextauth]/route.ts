@@ -97,20 +97,24 @@ export const authOptions: NextAuthOptions = {
             }
           });
         } else {
-          // Existing user: sync roles dynamically from Authentik SSO
+          // Existing user: sync roles dynamically from Authentik SSO unless overridden manually
           let updatedRole = dbUser.role;
-          if (emailLower === "tech@mtcd.org" || emailLower === "ben@abraham16.com" || isAuthentikAdmin) {
-            updatedRole = "Admin";
-          } else if (isAuthentikOrgLeader) {
-            if (dbUser.role !== "Admin") {
-              updatedRole = "OrgLeader";
-            }
+          if (dbUser.roleOverride) {
+            // Preserve manual override
           } else {
-            // Downgrade to standard User if access revoked in Authentik, unless they are a hardcoded system superadmin
-            if (dbUser.role === "Admin" && (emailLower === "tech@mtcd.org" || emailLower === "ben@abraham16.com")) {
-              // preserve
+            if (emailLower === "tech@mtcd.org" || emailLower === "ben@abraham16.com" || isAuthentikAdmin) {
+              updatedRole = "Admin";
+            } else if (isAuthentikOrgLeader) {
+              if (dbUser.role !== "Admin") {
+                updatedRole = "OrgLeader";
+              }
             } else {
-              updatedRole = "User";
+              // Downgrade to standard User if access revoked in Authentik, unless they are a hardcoded system superadmin
+              if (dbUser.role === "Admin" && (emailLower === "tech@mtcd.org" || emailLower === "ben@abraham16.com")) {
+                // preserve
+              } else {
+                updatedRole = "User";
+              }
             }
           }
           
@@ -163,7 +167,8 @@ export const authOptions: NextAuthOptions = {
             token.sub = (user as any).id;
             token.department = (user as any).department;
         }
-        // Always refresh role from DB so admin role changes take effect immediately
+        
+        // Always refresh from DB to handle dynamic role updates and impersonation
         if (token.sub || token.email) {
             try {
                 let dbUser = await prisma.user.findUnique({ where: { id: token.sub as string } });
@@ -173,10 +178,49 @@ export const authOptions: NextAuthOptions = {
                         token.sub = dbUser.id;
                     }
                 }
+                
                 if (dbUser) {
-                    token.role = dbUser.role;
+                    // Store the original identity of the logged-in user
+                    token.originalId = dbUser.id;
+                    token.originalRole = dbUser.role;
+                    token.originalEmail = dbUser.email;
+                    token.originalName = dbUser.name;
+                    
+                    // If this user is an admin and is impersonating another user
+                    if (dbUser.role === "Admin" && dbUser.impersonatingId) {
+                        const impUser = await prisma.user.findUnique({
+                            where: { id: dbUser.impersonatingId }
+                        });
+                        if (impUser) {
+                            token.role = impUser.role;
+                            token.email = impUser.email;
+                            token.name = impUser.name;
+                            token.department = impUser.department;
+                            token.impersonatedUserId = impUser.id;
+                        } else {
+                            // Target user not found, clear impersonation
+                            await prisma.user.update({
+                                where: { id: dbUser.id },
+                                data: { impersonatingId: null }
+                            });
+                            token.role = dbUser.role;
+                            token.email = dbUser.email;
+                            token.name = dbUser.name;
+                            token.department = dbUser.department;
+                            token.impersonatedUserId = null;
+                        }
+                    } else {
+                        // Standard session data
+                        token.role = dbUser.role;
+                        token.email = dbUser.email;
+                        token.name = dbUser.name;
+                        token.department = dbUser.department;
+                        token.impersonatedUserId = null;
+                    }
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.error("JWT Callback Error:", e);
+            }
         }
         return token;
     },
@@ -185,6 +229,11 @@ export const authOptions: NextAuthOptions = {
             (session.user as any).role = token.role;
             (session.user as any).id = token.sub;
             (session.user as any).department = token.department;
+            (session.user as any).impersonatedUserId = token.impersonatedUserId;
+            (session.user as any).originalId = token.originalId;
+            (session.user as any).originalRole = token.originalRole;
+            (session.user as any).originalEmail = token.originalEmail;
+            (session.user as any).originalName = token.originalName;
         }
         return session;
     }

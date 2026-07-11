@@ -80,7 +80,7 @@ export async function POST(req: Request) {
                         pcoName: u.pco_name || existing.pcoName,
                         msName: u.ms_name || existing.msName,
                         department: u.department || existing.department,
-                        role: u.role || existing.role,
+                        role: existing.roleOverride ? existing.role : (u.role || existing.role),
                         rawRole: u.raw_role || existing.rawRole,
                         organizations: {
                             set: orgsToConnect.map(o => ({ id: o.id }))

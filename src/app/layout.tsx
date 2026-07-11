@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { prisma } from "@/lib/prisma";
+import pkg from "../../package.json";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import ImpersonationBanner from "@/components/ImpersonationBanner";
 
 export async function generateMetadata() {
   let title = "DocSign Portal";
@@ -45,7 +49,10 @@ export default async function RootLayout({
   }
 
   // Version number (Printed in the footer for tracking)
-  const appVersion = "0.10.18";
+  const appVersion = pkg.version;
+
+  const session = await getServerSession(authOptions);
+  const isImpersonating = session?.user && (session.user as any).impersonatedUserId;
 
   return (
     <html lang="en" data-theme={themeMode}>
@@ -89,6 +96,12 @@ export default async function RootLayout({
             `,
           }}
         />
+        {isImpersonating && session?.user && (
+          <ImpersonationBanner
+            userName={session.user.name || "User"}
+            userEmail={session.user.email || ""}
+          />
+        )}
         <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", width: "100%" }}>
           <div style={{ flex: "1 0 auto" }}>{children}</div>
           <footer

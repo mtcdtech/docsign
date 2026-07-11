@@ -70,12 +70,15 @@ export async function POST(req: Request) {
         dbOrgs.push(org);
       }
 
-      // Upsert user and connect organizations
+      // Upsert user and connect organizations, respecting manual role overrides
+      const existing = await prisma.user.findUnique({ where: { email } });
+      const targetRole = existing?.roleOverride ? existing.role : role;
+      
       await prisma.user.upsert({
         where: { email },
         update: {
           name,
-          role,
+          role: targetRole,
           department: rawDeptStr || null,
           organizations: {
             set: dbOrgs.map(o => ({ id: o.id })),
@@ -84,7 +87,7 @@ export async function POST(req: Request) {
         create: {
           email,
           name,
-          role,
+          role: targetRole,
           department: rawDeptStr || null,
           organizations: {
             connect: dbOrgs.map(o => ({ id: o.id })),
