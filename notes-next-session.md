@@ -1,18 +1,19 @@
 # DocSign - Notes for Next Session
 
 ## Most Logical Next Steps
-1. Verify the Microsoft and Planning Center login options in production on `https://docsign.server.mtcd.org` (ensure the default login flow presents both options and does not require OTP).
-2. Log in with the shared account `contemporary@mtcd.org` and confirm:
-   - The user is authenticated successfully as an `OrgLeader` (no downgrade to `User`).
-   - The user's display name appears as "Contemporary Music Team" in the navbar, rather than any individual's name.
-3. Review user feedback on these changes.
+1. Verify that attempting to log in with an unregistered account (e.g. `pwteam@mtcd.org` when not present in the database/IAM portal) correctly results in an Access Denied error (blocked login).
+2. Sync the user `pwteam@mtcd.org` from the IAM portal (or manually add it to the database with name "Praise & Worship Team" and role "OrgLeader") and confirm:
+   - Login succeeds.
+   - Display name is shown as "Praise & Worship Team" in the navbar, rather than any individual's name (e.g. Ben Abraham or Mervin Abraham).
+3. Verify that `contemporary@mtcd.org` logs in successfully and displays "Contemporary Music Team".
 
 ## Open Questions & Uncertainties
 - None at present.
 
 ## Validation Still Needed
-- Live verification of production login flows and user sessions.
+- Live verification of production login flows, name mappings, and access control blocks.
 
 ## Blockers
 - None at present.
+
 
