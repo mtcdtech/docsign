@@ -126,6 +126,12 @@ export const authOptions: NextAuthOptions = {
             }
           }
           
+          // Deny login if the resolved role is User (only Admins and OrgLeaders are allowed access)
+          if (updatedRole === "User") {
+            console.warn(`Sign in denied for ${emailLower}: user has User role.`);
+            return false;
+          }
+          
           dbUser = await prisma.user.update({
             where: { id: dbUser.id },
             data: { name: dbUser.name || user.name, department: extractedDept, role: updatedRole }
