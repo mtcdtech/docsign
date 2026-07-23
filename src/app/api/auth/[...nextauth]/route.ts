@@ -109,9 +109,10 @@ export const authOptions: NextAuthOptions = {
                 updatedRole = "OrgLeader";
               }
             } else {
-              // Downgrade to standard User if access revoked in Authentik, unless they are a hardcoded system superadmin
-              if (dbUser.role === "Admin" && (emailLower === "tech@mtcd.org" || emailLower === "ben@abraham16.com")) {
-                // preserve
+              // Preserve dbUser.role if it is Admin or OrgLeader (since synced from central IAM portal),
+              // otherwise default to User.
+              if (dbUser.role === "Admin" || dbUser.role === "OrgLeader") {
+                updatedRole = dbUser.role;
               } else {
                 updatedRole = "User";
               }
@@ -120,7 +121,7 @@ export const authOptions: NextAuthOptions = {
           
           dbUser = await prisma.user.update({
             where: { id: dbUser.id },
-            data: { name: user.name, department: extractedDept, role: updatedRole }
+            data: { name: dbUser.name || user.name, department: extractedDept, role: updatedRole }
           });
         }
         
