@@ -21,6 +21,13 @@
 - **Access Control Block**: Updated NextAuth `signIn` callback in `src/app/api/auth/[...nextauth]/route.ts` to deny login (returning `false`) for users who do not exist in the database (indicating they were not explicitly granted access in the central IAM portal) and are not system administrators.
 - **Build Verification**: Ran local build `npm run build` which compiled cleanly.
 - **Deployment**: Committed, pushed to GitHub, and successfully triggered a stack update on Synology Portainer.
+- **Status**: Completed.
+
+### [2026-07-23] Strict Login Block for User Role Users (v0.10.24)
+- **Strict Role Block**: Added check to NextAuth `signIn` callback in `src/app/api/auth/[...nextauth]/route.ts` to block login (returning `false`) for any user who resolves to the `"User"` role, even if they already exist in the database (e.g. from previous logins or syncs). Only `"Admin"` and `"OrgLeader"` roles are allowed access.
+- **Build Verification**: Verified that local build `npm run build` succeeds.
+- **Deployment**: Committed, pushed to GitHub, and deployed stack on Synology Portainer.
 - **Status**: Completed, pending live verification.
+
 
 
