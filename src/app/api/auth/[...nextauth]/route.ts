@@ -81,10 +81,17 @@ export const authOptions: NextAuthOptions = {
 
         // Calculate target role
         let targetRole = "User";
-        if (emailLower === "tech@mtcd.org" || emailLower === "ben@abraham16.com" || isAuthentikAdmin) {
+        const isSystemAdmin = emailLower === "tech@mtcd.org" || emailLower === "ben@abraham16.com" || isAuthentikAdmin;
+        if (isSystemAdmin) {
           targetRole = "Admin";
         } else if (isAuthentikOrgLeader) {
           targetRole = "OrgLeader";
+        }
+
+        // If the user does not exist in the database and is not a system admin, deny access
+        if (!dbUser && !isSystemAdmin) {
+          console.warn(`Sign in denied for ${emailLower}: user not found in database and not a system administrator.`);
+          return false;
         }
 
         if (!dbUser) {
@@ -102,7 +109,7 @@ export const authOptions: NextAuthOptions = {
           if (dbUser.roleOverride) {
             // Preserve manual override
           } else {
-            if (emailLower === "tech@mtcd.org" || emailLower === "ben@abraham16.com" || isAuthentikAdmin) {
+            if (isSystemAdmin) {
               updatedRole = "Admin";
             } else if (isAuthentikOrgLeader) {
               if (dbUser.role !== "Admin") {
