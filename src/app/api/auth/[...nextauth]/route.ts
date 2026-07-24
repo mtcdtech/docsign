@@ -134,7 +134,7 @@ export const authOptions: NextAuthOptions = {
           
           dbUser = await prisma.user.update({
             where: { id: dbUser.id },
-            data: { name: dbUser.name || user.name, department: extractedDept, role: updatedRole }
+            data: { name: dbUser.msName || dbUser.name || user.name, department: extractedDept, role: updatedRole }
           });
         }
         
@@ -195,11 +195,12 @@ export const authOptions: NextAuthOptions = {
                 }
                 
                 if (dbUser) {
+                    const resolvedName = dbUser.msName || dbUser.name;
                     // Store the original identity of the logged-in user
                     token.originalId = dbUser.id;
                     token.originalRole = dbUser.role;
                     token.originalEmail = dbUser.email;
-                    token.originalName = dbUser.name;
+                    token.originalName = resolvedName;
                     
                     // If this user is an admin and is impersonating another user
                     if (dbUser.role === "Admin" && dbUser.impersonatingId) {
@@ -209,7 +210,7 @@ export const authOptions: NextAuthOptions = {
                         if (impUser) {
                             token.role = impUser.role;
                             token.email = impUser.email;
-                            token.name = impUser.name;
+                            token.name = impUser.msName || impUser.name;
                             token.department = impUser.department;
                             token.impersonatedUserId = impUser.id;
                             token.sub = impUser.id;
@@ -221,7 +222,7 @@ export const authOptions: NextAuthOptions = {
                             });
                             token.role = dbUser.role;
                             token.email = dbUser.email;
-                            token.name = dbUser.name;
+                            token.name = resolvedName;
                             token.department = dbUser.department;
                             token.impersonatedUserId = null;
                             token.sub = dbUser.id;
@@ -230,7 +231,7 @@ export const authOptions: NextAuthOptions = {
                         // Standard session data
                         token.role = dbUser.role;
                         token.email = dbUser.email;
-                        token.name = dbUser.name;
+                        token.name = resolvedName;
                         token.department = dbUser.department;
                         token.impersonatedUserId = null;
                         token.sub = dbUser.id;
@@ -244,6 +245,8 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
         if (session.user) {
+            session.user.name = token.name as string;
+            session.user.email = token.email as string;
             (session.user as any).role = token.role;
             (session.user as any).id = token.sub;
             (session.user as any).department = token.department;
