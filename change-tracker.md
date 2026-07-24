@@ -27,7 +27,14 @@
 - **Strict Role Block**: Added check to NextAuth `signIn` callback in `src/app/api/auth/[...nextauth]/route.ts` to block login (returning `false`) for any user who resolves to the `"User"` role, even if they already exist in the database (e.g. from previous logins or syncs). Only `"Admin"` and `"OrgLeader"` roles are allowed access.
 - **Build Verification**: Verified that local build `npm run build` succeeds.
 - **Deployment**: Committed, pushed to GitHub, and deployed stack on Synology Portainer.
+- **Status**: Completed.
+
+### [2026-07-24] Session Display Name Mapping Fix for Shared Accounts (v0.10.25)
+- **Root Cause Fix**: Updated NextAuth `jwt` and `session` callbacks in `src/app/api/auth/[...nextauth]/route.ts`. Assigned `session.user.name = token.name` and initialized `token.name = dbUser.msName || dbUser.name`. This ensures that even when individual PCO users log into shared accounts, the session display name explicitly reflects the shared account name (e.g. "Praise & Worship Team") rather than the individual's name (e.g. "Mervin Abraham").
+- **Build Verification**: Verified that local build `npm run build` compiles cleanly.
+- **Deployment**: Committed, pushed to GitHub, and deployed stack update on Synology Portainer.
 - **Status**: Completed, pending live verification.
+
 
 
 
