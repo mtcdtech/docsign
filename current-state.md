@@ -33,7 +33,7 @@
   - Reordered toolbox (Signer Identity fields moved to top).
   - Enforced required constraint on `signer_name` and `signer_email` and added save-validation.
   - Direct sidebar Properties Editor card (deprecating the pop-up modal).
-  - Unique system variable ID auto-calculation from Display Name (label) with incrementing unique suffixes.
+  - Unique system variable ID auto-calculation from Display Name (label) with incrementing unique suffixes (and made strictly read-only to avoid manual duplication).
   - Direct 1.2 page scaling factor alignment to eliminate text field width discrepancies.
 
 ## What is In Progress

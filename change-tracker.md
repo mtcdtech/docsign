@@ -51,3 +51,8 @@
 - **Variable ID Auto-Calculation**: Enabled automatic conversion of display names (labels) into unique snake_case variable IDs inside `handleUpdateFieldProperty`, automatically appending incrementing numeric suffixes if a duplicate is found in the current layout context.
 - **Build Verification**: Local Next.js build compilation (`npm run build`) completed successfully with zero TypeScript, syntax, or compilation warnings.
 - **Status**: Completed, ready for deployment.
+
+### [2026-07-25] Read-Only System Variable ID (v0.10.28)
+- **Read-Only Constraint**: Made the System Variable ID input card strictly read-only (`readOnly` attribute and styling adjustment) inside [DesignCanvas.tsx](file:///Users/benny2168/Antigravity/docsign/src/app/admin/templates/[id]/design/DesignCanvas.tsx). System Variable IDs are now fully managed automatically by the Display Name auto-calculation logic to prevent naming collisions and duplicate ID errors.
+- **Build Verification**: Local Next.js build compilation (`npm run build`) completed successfully with zero TypeScript, syntax, or compilation warnings.
+- **Status**: Completed, ready for deployment.

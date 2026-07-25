@@ -1236,15 +1236,9 @@ export default function DesignCanvas({
                           type="text"
                           className="form-input"
                           value={selectedField.id}
-                          onChange={(e) => handleUpdateFieldProperty(selectedFieldId!, { id: e.target.value })}
-                          placeholder="e.g. signer_name"
-                          style={{ padding: "8px", fontSize: "13px" }}
+                          readOnly
+                          style={{ padding: "8px", fontSize: "13px", background: "rgba(255,255,255,0.05)", cursor: "not-allowed", color: "var(--text-muted)" }}
                         />
-                        {isIdDuplicate(selectedField.id, selectedFieldId!) && (
-                          <div style={{ color: "#ef4444", fontSize: "11px", marginTop: "4px", fontWeight: "bold" }}>
-                            ⚠️ Duplicate ID! Already in use.
-                          </div>
-                        )}
                       </div>
 
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
