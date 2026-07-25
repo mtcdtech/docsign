@@ -25,9 +25,18 @@
   - Prevent role downgrades to `"User"` for legitimate database `Admin`/`OrgLeader` users.
   - Enforce strict access control by blocking logins (returning `false`) for unregistered users or users with `"User"` role.
 - Successfully committed, pushed to GitHub, and deployed to production Synology via the Portainer stack.
+- Implemented comprehensive Form Designer improvements:
+  - Multi-field selection using Shift/Cmd click.
+  - Alignment actions (Left, Right, Top, Bottom) and Dimension Matching actions (Width, Height).
+  - Parallel multi-field dragging and parallel keyboard deletions.
+  - Reordered toolbox (Signer Identity fields moved to top).
+  - Enforced required constraint on `signer_name` and `signer_email` and added save-validation.
+  - Direct sidebar Properties Editor card (deprecating the pop-up modal).
+  - Direct 1.2 page scaling factor alignment to eliminate text field width discrepancies.
 
 ## What is In Progress
 - Live user verification of session display names for shared accounts.
+- Live user verification of the new Form Designer alignment/editing features.
 
 ## Known Risks & Assumptions
 - **OAuth Callback Domain**: NextAuth and Authentik are configured to work against `https://docsign.server.mtcd.org`. Any local test verification of SSO logins will fail or require mocking.

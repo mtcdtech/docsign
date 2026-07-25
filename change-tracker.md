@@ -35,6 +35,13 @@
 - **Deployment**: Committed, pushed to GitHub, and deployed stack update on Synology Portainer.
 - **Status**: Completed, pending live verification.
 
-
-
-
+### [2026-07-25] Form Designer Enhancements & Scaling Alignments (v0.10.26)
+- **Multi-Selection**: Implemented multi-field selection using modifier keys (`Shift`/`Cmd`/`Ctrl`) in [DesignCanvas.tsx](file:///Users/benny2168/Antigravity/docsign/src/app/admin/templates/[id]/design/DesignCanvas.tsx). Highlighted anchor vs secondary fields.
+- **Alignment Toolbar**: Added buttons in the sidebar for Align Left, Align Right, Align Top, Align Bottom, Match Width, and Match Height.
+- **Parallel Dragging**: Modified drag coordinate calculations so all selected fields drag together in parallel.
+- **Embedded Properties Editor**: Removed the modal pop-up for property configuration and placed all inputs directly in the sidebar Properties Editor card. Enables real-time reactive editing of fields.
+- **Toolbox Reordering**: Moved Signer fields to the top of the toolbox list.
+- **Signer Validation**: Signer name and email are now strictly required to be placed on every template layout before saving.
+- **Layout Scale Correction**: Standardized the designer canvas rendering scale to `1.2` to eliminate text input visual discrepancies with live forms.
+- **Build Verification**: Next.js production build (`npm run build`) compiles cleanly.
+- **Status**: Completed, ready for deployment.
