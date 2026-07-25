@@ -45,3 +45,9 @@
 - **Layout Scale Correction**: Standardized the designer canvas rendering scale to `1.2` to eliminate text input visual discrepancies with live forms.
 - **Build Verification**: Next.js production build (`npm run build`) compiles cleanly.
 - **Status**: Completed, ready for deployment.
+
+### [2026-07-25] Distribute/Spacing Tools & System Variable ID Auto-Generation (v0.10.27)
+- **Distribute & Spacing Actions**: Implemented four layout actions (Distribute Horizontally, Distribute Vertically, Spacing Gap H, Spacing Gap V) in [DesignCanvas.tsx](file:///Users/benny2168/Antigravity/docsign/src/app/admin/templates/[id]/design/DesignCanvas.tsx) for 3 or more selected fields.
+- **Variable ID Auto-Calculation**: Enabled automatic conversion of display names (labels) into unique snake_case variable IDs inside `handleUpdateFieldProperty`, automatically appending incrementing numeric suffixes if a duplicate is found in the current layout context.
+- **Build Verification**: Local Next.js build compilation (`npm run build`) completed successfully with zero TypeScript, syntax, or compilation warnings.
+- **Status**: Completed, ready for deployment.

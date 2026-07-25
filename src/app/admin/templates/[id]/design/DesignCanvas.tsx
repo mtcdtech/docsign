@@ -549,6 +549,35 @@ export default function DesignCanvas({
         updatedField.id = updates.id.toLowerCase().replace(/[^a-z0-9_]/g, "");
       }
 
+      if (updates.label !== undefined) {
+        let generatedId = updates.label
+          .toLowerCase()
+          .replace(/[^a-z0-9_]+/g, "_")
+          .replace(/^_+|_+$/g, "");
+        
+        if (!generatedId) {
+          generatedId = current.type;
+        }
+
+        let uniqueId = generatedId;
+        let counter = 2;
+        while (
+          prev.some((f) => {
+            const key = f.instanceId || f.id;
+            if (key === fKey) return false;
+            const isSignerType = current.type === "signer_name" || current.type === "signer_email";
+            if (isSignerType && f.type === current.type) return false;
+            if (current.linkedFieldId === key) return false;
+            if (f.linkedFieldId === fKey) return false;
+            return f.id === uniqueId;
+          })
+        ) {
+          uniqueId = `${generatedId}_${counter}`;
+          counter++;
+        }
+        updatedField.id = uniqueId;
+      }
+
       const isSignerType = updatedField.type === "signer_name" || updatedField.type === "signer_email";
       const hasCustomLink = !isSignerType && updatedField.linkedFieldId;
 
@@ -744,6 +773,180 @@ export default function DesignCanvas({
             pdfMapping: {
               ...f.pdfMapping,
               height: refField.pdfMapping.height,
+            },
+          };
+        }
+        return f;
+      })
+    );
+  };
+
+  const handleDistributeHorizontally = () => {
+    const selectedFields = fields.filter((f) => selectedFieldIds.includes(f.instanceId || f.id));
+    if (selectedFields.length < 3) {
+      setAlertState({
+        title: "Distribute Fields",
+        message: "Please select at least 3 fields to distribute."
+      });
+      return;
+    }
+    const sorted = [...selectedFields].sort((a, b) => a.pdfMapping.x - b.pdfMapping.x);
+    const minX = sorted[0].pdfMapping.x;
+    const maxX = sorted[sorted.length - 1].pdfMapping.x;
+    const step = (maxX - minX) / (sorted.length - 1);
+    
+    setFields((prev) =>
+      prev.map((f) => {
+        const key = f.instanceId || f.id;
+        const idx = sorted.findIndex((s) => (s.instanceId || s.id) === key);
+        if (idx !== -1) {
+          return {
+            ...f,
+            pdfMapping: {
+              ...f.pdfMapping,
+              x: minX + idx * step,
+            },
+          };
+        }
+        return f;
+      })
+    );
+  };
+
+  const handleDistributeVertically = () => {
+    const selectedFields = fields.filter((f) => selectedFieldIds.includes(f.instanceId || f.id));
+    if (selectedFields.length < 3) {
+      setAlertState({
+        title: "Distribute Fields",
+        message: "Please select at least 3 fields to distribute."
+      });
+      return;
+    }
+    const sorted = [...selectedFields].sort((a, b) => a.pdfMapping.y - b.pdfMapping.y);
+    const minY = sorted[0].pdfMapping.y;
+    const maxY = sorted[sorted.length - 1].pdfMapping.y;
+    const step = (maxY - minY) / (sorted.length - 1);
+    
+    setFields((prev) =>
+      prev.map((f) => {
+        const key = f.instanceId || f.id;
+        const idx = sorted.findIndex((s) => (s.instanceId || s.id) === key);
+        if (idx !== -1) {
+          return {
+            ...f,
+            pdfMapping: {
+              ...f.pdfMapping,
+              y: minY + idx * step,
+            },
+          };
+        }
+        return f;
+      })
+    );
+  };
+
+  const handleEqualizeHorizontalSpacing = () => {
+    const selectedFields = fields.filter((f) => selectedFieldIds.includes(f.instanceId || f.id));
+    if (selectedFields.length < 3) {
+      setAlertState({
+        title: "Equalize Spacing",
+        message: "Please select at least 3 fields to equalize spacing."
+      });
+      return;
+    }
+    const sorted = [...selectedFields].sort((a, b) => a.pdfMapping.x - b.pdfMapping.x);
+    const pageIdx = sorted[0].pdfMapping.page;
+    const overlay = document.getElementById(`pdf-overlay-${pageIdx}`);
+    const pageWidth = overlay ? overlay.getBoundingClientRect().width : 800;
+    
+    let totalWidthPercent = 0;
+    sorted.forEach((sf) => {
+      const wPercent = (sf.pdfMapping.width / pageWidth) * 100;
+      totalWidthPercent += wPercent;
+    });
+    
+    const minX = sorted[0].pdfMapping.x;
+    const lastField = sorted[sorted.length - 1];
+    const lastFieldWidthPercent = (lastField.pdfMapping.width / pageWidth) * 100;
+    const maxXPlusWidth = lastField.pdfMapping.x + lastFieldWidthPercent;
+    
+    const totalSpan = maxXPlusWidth - minX;
+    const totalWhitespace = totalSpan - totalWidthPercent;
+    const gap = totalWhitespace / (sorted.length - 1);
+    
+    let currentX = minX;
+    const newPositions: { [key: string]: number } = {};
+    sorted.forEach((sf) => {
+      const key = sf.instanceId || sf.id;
+      newPositions[key] = currentX;
+      const wPercent = (sf.pdfMapping.width / pageWidth) * 100;
+      currentX += wPercent + gap;
+    });
+    
+    setFields((prev) =>
+      prev.map((f) => {
+        const key = f.instanceId || f.id;
+        if (key in newPositions) {
+          return {
+            ...f,
+            pdfMapping: {
+              ...f.pdfMapping,
+              x: Math.max(0, Math.min(100 - (f.pdfMapping.width / pageWidth) * 100, newPositions[key])),
+            },
+          };
+        }
+        return f;
+      })
+    );
+  };
+
+  const handleEqualizeVerticalSpacing = () => {
+    const selectedFields = fields.filter((f) => selectedFieldIds.includes(f.instanceId || f.id));
+    if (selectedFields.length < 3) {
+      setAlertState({
+        title: "Equalize Spacing",
+        message: "Please select at least 3 fields to equalize spacing."
+      });
+      return;
+    }
+    const sorted = [...selectedFields].sort((a, b) => a.pdfMapping.y - b.pdfMapping.y);
+    const pageIdx = sorted[0].pdfMapping.page;
+    const overlay = document.getElementById(`pdf-overlay-${pageIdx}`);
+    const pageHeight = overlay ? overlay.getBoundingClientRect().height : 1000;
+    
+    let totalHeightPercent = 0;
+    sorted.forEach((sf) => {
+      const hPercent = (sf.pdfMapping.height / pageHeight) * 100;
+      totalHeightPercent += hPercent;
+    });
+    
+    const minY = sorted[0].pdfMapping.y;
+    const lastField = sorted[sorted.length - 1];
+    const lastFieldHeightPercent = (lastField.pdfMapping.height / pageHeight) * 100;
+    const maxYPlusHeight = lastField.pdfMapping.y + lastFieldHeightPercent;
+    
+    const totalSpan = maxYPlusHeight - minY;
+    const totalWhitespace = totalSpan - totalHeightPercent;
+    const gap = totalWhitespace / (sorted.length - 1);
+    
+    let currentY = minY;
+    const newPositions: { [key: string]: number } = {};
+    sorted.forEach((sf) => {
+      const key = sf.instanceId || sf.id;
+      newPositions[key] = currentY;
+      const hPercent = (sf.pdfMapping.height / pageHeight) * 100;
+      currentY += hPercent + gap;
+    });
+    
+    setFields((prev) =>
+      prev.map((f) => {
+        const key = f.instanceId || f.id;
+        if (key in newPositions) {
+          return {
+            ...f,
+            pdfMapping: {
+              ...f.pdfMapping,
+              y: Math.max(0, Math.min(100 - (f.pdfMapping.height / pageHeight) * 100, newPositions[key])),
             },
           };
         }
@@ -988,6 +1191,24 @@ export default function DesignCanvas({
                         </button>
                         <button className="btn btn-secondary" onClick={handleMatchHeight} style={{ fontSize: "12px", padding: "8px", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
                           ↕️ Match Height
+                        </button>
+                      </div>
+
+                      <div style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: "bold", textTransform: "uppercase", marginTop: "4px" }}>
+                        Distribute & Spacing
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                        <button className="btn btn-secondary" onClick={handleDistributeHorizontally} style={{ fontSize: "11px", padding: "8px", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }} title="Distribute horizontal start coordinates evenly">
+                          ↔️ Distribute Horiz
+                        </button>
+                        <button className="btn btn-secondary" onClick={handleDistributeVertically} style={{ fontSize: "11px", padding: "8px", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }} title="Distribute vertical start coordinates evenly">
+                          ↕️ Distribute Vert
+                        </button>
+                        <button className="btn btn-secondary" onClick={handleEqualizeHorizontalSpacing} style={{ fontSize: "11px", padding: "8px", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }} title="Make horizontal whitespace gaps between elements equal">
+                          ↔️ Spacing Gap H
+                        </button>
+                        <button className="btn btn-secondary" onClick={handleEqualizeVerticalSpacing} style={{ fontSize: "11px", padding: "8px", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }} title="Make vertical whitespace gaps between elements equal">
+                          ↕️ Spacing Gap V
                         </button>
                       </div>
 

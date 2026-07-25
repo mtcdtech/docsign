@@ -6,11 +6,13 @@
    - Login succeeds.
    - Display name is shown as "Praise & Worship Team" in the navbar, rather than any individual's name (e.g. Ben Abraham or Mervin Abraham).
 3. Verify that `contemporary@mtcd.org` logs in successfully and displays "Contemporary Music Team".
-4. Deploy the latest version (`v0.10.26`) with the new Form Designer alignment and sidebar configuration tools.
+4. Deploy the latest version (`v0.10.27`) with the new Form Designer alignment, spacing, distribution, and sidebar properties editor.
 5. Verify on production:
    - Reordered toolbox: Signer Name/Email fields appear at the top.
    - Properties Editor: Selecting a field expands the sidebar Properties Editor card (without pop-up modal). Editing fields live updates the canvas immediately.
+   - Unique System ID generation: Editing the Display Name of a field reactively updates the System Variable ID (slugified/snake_cased), and appends incrementing suffixes if duplicates are detected.
    - Multi-field: Shift-clicking multiple fields enables alignment toolbar. Verify Align Left, Align Right, Align Top, Align Bottom, Match Width, and Match Height operations.
+   - Spacing & Distribution: Select 3 or more fields and verify Distribute Horiz, Distribute Vert, Spacing Gap H, and Spacing Gap V adjust layouts properly.
    - Parallel Dragging: Moving a field in a multi-selection drags all selected fields together.
    - Signer validation: Attempt to save a template layout without Signer Name/Email variables. Ensure it blocks and displays a dialog specifying missing fields.
 
