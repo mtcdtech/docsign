@@ -56,3 +56,11 @@
 - **Read-Only Constraint**: Made the System Variable ID input card strictly read-only (`readOnly` attribute and styling adjustment) inside [DesignCanvas.tsx](file:///Users/benny2168/Antigravity/docsign/src/app/admin/templates/[id]/design/DesignCanvas.tsx). System Variable IDs are now fully managed automatically by the Display Name auto-calculation logic to prevent naming collisions and duplicate ID errors.
 - **Build Verification**: Local Next.js build compilation (`npm run build`) completed successfully with zero TypeScript, syntax, or compilation warnings.
 - **Status**: Completed, ready for deployment.
+
+### [2026-07-25] Canonical mtcd_person_id Integration (Phase D1 & D2 - v0.11.0)
+- **Prisma Schema (D1.1)**: Added `@unique` optional `mtcdPersonId` column to `User` model in `prisma/schema.prisma`.
+- **Auth Profile & 3-Tier Lookup (D1.2 & D1.3)**: Updated `AuthentikProvider.profile()` in `route.ts` to capture `mtcd_person_id` and `mtcd_person_id_history`. Updated `signIn` callback to use 3-tier lookup order (1. current PID, 2. PID history migration, 3. email fallback) and dual-write `mtcdPersonId` when updated.
+- **Backfill Script (D2)**: Added `scripts/backfill-mtcd-person-ids.ts` for unified user export PID backfilling.
+- **Build Verification**: Local Next.js production build (`npm run build`) completed successfully.
+- **Status**: Completed, ready for deployment.
+

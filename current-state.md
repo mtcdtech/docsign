@@ -18,14 +18,17 @@
 ## What is Currently Working
 - The repository has been successfully pulled/cloned, checked out to `main` branch, and inspected.
 - Verified and compiled Next.js build locally (`npm run build`).
-- Switched the Authentik DocSign provider authentication flow to the standard `default-authentication-flow` to support both Microsoft and Planning Center logins without OTP verification codes.
+- Implemented Phase D1 & D2 canonical `mtcd_person_id` support (v0.11.0):
+  - Prisma Schema: Added `mtcdPersonId String? @unique` to `User` model in [schema.prisma](file:///Users/benny2168/Antigravity/docsign/prisma/schema.prisma).
+  - NextAuth Callbacks: Updated `AuthentikProvider.profile()` to forward `mtcdPersonId` and `mtcdPersonIdHistory`. Implemented 3-tier lookup order (1. current PID, 2. PID history migration, 3. email fallback) and PID dual-writing in `signIn` callback in [route.ts](file:///Users/benny2168/Antigravity/docsign/src/app/api/auth/[...nextauth]/route.ts).
+  - Backfill Script: Added `scripts/backfill-mtcd-person-ids.ts` for unified user export matching and PID backfills.
 - Implemented and pushed a fix (v0.10.25) in NextAuth callbacks to:
   - Populate `session.user.name` and `token.name` with `dbUser.msName || dbUser.name` instead of defaulting to the raw OIDC user name.
   - Preserve display names for reconciled shared Microsoft accounts (e.g. "Praise & Worship Team", "Contemporary Music Team").
   - Prevent role downgrades to `"User"` for legitimate database `Admin`/`OrgLeader` users.
   - Enforce strict access control by blocking logins (returning `false`) for unregistered users or users with `"User"` role.
 - Successfully committed, pushed to GitHub, and deployed to production Synology via the Portainer stack.
-- Implemented comprehensive Form Designer improvements:
+- Implemented comprehensive Form Designer improvements (v0.10.26 - v0.10.28):
   - Multi-field selection using Shift/Cmd click.
   - Alignment actions (Left, Right, Top, Bottom) and Dimension Matching actions (Width, Height).
   - Distribute actions (Horizontally, Vertically) and whitespace gap spacing actions (Gap H, Gap V).
@@ -39,6 +42,7 @@
 ## What is In Progress
 - Live user verification of session display names for shared accounts.
 - Live user verification of the new Form Designer alignment/editing features.
+- Verification of Phase D1 dormant PID lookup when admin portal compat mode is flipped (Phase D3).
 
 ## Known Risks & Assumptions
 - **OAuth Callback Domain**: NextAuth and Authentik are configured to work against `https://docsign.server.mtcd.org`. Any local test verification of SSO logins will fail or require mocking.

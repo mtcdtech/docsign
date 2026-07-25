@@ -1,12 +1,9 @@
 # DocSign - Notes for Next Session
 
 ## Most Logical Next Steps
-1. Verify that attempting to log in with an unregistered account (e.g. `pwteam@mtcd.org` when not present in the database/IAM portal) correctly results in an Access Denied error (blocked login).
-2. Sync the user `pwteam@mtcd.org` from the IAM portal (or manually add it to the database with name "Praise & Worship Team" and role "OrgLeader") and confirm:
-   - Login succeeds.
-   - Display name is shown as "Praise & Worship Team" in the navbar, rather than any individual's name (e.g. Ben Abraham or Mervin Abraham).
-3. Verify that `contemporary@mtcd.org` logs in successfully and displays "Contemporary Music Team".
-4. Deploy the latest version (`v0.10.28`) with the new Form Designer alignment, spacing, distribution, and sidebar properties editor.
+1. Deploy the latest version (`v0.11.0`) containing Phase D1 & D2 canonical `mtcd_person_id` support and Form Designer enhancements.
+2. Verify Phase D1 fallback behavior: Sign-in continues working seamlessly under `compat_mode: True` using email fallback.
+3. Run `npx tsx scripts/backfill-mtcd-person-ids.ts --dry-run` and `--apply` once the admin portal user export endpoint (`/api/export/users`) is accessible.
 5. Verify on production:
    - Reordered toolbox: Signer Name/Email fields appear at the top.
    - Properties Editor: Selecting a field expands the sidebar Properties Editor card (without pop-up modal). Editing fields live updates the canvas immediately.

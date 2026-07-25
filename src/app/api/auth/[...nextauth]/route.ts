@@ -21,6 +21,8 @@ export const authOptions: NextAuthOptions = {
           image: profile.picture,
           department: profile.attributes?.department || profile.department || (profile.groups && profile.groups.length > 0 ? profile.groups[0] : "General"),
           groups: profile.groups || [],
+          mtcdPersonId: (profile as any).mtcd_person_id ?? null,
+          mtcdPersonIdHistory: (profile as any).mtcd_person_id_history ?? [],
         }
       }
     }),
@@ -60,7 +62,36 @@ export const authOptions: NextAuthOptions = {
       if (account?.provider === "authentik") {
         if (!user.email) return false;
         const emailLower = user.email.toLowerCase();
-        let dbUser = await prisma.user.findUnique({ where: { email: emailLower } });
+
+        const claimedPid = (user as any).mtcdPersonId as string | null;
+        const claimedHistory = ((user as any).mtcdPersonIdHistory ?? []) as Array<{
+          previous_mtcd_person_id?: string;
+        }>;
+
+        // Lookup order: (1) current pid, (2) any prior pid from history,
+        // (3) email fallback (the only path that works during compat mode).
+        let dbUser = null;
+
+        if (claimedPid) {
+          dbUser = await prisma.user.findUnique({ where: { mtcdPersonId: claimedPid } });
+        }
+
+        if (!dbUser && claimedHistory.length > 0) {
+          const priorPids = claimedHistory
+            .map(h => h?.previous_mtcd_person_id)
+            .filter((p): p is string => typeof p === "string" && p.length > 0);
+          for (const priorPid of priorPids) {
+            dbUser = await prisma.user.findUnique({ where: { mtcdPersonId: priorPid } });
+            if (dbUser) {
+              console.log(`[auth] migrating mtcdPersonId ${priorPid} -> ${claimedPid} for ${dbUser.email}`);
+              break;
+            }
+          }
+        }
+
+        if (!dbUser) {
+          dbUser = await prisma.user.findUnique({ where: { email: emailLower } });
+        }
         
         const authDept = (user as any).department;
         const dbDept = dbUser?.department;
@@ -153,6 +184,19 @@ export const authOptions: NextAuthOptions = {
                    }
                 }
              });
+          }
+        }
+
+        // Dual-write pid whenever we learned it and it changed
+        if (claimedPid && dbUser && dbUser.mtcdPersonId !== claimedPid) {
+          try {
+            await prisma.user.update({
+              where: { id: dbUser.id },
+              data: { mtcdPersonId: claimedPid },
+            });
+          } catch (e) {
+            console.error(`[auth] failed to write mtcdPersonId=${claimedPid} for ${dbUser.email}`, e);
+            // Non-fatal — user's login still succeeds
           }
         }
         
