@@ -69,6 +69,25 @@ export const authOptions: NextAuthOptions = {
           previous_mtcd_person_id?: string;
         }>;
 
+        const WEBAPP_SLUG = "docsign";
+        const rawLoginSource = (profile as any)?.mtcd_login_source || "";
+        const rawPersonId = (profile as any)?.mtcd_person_id || claimedPid || "";
+        const rawAuthorizedWebapp = (profile as any)?.mtcd_shared_authorized_webapp || "";
+
+        const isSharedMailbox =
+          rawLoginSource === "microsoft_shared" ||
+          rawLoginSource === "microsoft_shared_authorized" ||
+          rawPersonId.startsWith("mtcd_shared_");
+
+        const isAuthorizedSharedForThisApp =
+          rawLoginSource === "microsoft_shared_authorized" &&
+          (rawAuthorizedWebapp === WEBAPP_SLUG || rawAuthorizedWebapp === "docsign");
+
+        if (isSharedMailbox && !isAuthorizedSharedForThisApp) {
+          console.warn(`[auth] REJECTING shared mailbox in docsign: pid=${rawPersonId} login_source=${rawLoginSource}`);
+          return false;
+        }
+
         // Lookup order: (1) current pid, (2) any prior pid from history,
         // (3) email fallback (the only path that works during compat mode).
         let dbUser = null;
