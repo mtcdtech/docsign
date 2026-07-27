@@ -9,6 +9,7 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.AUTHENTIK_CLIENT_ID || "",
       clientSecret: process.env.AUTHENTIK_CLIENT_SECRET || "",
       issuer: process.env.AUTHENTIK_ISSUER || "",
+      authorization: { params: { scope: "openid profile email groups mtcd_person" } },
       client: {
         id_token_signed_response_alg: "HS256"
       },
