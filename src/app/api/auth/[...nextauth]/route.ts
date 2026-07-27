@@ -139,8 +139,8 @@ export const authOptions: NextAuthOptions = {
           targetRole = "OrgLeader";
         }
 
-        // If the user does not exist in the database and is not a system admin, deny access
-        if (!dbUser && !isSystemAdmin) {
+        // If the user does not exist in the database and is not a system admin (and not an authorized shared account), deny access
+        if (!dbUser && !isSystemAdmin && !isAuthorizedSharedForThisApp) {
           console.warn(`Sign in denied for ${emailLower}: user not found in database and not a system administrator.`);
           return false;
         }
@@ -150,7 +150,9 @@ export const authOptions: NextAuthOptions = {
             data: {
               email: emailLower,
               role: targetRole,
-              name: user.name,
+              name: isAuthorizedSharedForThisApp
+                ? ((profile as any)?.name || (profile as any)?.preferred_username || "Shared Account")
+                : user.name,
               department: extractedDept
             }
           });
