@@ -38,11 +38,12 @@
   - Direct sidebar Properties Editor card (deprecating the pop-up modal).
   - Unique system variable ID auto-calculation from Display Name (label) with incrementing unique suffixes (and made strictly read-only to avoid manual duplication).
   - Direct 1.2 page scaling factor alignment to eliminate text field width discrepancies.
+- Completed Pre-Flip Checklist for docsign: verified version (v0.11.1), confirmed all 31 privileged users (5 Admin, 26 OrgLeader) are fully linked to Microsoft identities, and confirmed no unlinked shared mailbox grants exist.
+- Successfully executed database backfill in production container, populating `mtcdPersonId` for 62 existing users (with 5 expected conflicts handled).
 
 ## What is In Progress
-- Live user verification of session display names for shared accounts.
-- Live user verification of the new Form Designer alignment/editing features.
-- Verification of Phase D1 dormant PID lookup when admin portal compat mode is flipped (Phase D3).
+- Proceeding with flipping `identity_profile.compat_mode` from `true` -> `false` for webapp slug `docsign` on the Admin Portal.
+- Post-flip verification of Microsoft SSO logins under canonical `mtcd_person_id` matching (Phase D3 verification).
 
 ## Known Risks & Assumptions
 - **OAuth Callback Domain**: NextAuth and Authentik are configured to work against `https://docsign.server.mtcd.org`. Any local test verification of SSO logins will fail or require mocking.

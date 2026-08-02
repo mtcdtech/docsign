@@ -62,5 +62,16 @@
 - **Auth Profile & 3-Tier Lookup (D1.2 & D1.3)**: Updated `AuthentikProvider.profile()` in `route.ts` to capture `mtcd_person_id` and `mtcd_person_id_history`. Updated `signIn` callback to use 3-tier lookup order (1. current PID, 2. PID history migration, 3. email fallback) and dual-write `mtcdPersonId` when updated.
 - **Backfill Script (D2)**: Added `scripts/backfill-mtcd-person-ids.ts` for unified user export PID backfilling.
 - **Build Verification**: Local Next.js production build (`npm run build`) completed successfully.
-- **Status**: Completed, ready for deployment.
+- **Status**: Completed, deployed to production.
+
+### [2026-07-27] OIDC Scope and Shared Mailbox Role Unification (v0.11.1)
+- **OIDC Scope**: Added `mtcd_person` to OIDC scopes in `[...nextauth]/route.ts` so `mtcd_person_id` claims arrive from Authentik.
+- **Shared Mailbox Auth**: Handled Microsoft shared mailbox detection and role mappings, preventing standard users from getting downgraded and allowing authorized shared accounts access.
+- **Status**: Completed, deployed to production.
+
+### [2026-08-02] Pre-Flip Readiness Analysis & Database Backfill (v0.11.1 verification)
+- **Preflight Check**: Queried central IAM portal `docsign-users` and `users` exports. Verified all 31 privileged users (5 Admin, 26 OrgLeader) are fully linked to Microsoft identities. Zero unlinked users.
+- **Database Backfill**: Successfully executed `backfill-prod.js` inside the production Docker container. Backfilled 62 user records with their correct `mtcdPersonId`s, handling 5 expected duplicate email/alias conflicts safely.
+- **Readiness Verdict**: 100% ready for the `compat_mode: false` flip.
+
 

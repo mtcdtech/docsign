@@ -1,25 +1,21 @@
 # DocSign - Notes for Next Session
 
 ## Most Logical Next Steps
-1. Deploy the latest version (`v0.11.0`) containing Phase D1 & D2 canonical `mtcd_person_id` support and Form Designer enhancements.
-2. Verify Phase D1 fallback behavior: Sign-in continues working seamlessly under `compat_mode: True` using email fallback.
-3. Run `npx tsx scripts/backfill-mtcd-person-ids.ts --dry-run` and `--apply` once the admin portal user export endpoint (`/api/export/users`) is accessible.
-5. Verify on production:
-   - Reordered toolbox: Signer Name/Email fields appear at the top.
-   - Properties Editor: Selecting a field expands the sidebar Properties Editor card (without pop-up modal). Editing fields live updates the canvas immediately.
-   - Unique System ID generation: Editing the Display Name of a field reactively updates the System Variable ID (slugified/snake_cased), and appends incrementing suffixes if duplicates are detected. The Variable ID must be strictly read-only and non-editable.
-   - Multi-field: Shift-clicking multiple fields enables alignment toolbar. Verify Align Left, Align Right, Align Top, Align Bottom, Match Width, and Match Height operations.
-   - Spacing & Distribution: Select 3 or more fields and verify Distribute Horiz, Distribute Vert, Spacing Gap H, and Spacing Gap V adjust layouts properly.
-   - Parallel Dragging: Moving a field in a multi-selection drags all selected fields together.
-   - Signer validation: Attempt to save a template layout without Signer Name/Email variables. Ensure it blocks and displays a dialog specifying missing fields.
+1. Flip `identity_profile.compat_mode` to `false` for webapp slug `docsign` on the Admin Portal.
+2. Verify production login flows post-flip:
+   - Log in as a Microsoft-linked Admin (e.g. `ben@abraham16.com`). Verify Prisma `dbUser.role === "Admin"`.
+   - Log in as a Microsoft-linked OrgLeader. Verify role, organization visibility, and template editing.
+   - Log in as `tech@mtcd.org`. Verify it bypasses standard checks and logs in as Admin.
+   - Attempt login with a PCO-only user. Verify they are blocked at the Authentik/token step.
 
 ## Open Questions & Uncertainties
 - None at present.
 
 ## Validation Still Needed
-- Live verification of production login flows, name mappings, access control blocks, and visual Form Designer alignment features.
+- Post-flip verification of Microsoft SSO logins using the canonical `mtcd_person_id` mapping.
 
 ## Blockers
 - None at present.
+
 
 
