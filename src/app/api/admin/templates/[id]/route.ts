@@ -12,7 +12,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     }
 
     const body = await req.json();
-    const { title, slug, emailUser, emailLeader, notificationEmails, saveSharepoint, sharepointFolderId, sharepointFolderName, fieldsJson, isArchived } = body;
+    const { title, slug, emailUser, emailLeader, emailParent, notificationEmails, saveSharepoint, sharepointFolderId, sharepointFolderName, fieldsJson, isArchived } = body;
 
     const templateId = params.id;
     const template = await prisma.template.findUnique({ where: { id: templateId } });
@@ -53,6 +53,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     }
     if (emailUser !== undefined) updateData.emailUser = emailUser;
     if (emailLeader !== undefined) updateData.emailLeader = emailLeader;
+    if (emailParent !== undefined) updateData.emailParent = emailParent;
     if (notificationEmails !== undefined) updateData.notificationEmails = notificationEmails;
     if (saveSharepoint !== undefined) updateData.saveSharepoint = saveSharepoint;
     if (sharepointFolderId !== undefined) updateData.sharepointFolderId = sharepointFolderId;

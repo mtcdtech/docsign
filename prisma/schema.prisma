@@ -43,6 +43,7 @@ model Template {
   conditionalLogic    String?          // JSON string for conditional field display
   emailUser           Boolean          @default(true)
   emailLeader         Boolean          @default(true)
+  emailParent         Boolean          @default(false)
   notificationEmails  String?
   saveSharepoint      Boolean          @default(false)
   sharepointFolderId  String?          // SharePoint folder path or ID
@@ -62,10 +63,12 @@ model SignedDocument {
   signerName     String
   signerEmail    String
   formDataJson   String   // JSON string of all user input responses
-  signedPdfPath  String   // Local path of generated signed PDF
+  signedPdfPath  String?  // Local path of generated signed PDF (optional for drafts)
   sharepointUrl  String?  // SharePoint URL if uploaded
   emailedUser    Boolean  @default(false)
   emailedLeader  Boolean  @default(false)
+  emailedParent  Boolean  @default(false)
+  isDraft        Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }

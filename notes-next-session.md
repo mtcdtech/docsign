@@ -1,21 +1,23 @@
 # DocSign - Notes for Next Session
 
 ## Most Logical Next Steps
-1. Flip `identity_profile.compat_mode` to `false` for webapp slug `docsign` on the Admin Portal.
-2. Verify production login flows post-flip:
-   - Log in as a Microsoft-linked Admin (e.g. `ben@abraham16.com`). Verify Prisma `dbUser.role === "Admin"`.
-   - Log in as a Microsoft-linked OrgLeader. Verify role, organization visibility, and template editing.
-   - Log in as `tech@mtcd.org`. Verify it bypasses standard checks and logs in as Admin.
-   - Attempt login with a PCO-only user. Verify they are blocked at the Authentik/token step.
+1. Deploy v0.12.0 enhancements to production Portainer stack.
+2. Verify visual designer auto-save loop in admin templates dashboard.
+3. Validate "first-time help tour" triggers and works on a fresh browser profile (or after clearing local storage).
+4. Verify click-and-drag selection bounding box works to select and align multiple fields.
+5. Fill out a public signature form:
+   - Verify draft is saved to database automatically while typing.
+   - Verify "Reset Form" button triggers custom confirmation dialog, deletes draft from DB, clears local state/local storage, and reloads layout fields.
+   - Complete form and submit: verify draft is promoted to fully signed document status, and parent emails are dispatched (if template has Parent Email integration enabled).
 
 ## Open Questions & Uncertainties
-- None at present.
+- None.
 
 ## Validation Still Needed
-- Post-flip verification of Microsoft SSO logins using the canonical `mtcd_person_id` mapping.
+- Verify email dispatches to parent copies and confirm SMTP handshake handles Office 365 cleanly under modern TLS.
 
 ## Blockers
-- None at present.
+- None.
 
 
 

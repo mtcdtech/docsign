@@ -31,7 +31,6 @@ export async function sendEmail({
       pass,
     },
     tls: {
-      ciphers: "SSLv3",
       rejectUnauthorized: false,
     },
   });

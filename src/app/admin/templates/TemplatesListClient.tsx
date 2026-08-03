@@ -493,42 +493,43 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
                                           <th>Date Signed</th>
                                           <th>Signer Name</th>
                                           <th>Signer Email</th>
-                                          <th>Fields Payload</th>
                                           <th style={{ textAlign: "right" }}>Actions</th>
                                         </tr>
                                       </thead>
                                       <tbody>
                                         {filteredSubmissions.map((doc) => {
                                           const date = new Date(doc.createdAt).toLocaleString();
-                                          const formData = JSON.parse(doc.formDataJson);
                                           return (
-                                            <tr key={doc.id}>
+                                            <tr key={doc.id} style={{ opacity: doc.isDraft ? 0.75 : 1 }}>
                                               <td style={{ fontSize: "12px" }} suppressHydrationWarning>{date}</td>
-                                              <td style={{ fontWeight: 600 }}>{doc.signerName}</td>
-                                              <td style={{ fontSize: "12px" }}>{doc.signerEmail}</td>
-                                              <td>
-                                                <details style={{ cursor: "pointer" }}>
-                                                  <summary style={{ fontSize: "11px", color: "var(--primary-color)" }}>View Mapped Fields ({Object.keys(formData).length})</summary>
-                                                  <div style={{ background: "rgba(0,0,0,0.3)", padding: "8px", borderRadius: "4px", fontSize: "11px", marginTop: "4px", maxHeight: "150px", overflowY: "auto", fontFamily: "monospace" }}>
-                                                    {Object.entries(formData).map(([k, v]) => (
-                                                      <div key={k} style={{ marginBottom: "2px" }}>
-                                                        <span style={{ color: "var(--text-muted)" }}>{k}:</span> {String(v)}
-                                                      </div>
-                                                    ))}
-                                                  </div>
-                                                </details>
+                                              <td style={{ fontWeight: 600 }}>
+                                                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                                  <span>{doc.signerName}</span>
+                                                  {doc.isDraft && (
+                                                    <span style={{ fontSize: "9px", padding: "1px 5px", borderRadius: "3px", background: "#f59e0b", color: "#fff", fontWeight: "bold" }}>
+                                                      Draft
+                                                    </span>
+                                                  )}
+                                                </div>
                                               </td>
+                                              <td style={{ fontSize: "12px" }}>{doc.signerEmail || "(Unspecified)"}</td>
                                               <td style={{ textAlign: "right" }}>
-                                                <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-                                                  <a
-                                                    href={`/api/download/signed/${getFilename(doc.signedPdfPath)}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="btn btn-secondary"
-                                                    style={{ padding: "4px 8px", fontSize: "11px", width: "auto" }}
-                                                  >
-                                                    View PDF
-                                                  </a>
+                                                <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", alignItems: "center" }}>
+                                                  {doc.isDraft ? (
+                                                    <span style={{ fontSize: "11px", color: "var(--text-muted)", fontStyle: "italic", paddingRight: "6px" }}>
+                                                      In Progress
+                                                    </span>
+                                                  ) : (
+                                                    <a
+                                                      href={doc.signedPdfPath ? `/api/download/signed/${getFilename(doc.signedPdfPath)}` : "#"}
+                                                      target="_blank"
+                                                      rel="noopener noreferrer"
+                                                      className="btn btn-secondary"
+                                                      style={{ padding: "4px 8px", fontSize: "11px", width: "auto" }}
+                                                    >
+                                                      View PDF
+                                                    </a>
+                                                  )}
                                                   {confirmDeleteSubmissionId === doc.id ? (
                                                      <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                                                        <span style={{ fontSize: "11px", color: "#ef4444", fontWeight: "bold" }}>Delete?</span>

@@ -24,6 +24,7 @@ interface TemplateFormProps {
     slug: string;
     emailUser: boolean;
     emailLeader: boolean;
+    emailParent?: boolean;
     notificationEmails?: string | null;
     saveSharepoint: boolean;
     sharepointFolderId: string | null;
@@ -46,6 +47,7 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
   const [organizationId, setOrganizationId] = useState(template?.organizationId || organizations[0]?.id || "");
   const [emailUser, setEmailUser] = useState(template?.emailUser ?? true);
   const [emailLeader, setEmailLeader] = useState(template?.emailLeader ?? true);
+  const [emailParent, setEmailParent] = useState((template as any)?.emailParent ?? false);
   const [selectedLeaderEmails, setSelectedLeaderEmails] = useState<string[]>([]);
   const [manualEmails, setManualEmails] = useState<string[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -302,6 +304,7 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
             title,
             emailUser,
             emailLeader,
+            emailParent,
             notificationEmails,
             saveSharepoint,
             sharepointFolderId: selectedFolderId || null,
@@ -330,6 +333,7 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
         formData.append("organizationId", organizationId);
         formData.append("emailUser", String(emailUser));
         formData.append("emailLeader", String(emailLeader));
+        formData.append("emailParent", String(emailParent));
         formData.append("notificationEmails", notificationEmails);
         formData.append("saveSharepoint", String(saveSharepoint));
         formData.append("sharepointFolderId", selectedFolderId);
@@ -417,6 +421,16 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
             style={{ width: "18px", height: "18px", accentColor: "var(--primary-color)" }}
           />
           Email completed copy to Signer
+        </label>
+
+        <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", color: "var(--text-main)", fontSize: "14px" }}>
+          <input
+            type="checkbox"
+            checked={emailParent}
+            onChange={(e) => setEmailParent(e.target.checked)}
+            style={{ width: "18px", height: "18px", accentColor: "var(--primary-color)" }}
+          />
+          Email completed copy to Parent/Guardian (if parent_email or custom_email field is filled)
         </label>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>

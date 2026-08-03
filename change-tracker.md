@@ -74,4 +74,20 @@
 - **Database Backfill**: Successfully executed `backfill-prod.js` inside the production Docker container. Backfilled 62 user records with their correct `mtcdPersonId`s, handling 5 expected duplicate email/alias conflicts safely.
 - **Readiness Verdict**: 100% ready for the `compat_mode: false` flip.
 
-
+### [2026-08-03] Visual Designer & Form Filling Enhancements (v0.12.0)
+- **Database Schema**: Modified `SignedDocument` to make `signedPdfPath` optional and added `isDraft` and `emailedParent` boolean fields. Added `emailParent` boolean field to `Template` model. Synchronized schema changes with database.
+- **Transporter TLS Fix**: Removed `ciphers: "SSLv3"` cipher suites restriction in `mail.ts` to allow standard TLS 1.2/1.3 handshakes, resolving SMTP failures with Microsoft Office 365.
+- **Template Integration Settings**: Added "Email copy to Parent/Guardian" integration option toggle. Updated edit templates page and template CRUD API routes (`POST`/`PATCH`) to support the new field.
+- **Form Designer Enhancements**:
+  - Implemented auto-saving loop in `DesignCanvas.tsx` that debounces template layout updates and displays auto-save status feedback.
+  - Implemented a custom leave warning dialog that intercepts page transitions or reloads if there are unsaved changes.
+  - Added click-and-drag selection bounding box highlighting and overlap checking to select multiple fields simultaneously.
+  - Added an interactive first-time onboarding tutorial step-by-step help tour for toolbox library sections.
+- **Public Form Filler & Drafts**:
+  - Added debounced drafts saving from the public signer form using new draft management API endpoints (`POST`/`PATCH`/`DELETE` under `/api/sign/[id]/draft`).
+  - Added a "Reset Form" button on the signer page with a custom React confirmation modal that clears progress, deletes drafts, and reloads the template layout.
+- **Dashboard & History**:
+  - Updated admin dashboard to display Drafts in Progress statistics and highlight drafts in the recent submissions list.
+  - Removed "Fields Payload" column and the "View Mapped Fields" details element from the templates history table cards.
+- **Build Verification**: Local Next.js build compilation completed successfully.
+- **Status**: Completed, ready for deployment.

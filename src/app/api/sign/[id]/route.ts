@@ -9,7 +9,7 @@ import fs from "fs";
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
     const templateId = params.id;
-    const { signerName, signerEmail, formData } = await req.json();
+    const { signerName, signerEmail, formData, draftId } = await req.json();
 
     if (!signerName || !signerEmail || !formData) {
       return NextResponse.json({ error: "Missing required submission fields." }, { status: 400 });
@@ -76,17 +76,39 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       }
     }
 
-    // 3. Save the Signed Document to Database
-    const signedDoc = await prisma.signedDocument.create({
-      data: {
-        templateId: template.id,
-        signerName,
-        signerEmail,
-        formDataJson: JSON.stringify(formData),
-        signedPdfPath: outputPath,
-        sharepointUrl: sharepointUrl,
+    // 3. Save the Signed Document to Database (Update draft or create new)
+    let signedDoc = null;
+    if (draftId) {
+      try {
+        signedDoc = await prisma.signedDocument.update({
+          where: { id: draftId },
+          data: {
+            signerName,
+            signerEmail,
+            formDataJson: JSON.stringify(formData),
+            signedPdfPath: outputPath,
+            sharepointUrl: sharepointUrl,
+            isDraft: false,
+          }
+        });
+      } catch (err) {
+        console.warn("Could not update existing draft during submit:", err);
       }
-    });
+    }
+
+    if (!signedDoc) {
+      signedDoc = await prisma.signedDocument.create({
+        data: {
+          templateId: template.id,
+          signerName,
+          signerEmail,
+          formDataJson: JSON.stringify(formData),
+          signedPdfPath: outputPath,
+          sharepointUrl: sharepointUrl,
+          isDraft: false,
+        }
+      });
+    }
 
     // 4. Trigger Email Dispatches
     let emailedUser = false;
@@ -195,12 +217,59 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       }
     }
 
+    // Email copy to parent/guardian if template setting is enabled
+    let emailedParent = false;
+    if (template.emailParent) {
+      try {
+        const parentEmails = [];
+        const parsedFields = JSON.parse(template.fieldsJson) || [];
+        parsedFields.forEach((f) => {
+          if ((f.type === "custom_email" || f.id === "parent_email") && formData[f.id]) {
+            const emailVal = String(formData[f.id]).trim();
+            if (emailVal && emailVal.includes("@") && !parentEmails.includes(emailVal)) {
+              parentEmails.push(emailVal);
+            }
+          }
+        });
+
+        if (parentEmails.length > 0) {
+          const htmlContent = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; color: #333; line-height: 1.6;">
+              <h2>Signed Document Copy</h2>
+              <p>Hello,</p>
+              <p>A copy of the signed document: <strong>${template.title}</strong> has been attached to this email.</p>
+              <p><strong>Signer Name:</strong> ${signerName}</p>
+              <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;" />
+              <p style="font-size: 12px; color: #777;">This is an automated notification from DocSign.</p>
+            </div>
+          `;
+          for (const email of parentEmails) {
+            try {
+              await sendEmail({
+                to: email,
+                subject: `Parent/Guardian Copy: ${template.title}`,
+                html: htmlContent,
+                attachmentPath: outputPath,
+                attachmentName: `${template.title}_Signed.pdf`
+              });
+            } catch (mailErr) {
+              console.error(`Failed to send parent email copy to ${email}:`, mailErr);
+            }
+          }
+          emailedParent = true;
+        }
+      } catch (mailErr) {
+        console.error("Failed to process parent email copy dispatch:", mailErr);
+      }
+    }
+
     // Update email status flags in DB
     await prisma.signedDocument.update({
       where: { id: signedDoc.id },
       data: {
         emailedUser,
         emailedLeader,
+        emailedParent,
       }
     });
 

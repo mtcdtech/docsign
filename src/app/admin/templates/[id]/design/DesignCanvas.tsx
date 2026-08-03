@@ -52,6 +52,23 @@ export default function DesignCanvas({
   const [loadingPdf, setLoadingPdf] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Unsaved changes & auto-save states
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
+  const [autoSavingStatus, setAutoSavingStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const hasLoadedInitial = useRef(false);
+
+  // Custom unsaved changes warning dialog states
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [pendingLeaveUrl, setPendingLeaveUrl] = useState<string | null>(null);
+
+  // Drag-to-select states
+  const [dragSelectStart, setDragSelectStart] = useState<{ x: number; y: number; page: number } | null>(null);
+  const [dragSelectCurrent, setDragSelectCurrent] = useState<{ x: number; y: number } | null>(null);
+
+  // Interactive tour states
+  const [tourStep, setTourStep] = useState<number | null>(null);
+
   // Custom inline dialog states (avoiding system native popups)
   const [alertState, setAlertState] = useState<{ message: string; title?: string } | null>(null);
   const [confirmState, setConfirmState] = useState<{
@@ -96,11 +113,237 @@ export default function DesignCanvas({
   // Load initial fields
   useEffect(() => {
     try {
-      setFields(JSON.parse(initialFieldsJson) || []);
+      const parsed = JSON.parse(initialFieldsJson) || [];
+      setFields(parsed);
     } catch (e) {
       setFields([]);
     }
+    // Set hasLoadedInitial to true after a tiny tick to prevent immediate unsaved trigger on mount
+    setTimeout(() => {
+      hasLoadedInitial.current = true;
+    }, 100);
   }, [initialFieldsJson]);
+
+  // Track field changes to toggle unsaved changes
+  useEffect(() => {
+    if (hasLoadedInitial.current) {
+      setHasUnsavedChanges(true);
+      setAutoSavingStatus("idle");
+    }
+  }, [fields]);
+
+  // Auto-save logic
+  useEffect(() => {
+    if (!hasUnsavedChanges || fields.length === 0) return;
+
+    const timer = setTimeout(async () => {
+      setAutoSavingStatus("saving");
+      try {
+        const res = await fetch(`/api/admin/templates/${templateId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            fieldsJson: JSON.stringify(fields),
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.ok === false) {
+          throw new Error(data.error || "Auto-save failed");
+        }
+        setHasUnsavedChanges(false);
+        setAutoSavingStatus("saved");
+        const now = new Date();
+        setLastSaved(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      } catch (err) {
+        console.error("Auto-save error:", err);
+        setAutoSavingStatus("error");
+      }
+    }, 4000); // 4 seconds of inactivity triggers auto-save
+
+    return () => clearTimeout(timer);
+  }, [fields, hasUnsavedChanges, templateId]);
+
+  // Intercept Next.js app navigation clicks if unsaved
+  useEffect(() => {
+    const handleAnchorClick = (e: MouseEvent) => {
+      if (!hasUnsavedChanges) return;
+
+      let target = e.target as HTMLElement | null;
+      while (target && target.tagName !== "A") {
+        target = target.parentElement;
+      }
+
+      if (target && target.getAttribute("href")) {
+        const href = target.getAttribute("href");
+        if (href && !href.startsWith("#") && !href.startsWith("javascript:")) {
+          e.preventDefault();
+          e.stopPropagation();
+          setPendingLeaveUrl(href);
+          setShowLeaveConfirm(true);
+        }
+      }
+    };
+
+    document.addEventListener("click", handleAnchorClick, true);
+    return () => {
+      document.removeEventListener("click", handleAnchorClick, true);
+    };
+  }, [hasUnsavedChanges]);
+
+  // Intercept tab closing or reloads if unsaved
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "You have unsaved changes in the form designer. Are you sure you want to leave?";
+      return e.returnValue;
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
+
+  // Window-level mouse listeners for selection box dragging
+  useEffect(() => {
+    if (!dragSelectStart) return;
+
+    const handleWindowMouseMove = (e: MouseEvent) => {
+      const container = document.getElementById(`pdf-overlay-${dragSelectStart.page}`);
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      setDragSelectCurrent({ x, y });
+    };
+
+    const handleWindowMouseUp = (e: MouseEvent) => {
+      const container = document.getElementById(`pdf-overlay-${dragSelectStart.page}`);
+      if (container && dragSelectCurrent) {
+        const rect = container.getBoundingClientRect();
+        const containerWidth = rect.width;
+        const containerHeight = rect.height;
+
+        const startX = dragSelectStart.x;
+        const startY = dragSelectStart.y;
+        const currentX = e.clientX - rect.left;
+        const currentY = e.clientY - rect.top;
+
+        const distance = Math.sqrt(Math.pow(currentX - startX, 2) + Math.pow(currentY - startY, 2));
+
+        if (distance > 5) {
+          const selMinX = Math.min(startX, currentX);
+          const selMaxX = Math.max(startX, currentX);
+          const selMinY = Math.min(startY, currentY);
+          const selMaxY = Math.max(startY, currentY);
+
+          const newlySelected: string[] = [];
+          fields.forEach((f) => {
+            if (f.pdfMapping.page !== dragSelectStart.page) return;
+
+            const fLeft = (f.pdfMapping.x / 100) * containerWidth;
+            const fTop = (f.pdfMapping.y / 100) * containerHeight;
+            const fWidth = f.pdfMapping.width;
+            const fHeight = f.pdfMapping.height;
+
+            const fRight = fLeft + fWidth;
+            const fBottom = fTop + fHeight;
+
+            if (fLeft < selMaxX && fRight > selMinX && fTop < selMaxY && fBottom > selMinY) {
+              const fKey = f.instanceId || f.id;
+              newlySelected.push(fKey);
+            }
+          });
+
+          setSelectedFieldIds((prev) => {
+            const isModifier = e.shiftKey || e.metaKey || e.ctrlKey;
+            if (isModifier) {
+              return Array.from(new Set([...prev, ...newlySelected]));
+            }
+            return newlySelected;
+          });
+        } else {
+          const isModifier = e.shiftKey || e.metaKey || e.ctrlKey;
+          if (!isModifier) {
+            setSelectedFieldIds([]);
+          }
+        }
+      }
+
+      setDragSelectStart(null);
+      setDragSelectCurrent(null);
+    };
+
+    window.addEventListener("mousemove", handleWindowMouseMove);
+    window.addEventListener("mouseup", handleWindowMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleWindowMouseMove);
+      window.removeEventListener("mouseup", handleWindowMouseUp);
+    };
+  }, [dragSelectStart, dragSelectCurrent, fields]);
+
+  // First-time tutorial tour logic
+  useEffect(() => {
+    const completed = localStorage.getItem("docsign_designer_tour_completed");
+    if (!completed) {
+      setTourStep(0);
+    }
+  }, []);
+
+  const tourSteps = [
+    {
+      title: "Welcome to the Form Designer!",
+      description: "Let's take a quick 1-minute tour to see how to place signature fields and collect signer details.",
+      targetId: null,
+    },
+    {
+      title: "👤 Signer Identity Fields",
+      description: "Every template requires both 'Signer Name' and 'Signer Email' fields to be placed. Use the Custom Email field for parent/guardian copies or CCs.",
+      targetId: "tour-identity-fields",
+    },
+    {
+      title: "📝 Standard Input Fields",
+      description: "Drag text boxes, date pickers, numeric fields, or signature pads onto your PDF pages to collect signer input.",
+      targetId: "tour-standard-fields",
+    },
+    {
+      title: "🧮 Calculated & Special Fields",
+      description: "These update automatically! 'Today's Date' stamps the current date, and 'Age (Calculated)' computes signer's age from their Date of Birth.",
+      targetId: "tour-calculated-fields",
+    },
+    {
+      title: "⚡ Alignment & Save",
+      description: "Hold Shift and click multiple fields to open multi-alignment tools. Don't forget to save your schema when done!",
+      targetId: "tour-toolbox",
+    },
+  ];
+
+  const handleNextTour = () => {
+    if (tourStep === null) return;
+    if (tourStep < tourSteps.length - 1) {
+      setTourStep(tourStep + 1);
+    } else {
+      localStorage.setItem("docsign_designer_tour_completed", "true");
+      setTourStep(null);
+    }
+  };
+
+  const handlePrevTour = () => {
+    if (tourStep === null) return;
+    if (tourStep > 0) {
+      setTourStep(tourStep - 1);
+    }
+  };
+
+  const handleSkipTour = () => {
+    localStorage.setItem("docsign_designer_tour_completed", "true");
+    setTourStep(null);
+  };
 
   // Keyboard Actions Listener (Copy/Paste, Delete, Arrow moves)
   useEffect(() => {
@@ -989,6 +1232,7 @@ export default function DesignCanvas({
         throw new Error(data.error || "Failed to save fields schema.");
       }
 
+      setHasUnsavedChanges(false);
       setAlertState({
         title: "Success",
         message: "Visual schema template successfully saved!",
@@ -1022,7 +1266,7 @@ export default function DesignCanvas({
           <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "16px", paddingRight: "4px" }}>
             
             {/* Section 1: Drag-and-Drop Elements Library */}
-            <div className="card-glass" style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px", flexShrink: 0 }}>
+            <div id="tour-toolbox" className="card-glass" style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px", flexShrink: 0 }}>
               <h3 
                 onClick={() => setIsToolboxExpanded(!isToolboxExpanded)} 
                 style={{ margin: 0, fontSize: "15px", fontWeight: "bold", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", userSelect: "none" }}
@@ -1038,7 +1282,7 @@ export default function DesignCanvas({
                   </p>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                    <div style={{ fontSize: "11px", fontWeight: "bold", textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em", marginTop: "4px" }}>
+                    <div id="tour-identity-fields" style={{ fontSize: "11px", fontWeight: "bold", textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em", marginTop: "4px" }}>
                       Signer Identity fields
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
@@ -1065,7 +1309,7 @@ export default function DesignCanvas({
                       </div>
                     </div>
 
-                    <div style={{ fontSize: "11px", fontWeight: "bold", textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em", borderTop: "1px solid var(--border-color)", paddingTop: "10px", marginTop: "4px" }}>
+                    <div id="tour-standard-fields" style={{ fontSize: "11px", fontWeight: "bold", textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em", borderTop: "1px solid var(--border-color)", paddingTop: "10px", marginTop: "4px" }}>
                       Standard Fields
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
@@ -1113,7 +1357,7 @@ export default function DesignCanvas({
                       </div>
                     </div>
 
-                    <div style={{ fontSize: "11px", fontWeight: "bold", textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em", borderTop: "1px solid var(--border-color)", paddingTop: "10px", marginTop: "4px" }}>
+                    <div id="tour-calculated-fields" style={{ fontSize: "11px", fontWeight: "bold", textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.05em", borderTop: "1px solid var(--border-color)", paddingTop: "10px", marginTop: "4px" }}>
                       Calculated Fields
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
@@ -1601,6 +1845,16 @@ export default function DesignCanvas({
 
           {/* Pinned Save button area at bottom of sidebar */}
           <div style={{ flexShrink: 0, paddingTop: "12px", borderTop: "1px solid var(--border-color)", background: "transparent" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", fontSize: "11px", color: "var(--text-muted)", padding: "0 4px" }}>
+              <span>Status:</span>
+              <span style={{ fontWeight: "bold" }}>
+                {autoSavingStatus === "saving" && "⏳ Saving draft..."}
+                {autoSavingStatus === "saved" && `✓ Saved at ${lastSaved}`}
+                {autoSavingStatus === "error" && "⚠️ Auto-save error"}
+                {autoSavingStatus === "idle" && hasUnsavedChanges && "● Unsaved changes"}
+                {autoSavingStatus === "idle" && !hasUnsavedChanges && "✓ Saved"}
+              </span>
+            </div>
             <button
               onClick={handleSaveSchema}
               disabled={saving}
@@ -1640,7 +1894,7 @@ export default function DesignCanvas({
               
               {/* Placement & Interactivity Overlay Container */}
               <div
-                onClick={() => setSelectedFieldIds([])}
+                onMouseDown={(e) => handleOverlayMouseDown(e, pageIdx)}
                 style={{
                   position: "absolute",
                   top: 0,
@@ -1650,6 +1904,22 @@ export default function DesignCanvas({
                   zIndex: 10,
                 }}
               >
+                {/* Drag Selection Box Overlay */}
+                {dragSelectStart && dragSelectStart.page === pageIdx && dragSelectCurrent && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: Math.min(dragSelectStart.x, dragSelectCurrent.x),
+                      top: Math.min(dragSelectStart.y, dragSelectCurrent.y),
+                      width: Math.abs(dragSelectCurrent.x - dragSelectStart.x),
+                      height: Math.abs(dragSelectCurrent.y - dragSelectStart.y),
+                      border: "1.5px dashed var(--primary-color)",
+                      backgroundColor: "rgba(79, 70, 229, 0.15)",
+                      pointerEvents: "none",
+                      zIndex: 100,
+                    }}
+                  />
+                )}
                 {/* Placed Fields Overlay Cards */}
                 {fields
                   .filter((f) => f.pdfMapping.page === pageIdx)
@@ -1781,6 +2051,120 @@ export default function DesignCanvas({
           </div>
         </div>
       )}
+
+      {/* Custom Unsaved Changes Warning Dialog */}
+      {showLeaveConfirm && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000 }}>
+          <div className="card-glass" style={{ width: "420px", padding: "24px", display: "flex", flexDirection: "column", gap: "16px", border: "1px solid var(--border-color)" }}>
+            <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "bold", color: "#f59e0b" }}>⚠️ Unsaved Changes</h3>
+            <p style={{ margin: 0, fontSize: "14px", color: "var(--text-main)", lineHeight: "1.5" }}>
+              You have unsaved changes in the designer template. Do you want to save them before leaving?
+            </p>
+            <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end", marginTop: "8px" }}>
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => {
+                  setShowLeaveConfirm(false);
+                  setHasUnsavedChanges(false);
+                  if (pendingLeaveUrl) {
+                    router.push(pendingLeaveUrl);
+                  }
+                }} 
+                style={{ width: "auto", border: "1px solid #ef4444", color: "#ef4444" }}
+              >
+                Discard & Leave
+              </button>
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => setShowLeaveConfirm(false)} 
+                style={{ width: "auto" }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={async () => {
+                  setShowLeaveConfirm(false);
+                  await handleSaveSchema();
+                }}
+                style={{ width: "auto" }}
+              >
+                Save & Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Interactive Tour Step tooltip overlay */}
+      {tourStep !== null && (() => {
+        const step = tourSteps[tourStep];
+        const isCenter = !step.targetId;
+        return (
+          <div style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0, 0, 0, 0.4)",
+            zIndex: 9999,
+            display: "flex",
+            justifyContent: isCenter ? "center" : "flex-start",
+            alignItems: isCenter ? "center" : "flex-start",
+            paddingLeft: isCenter ? "0" : "390px",
+            paddingTop: isCenter ? "0" : "200px",
+          }}>
+            <div className="card-glass" style={{
+              width: "360px",
+              padding: "24px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4)",
+              border: "2px solid var(--primary-color)",
+            }}>
+              <div>
+                <span style={{ fontSize: "11px", fontWeight: "bold", textTransform: "uppercase", color: "var(--primary-color)", letterSpacing: "0.05em" }}>
+                  Step {tourStep + 1} of {tourSteps.length}
+                </span>
+                <h3 style={{ margin: "4px 0 0", fontSize: "16px", fontWeight: "bold" }}>{step.title}</h3>
+              </div>
+              
+              <p style={{ margin: 0, fontSize: "13px", color: "var(--text-main)", lineHeight: "1.5" }}>
+                {step.description}
+              </p>
+              
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "8px" }}>
+                <button 
+                  onClick={handleSkipTour}
+                  style={{ background: "transparent", border: "none", color: "var(--text-muted)", fontSize: "12px", cursor: "pointer" }}
+                >
+                  Skip Tour
+                </button>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  {tourStep > 0 && (
+                    <button 
+                      onClick={handlePrevTour}
+                      className="btn btn-secondary"
+                      style={{ padding: "6px 12px", fontSize: "12px", width: "auto" }}
+                    >
+                      Back
+                    </button>
+                  )}
+                  <button 
+                    onClick={handleNextTour}
+                    className="btn btn-primary"
+                    style={{ padding: "6px 12px", fontSize: "12px", width: "auto" }}
+                  >
+                    {tourStep === tourSteps.length - 1 ? "Finish" : "Next"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </>
   );
 }

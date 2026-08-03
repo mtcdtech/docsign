@@ -15,7 +15,7 @@ export default async function AdminDashboard() {
   const isGlobalAdmin = user.role === "Admin";
 
   let signedDocs = [];
-  let stats = { templatesCount: 0, docsCount: 0 };
+  let stats = { templatesCount: 0, docsCount: 0, draftsCount: 0 };
 
   if (isGlobalAdmin) {
     signedDocs = await prisma.signedDocument.findMany({
@@ -29,7 +29,8 @@ export default async function AdminDashboard() {
       orderBy: { createdAt: "desc" },
     });
     stats.templatesCount = await prisma.template.count();
-    stats.docsCount = await prisma.signedDocument.count();
+    stats.docsCount = await prisma.signedDocument.count({ where: { isDraft: false } });
+    stats.draftsCount = await prisma.signedDocument.count({ where: { isDraft: true } });
   } else {
     // Segregate documents by organization memberships
     const orgs = await prisma.organization.findMany({
@@ -60,7 +61,8 @@ export default async function AdminDashboard() {
         organizationId: { in: orgIds },
       },
     });
-    stats.docsCount = signedDocs.length;
+    stats.docsCount = signedDocs.filter((d) => !d.isDraft).length;
+    stats.draftsCount = signedDocs.filter((d) => d.isDraft).length;
   }
 
   return (
@@ -103,6 +105,15 @@ export default async function AdminDashboard() {
 
         <div className="card-glass">
           <span style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase" }}>
+            Drafts in Progress
+          </span>
+          <div style={{ fontSize: "36px", fontWeight: 800, marginTop: "8px", color: "#f59e0b" }}>
+            {stats.draftsCount}
+          </div>
+        </div>
+
+        <div className="card-glass">
+          <span style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase" }}>
             Organization Scope
           </span>
           <div style={{ fontSize: "18px", fontWeight: 600, marginTop: "16px", color: "var(--text-main)" }}>
@@ -137,66 +148,91 @@ export default async function AdminDashboard() {
               </thead>
               <tbody>
                 {signedDocs.map((doc) => {
-                  const cleanFilename = path.basename(doc.signedPdfPath);
-                  const downloadUrl = `/uploads/signed/${cleanFilename}`;
+                  const downloadUrl = doc.signedPdfPath ? `/uploads/signed/${path.basename(doc.signedPdfPath)}` : null;
                   
                   return (
-                    <tr key={doc.id}>
+                    <tr key={doc.id} style={{ opacity: doc.isDraft ? 0.75 : 1 }}>
                       <td>
-                        <div style={{ fontWeight: 600, color: "var(--text-main)" }}>{doc.signerName}</div>
-                        <div style={{ fontSize: "12px" }}>{doc.signerEmail}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <div style={{ fontWeight: 600, color: "var(--text-main)" }}>{doc.signerName}</div>
+                          {doc.isDraft && (
+                            <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "4px", background: "#f59e0b", color: "#fff", fontWeight: "bold" }}>
+                              Draft
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: "12px" }}>{doc.signerEmail || "(Unspecified)"}</div>
                       </td>
                       <td>{doc.template.title}</td>
                       <td>{doc.template.organization.name}</td>
                       <td suppressHydrationWarning>{new Date(doc.createdAt).toLocaleString()}</td>
                       <td>
-                        <div style={{ display: "flex", gap: "8px", fontSize: "11px" }}>
-                          <span style={{ color: doc.emailedUser ? "#22c55e" : "#ef4444" }}>
-                            {doc.emailedUser ? "✓ User Email" : "✗ User Email"}
+                        {doc.isDraft ? (
+                          <span style={{ fontSize: "11px", color: "var(--text-muted)", fontStyle: "italic" }}>
+                            Draft – No integrations run yet
                           </span>
-                          <span style={{ color: doc.emailedLeader ? "#22c55e" : "#ef4444" }}>
-                            {doc.emailedLeader ? "✓ Leader Email" : "✗ Leader Email"}
-                          </span>
-                           {doc.template.saveSharepoint && (
-                             doc.sharepointUrl ? (
-                               <a
-                                 href={doc.sharepointUrl}
-                                 target="_blank"
-                                 rel="noopener noreferrer"
-                                 style={{ color: "#22c55e", textDecoration: "none", cursor: "pointer", fontWeight: "bold" }}
-                               >
-                                 ✓ SharePoint 🔗
-                               </a>
-                             ) : (
-                               <span style={{ color: "#ef4444" }}>
-                                 ✗ SharePoint
-                               </span>
-                             )
-                           )}
-                        </div>
+                        ) : (
+                          <div style={{ display: "flex", gap: "8px", fontSize: "11px" }}>
+                            <span style={{ color: doc.emailedUser ? "#22c55e" : "#ef4444" }}>
+                              {doc.emailedUser ? "✓ User Email" : "✗ User Email"}
+                            </span>
+                            <span style={{ color: doc.emailedLeader ? "#22c55e" : "#ef4444" }}>
+                              {doc.emailedLeader ? "✓ Leader Email" : "✗ Leader Email"}
+                            </span>
+                            {doc.template.emailParent && (
+                              <span style={{ color: doc.emailedParent ? "#22c55e" : "#ef4444" }}>
+                                {doc.emailedParent ? "✓ Parent Email" : "✗ Parent Email"}
+                              </span>
+                            )}
+                            {doc.template.saveSharepoint && (
+                              doc.sharepointUrl ? (
+                                <a
+                                  href={doc.sharepointUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ color: "#22c55e", textDecoration: "none", cursor: "pointer", fontWeight: "bold" }}
+                                >
+                                  ✓ SharePoint 🔗
+                                </a>
+                              ) : (
+                                <span style={{ color: "#ef4444" }}>
+                                  ✗ SharePoint
+                                </span>
+                              )
+                            )}
+                          </div>
+                        )}
                       </td>
                       <td style={{ textAlign: "right" }}>
-                        <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-                          {doc.sharepointUrl && (
-                            <a
-                              href={doc.sharepointUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="btn btn-secondary"
-                              style={{ padding: "6px 12px", fontSize: "12px", width: "auto" }}
-                            >
-                              SharePoint
-                            </a>
-                          )}
-                          <a
-                            href={downloadUrl}
-                            download
-                            className="btn btn-primary"
-                            style={{ padding: "6px 12px", fontSize: "12px", width: "auto" }}
-                          >
-                            Download PDF
-                          </a>
-                        </div>
+                        {doc.isDraft ? (
+                          <span style={{ fontSize: "12px", color: "var(--text-muted)", fontStyle: "italic", paddingRight: "12px" }}>
+                            In Progress
+                          </span>
+                        ) : (
+                          <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+                            {doc.sharepointUrl && (
+                              <a
+                                href={doc.sharepointUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-secondary"
+                                style={{ padding: "6px 12px", fontSize: "12px", width: "auto" }}
+                              >
+                                SharePoint
+                              </a>
+                            )}
+                            {downloadUrl && (
+                              <a
+                                href={downloadUrl}
+                                download
+                                className="btn btn-primary"
+                                style={{ padding: "6px 12px", fontSize: "12px", width: "auto" }}
+                              >
+                                Download PDF
+                              </a>
+                            )}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );

@@ -69,6 +69,10 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [signedPdfUrl, setSignedPdfUrl] = useState<string | null>(null);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  
+  // Signer draft states
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [confirmResetOpen, setConfirmResetOpen] = useState(false);
 
   // PDF.js rendering states
   const [pdfjsLoaded, setPdfjsLoaded] = useState(false);
@@ -146,6 +150,11 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
         console.error("Failed to parse saved signing progress:", e);
       }
     }
+
+    const savedDraftId = localStorage.getItem(`docsign_draft_id_${template.id}`);
+    if (savedDraftId) {
+      setDraftId(savedDraftId);
+    }
   }, [template.id]);
 
   // Persist progress to localStorage on change
@@ -157,6 +166,40 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
       );
     }
   }, [signerName, signerEmail, formData, template.id]);
+
+  // Database draft auto-save sync loop (debounced)
+  useEffect(() => {
+    if (!signerName && !signerEmail && Object.keys(formData).length === 0) return;
+
+    const saveDraftDebounced = setTimeout(async () => {
+      try {
+        if (draftId) {
+          // Update existing draft
+          await fetch(`/api/sign/${template.id}/draft`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ draftId, signerName, signerEmail, formData })
+          });
+        } else {
+          // Create new draft
+          const res = await fetch(`/api/sign/${template.id}/draft`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ signerName, signerEmail, formData })
+          });
+          const data = await res.json();
+          if (res.ok && data.draftId) {
+            setDraftId(data.draftId);
+            localStorage.setItem(`docsign_draft_id_${template.id}`, data.draftId);
+          }
+        }
+      } catch (err) {
+        console.error("Error auto-saving signer draft to database:", err);
+      }
+    }, 3000); // 3 seconds of typing/interaction inactivity triggers draft save
+
+    return () => clearTimeout(saveDraftDebounced);
+  }, [signerName, signerEmail, formData, draftId, template.id]);
 
   // Detect mobile view size
   useEffect(() => {
@@ -518,6 +561,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
           signerName,
           signerEmail,
           formData: finalFormData,
+          draftId,
         }),
       });
 
@@ -528,6 +572,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
 
       // Successful signing: clear localStorage progress cache
       localStorage.removeItem(`docsign_progress_${template.id}`);
+      localStorage.removeItem(`docsign_draft_id_${template.id}`);
       setSignedPdfUrl(data.pdfUrl || `/uploads/signed/${data.signedDocumentId}.pdf`);
     } catch (err: any) {
       setSubmitError(err.message || "An unexpected error occurred.");
@@ -1443,6 +1488,14 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
                     </button>
                   )}
 
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setConfirmResetOpen(true)}
+                    style={{ width: "100%", padding: "10px", marginTop: "12px", border: "1px dashed #ef4444", color: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+                  >
+                    🗑️ Reset Form & Clear Data
+                  </button>
                 </div>
               </form>
             )
@@ -1615,6 +1668,56 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
               {isSubmitting ? "Signing & Processing..." : "Sign Document"}
             </button>
           )}
+        </div>
+      )}
+
+      {/* Custom Reset Confirmation Modal */}
+      {confirmResetOpen && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999 }}>
+          <div className="card-glass" style={{ width: "400px", padding: "24px", display: "flex", flexDirection: "column", gap: "16px", border: "1px solid var(--border-color)" }}>
+            <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "bold", color: "#ef4444" }}>Reset Form & Clear Progress</h3>
+            <p style={{ margin: 0, fontSize: "13px", color: "var(--text-main)", lineHeight: "1.5" }}>
+              Are you sure you want to clear your current progress and reset this form? This will erase all filled values and retrieve the latest structure from the server.
+            </p>
+            <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+              <button 
+                type="button"
+                className="btn btn-secondary" 
+                onClick={() => setConfirmResetOpen(false)}
+                style={{ width: "auto" }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={async () => {
+                  setConfirmResetOpen(false);
+                  
+                  // Delete draft database record if exists
+                  if (draftId) {
+                    try {
+                      await fetch(`/api/sign/${template.id}/draft?draftId=${draftId}`, {
+                        method: "DELETE",
+                      });
+                    } catch (delErr) {
+                      console.error("Failed to delete draft on server during reset:", delErr);
+                    }
+                  }
+                  
+                  // Clear localStorage caches
+                  localStorage.removeItem(`docsign_progress_${template.id}`);
+                  localStorage.removeItem(`docsign_draft_id_${template.id}`);
+                  
+                  // Reload the page to reset react state and fetch latest fields
+                  window.location.reload();
+                }}
+                style={{ width: "auto", background: "#ef4444", borderColor: "#ef4444" }}
+              >
+                Confirm Reset
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>

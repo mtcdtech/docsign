@@ -70,6 +70,7 @@ export default async function EditTemplatePage({ params }: EditTemplatePageProps
             slug: template.slug,
             emailUser: template.emailUser,
             emailLeader: template.emailLeader,
+            emailParent: template.emailParent,
             notificationEmails: template.notificationEmails || "",
             saveSharepoint: template.saveSharepoint,
             sharepointFolderId: template.sharepointFolderId,
