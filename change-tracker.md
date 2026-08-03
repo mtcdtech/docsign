@@ -136,3 +136,8 @@
 - **SMTP Sender Reversion**: Changed the default fallback `mailFrom` in [mail.ts](file:///Users/benny2168/Antigravity/docsign/src/lib/mail.ts) back to `"docsign@mtcd.org"` as explicitly required for Azure configuration alignment.
 - **SMTP Sender Header**: Added the `sender` configuration option to nodemailer `mailOptions` (bound to `SMTP_USER`), enabling Exchange Online to process mail delivery via Send-on-Behalf or Send-As authorizations correctly and bypass SMTP client SendAsDenied rejections.
 - **Status**: Completed.
+
+### [2026-08-03] Azure Communication Services SMTP Dynamic Configuration (v0.12.8)
+- **ACS SMTP Auto-Config**: Programmed [mail.ts](file:///Users/benny2168/Antigravity/docsign/src/lib/mail.ts) to detect `AZURE_AD_CLIENT_ID`, `AZURE_AD_TENANT_ID`, and `AZURE_AD_CLIENT_SECRET` environment variables. If present, it automatically redirects SMTP traffic to `smtp.azurecomm.net` on port 587, authenticating via `<client_id>@<tenant_id>` username and client secret password.
+- **ACS Envelope Validation**: Omitted setting the SMTP `sender` header when routing through `smtp.azurecomm.net` to avoid malformed header validations (since the ACS login username is not a valid email address), ensuring emails are delivered as pure `docsign@mtcd.org` sender envelopes.
+- **Status**: Completed.

@@ -15,11 +15,23 @@ export async function sendEmail({
   attachmentPath?: string;
   attachmentName?: string;
 }) {
-  const host = process.env.SMTP_HOST || "smtp.office365.com";
-  const port = parseInt(process.env.SMTP_PORT || "587");
-  // Default fallback user/pass to the Office 365 account from the other app
-  const user = process.env.SMTP_USER || "announcements@mtcd.org";
-  const pass = process.env.SMTP_PASS || "T#613178294935us";
+  let host = process.env.SMTP_HOST || "smtp.office365.com";
+  let port = parseInt(process.env.SMTP_PORT || "587");
+  let user = process.env.SMTP_USER || "announcements@mtcd.org";
+  let pass = process.env.SMTP_PASS || "T#613178294935us";
+
+  // Auto-configure Azure Communication Services SMTP if Azure credentials are present
+  const azureClientId = process.env.AZURE_AD_CLIENT_ID;
+  const azureTenantId = process.env.AZURE_AD_TENANT_ID;
+  const azureClientSecret = process.env.AZURE_AD_CLIENT_SECRET;
+
+  if (azureClientId && azureTenantId && azureClientSecret) {
+    host = "smtp.azurecomm.net";
+    port = 587;
+    user = `${azureClientId}@${azureTenantId}`;
+    pass = azureClientSecret;
+  }
+
   const mailFrom = process.env.SMTP_FROM || "docsign@mtcd.org";
 
   const transporter = nodemailer.createTransport({
@@ -43,14 +55,17 @@ export async function sendEmail({
     });
   }
 
-  const mailOptions = {
+  const mailOptions: any = {
     from: `"DocSign Portal" <${mailFrom}>`,
-    sender: user,
     to,
     subject,
     html,
     attachments,
   };
+
+  if (host !== "smtp.azurecomm.net") {
+    mailOptions.sender = user;
+  }
 
   try {
     const info = await transporter.sendMail(mailOptions);
