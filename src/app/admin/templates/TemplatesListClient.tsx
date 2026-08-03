@@ -56,7 +56,7 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
   const [searchQuery, setSearchQuery] = useState("");
   const [orgSortOrder, setOrgSortOrder] = useState<"asc" | "desc" | null>(null);
   const [currentTab, setCurrentTab] = useState<"active" | "archived">("active");
-  const [previewDoc, setPreviewDoc] = useState<Submission | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<{ submission: Submission; template: Template } | null>(null);
 
   const handleSharePointTagClick = async (folderId: string) => {
     try {
@@ -528,7 +528,7 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
                                           return (
                                             <tr 
                                               key={doc.id} 
-                                              onClick={() => setPreviewDoc(doc)}
+                                              onClick={() => setPreviewDoc({ submission: doc, template: tpl as any })}
                                               style={{ opacity: doc.isDraft ? 0.75 : 1, cursor: "pointer" }}
                                               title="Click row to preview submission details"
                                             >
@@ -616,7 +616,7 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
 
       {previewDoc && (
         <FormPreviewModal 
-          submission={previewDoc as any} 
+          submission={previewDoc.submission as any} 
           template={previewDoc.template as any} 
           onClose={() => setPreviewDoc(null)} 
         />

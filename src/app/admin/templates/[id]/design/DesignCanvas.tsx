@@ -91,6 +91,7 @@ export default function DesignCanvas({
   });
 
   const renderedPagesRef = useRef<Set<number>>(new Set());
+  const dragJustCompletedRef = useRef(false);
 
   // Sidebar collapsible sections states
   const [isToolboxExpanded, setIsToolboxExpanded] = useState(true);
@@ -236,6 +237,10 @@ export default function DesignCanvas({
         const distance = Math.sqrt(Math.pow(currentX - startX, 2) + Math.pow(currentY - startY, 2));
 
         if (distance > 5) {
+          dragJustCompletedRef.current = true;
+          setTimeout(() => {
+            dragJustCompletedRef.current = false;
+          }, 100);
           const selMinX = Math.min(startX, currentX);
           const selMaxX = Math.max(startX, currentX);
           const selMinY = Math.min(startY, currentY);
@@ -1901,6 +1906,7 @@ export default function DesignCanvas({
               <div
                 onMouseDown={(e) => handleOverlayMouseDown(e, pageIdx)}
                 onClick={(e) => {
+                  if (dragJustCompletedRef.current) return;
                   if (e.target === e.currentTarget) {
                     setSelectedFieldIds([]);
                   }

@@ -113,3 +113,10 @@
 - **Dashboard Audit Logs**: Relocated system audit logs from the Admin Settings subtab directly into a primary dashboard card component `AuditLogsDashboardClient.tsx`.
 - **Event Filter Buttons**: Added quick-filter toggle buttons (All, Logins, Creations & Edits, Deletions) to the dashboard audit trail card, allowing instant log isolation.
 - **Status**: Completed.
+
+### [2026-08-03] Selection Drag Fix, Modal Proportions & Collapsed Audit Log (v0.12.4)
+- **Selection Drag Race Fix**: Resolved the browser native click-event race condition where releasing a selection drag immediately fired a click on the parent canvas overlay container, resetting selected fields. Introduced a transient `dragJustCompletedRef` flag in [DesignCanvas.tsx](file:///Users/benny2168/Antigravity/docsign/src/app/admin/templates/%5Bid%5D/design/DesignCanvas.tsx) to block canvas overlay click actions immediately after drag releases.
+- **Natural Canvas Scaling**: Removed the hardcoded `aspectRatio: "8.5 / 11"` wrapper limit and changed canvas styling to `width: "100%", height: "auto"` inside [FormPreviewModal.tsx](file:///Users/benny2168/Antigravity/docsign/src/components/FormPreviewModal.tsx). This allows the canvas to render with perfect, uncompressed aspect proportions for all PDF page dimensions.
+- **Template list History Preview Fix**: Changed the clicked preview row state in [TemplatesListClient.tsx](file:///Users/benny2168/Antigravity/docsign/src/app/admin/templates/TemplatesListClient.tsx) to hold both `submission` and `template` properties, preventing client-side `Cannot read properties of undefined (reading 'pdfPath')` errors when passing arguments to `FormPreviewModal`.
+- **Collapsed Audit Log**: Renamed the Audit section to "System Audit Log" and implemented default-collapsed state management inside [AuditLogsDashboardClient.tsx](file:///Users/benny2168/Antigravity/docsign/src/app/admin/AuditLogsDashboardClient.tsx), exposing an interactive expand/collapse toggle header.
+- **Status**: Completed.

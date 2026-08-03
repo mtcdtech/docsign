@@ -197,13 +197,12 @@ export default function FormPreviewModal({ submission, template, onClose }: Form
                   overflow: "hidden",
                   width: "100%",
                   maxWidth: "680px",
-                  aspectRatio: "8.5 / 11",
                   background: "#fff",
                 }}
               >
                 <canvas 
                   id={`shared-preview-pdf-canvas-${pageIdx}`} 
-                  style={{ display: "block", width: "100%", height: "100%" }} 
+                  style={{ display: "block", width: "100%", height: "auto" }} 
                 />
                 
                 <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
