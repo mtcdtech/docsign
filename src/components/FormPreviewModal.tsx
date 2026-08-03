@@ -153,6 +153,8 @@ export default function FormPreviewModal({ submission, template, onClose }: Form
       <div className="card-glass" style={{
         width: "800px",
         height: "85vh",
+        maxHeight: "85vh",
+        overflow: "hidden",
         maxWidth: "95%",
         padding: "24px",
         display: "flex",
