@@ -3,6 +3,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import SubmissionsListClient from "./SubmissionsListClient";
+import AuditLogsDashboardClient from "./AuditLogsDashboardClient";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ export default async function AdminDashboard() {
   const isGlobalAdmin = user.role === "Admin";
 
   let signedDocs = [];
+  let auditLogs: any[] = [];
   let stats = { templatesCount: 0, docsCount: 0, draftsCount: 0 };
 
   if (isGlobalAdmin) {
@@ -31,6 +33,10 @@ export default async function AdminDashboard() {
     stats.templatesCount = await prisma.template.count();
     stats.docsCount = await prisma.signedDocument.count({ where: { isDraft: false } });
     stats.draftsCount = await prisma.signedDocument.count({ where: { isDraft: true } });
+    auditLogs = await prisma.auditLog.findMany({
+      take: 100,
+      orderBy: { createdAt: "desc" },
+    });
   } else {
     // Segregate documents by organization memberships
     const orgs = await prisma.organization.findMany({
@@ -130,6 +136,12 @@ export default async function AdminDashboard() {
 
         <SubmissionsListClient signedDocs={signedDocs} />
       </div>
+
+      {isGlobalAdmin && (
+        <div style={{ marginTop: "32px" }}>
+          <AuditLogsDashboardClient initialAuditLogs={auditLogs} />
+        </div>
+      )}
     </div>
   );
 }

@@ -169,7 +169,9 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
           </div>
 
           <button
-            onClick={() => signOut({ callbackUrl: "/" })}
+            onClick={() => signOut({ redirect: false }).then(() => {
+              window.location.href = "https://auth.server.mtcd.org/application/o/docsign/end-session/?post_logout_redirect_uri=" + encodeURIComponent(window.location.origin + "/");
+            })}
             className="btn btn-secondary"
             style={{ padding: "8px 16px", fontSize: "13px" }}
           >
