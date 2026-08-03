@@ -106,3 +106,10 @@
 - **Fix Drag Selection Box**: Added `px` unit string conversions to CSS positioning parameters (left, top, width, height) of the drag-selection outline overlay, and added `userSelect: "none"` styles to prevent browser text-selection blocks.
 - **Next.js Production Build**: Marked `/api/admin/audit` route as dynamic to avoid static pre-generation warnings during webpack phase. Production build compiled cleanly with zero compilation errors.
 - **Status**: Completed.
+
+### [2026-08-03] Portal Previews & Dashboard Audit Logs with Type Filters (v0.12.3)
+- **Portal Previews**: Extracted the dynamic `FormPreviewModal` into a shared component under `src/components/FormPreviewModal.tsx` and wrapped it in a React Portal (`createPortal(..., document.body)`). This ensures the modal renders at the body root, bypassing any containing block styles (like parent `backdrop-filter: blur` or `transform`) that caused the preview to stretch, distort, or cut off inside iframe or card panels.
+- **Form Templates History Modal**: Updated the history preview modal in `TemplatesListClient.tsx` to use the new actual form state `FormPreviewModal` component, rendering the formatted PDF pages with signer variables instead of simple raw text lists.
+- **Dashboard Audit Logs**: Relocated system audit logs from the Admin Settings subtab directly into a primary dashboard card component `AuditLogsDashboardClient.tsx`.
+- **Event Filter Buttons**: Added quick-filter toggle buttons (All, Logins, Creations & Edits, Deletions) to the dashboard audit trail card, allowing instant log isolation.
+- **Status**: Completed.
