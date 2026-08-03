@@ -80,14 +80,19 @@
 - **Template Integration Settings**: Added "Email copy to Parent/Guardian" integration option toggle. Updated edit templates page and template CRUD API routes (`POST`/`PATCH`) to support the new field.
 - **Form Designer Enhancements**:
   - Implemented auto-saving loop in `DesignCanvas.tsx` that debounces template layout updates and displays auto-save status feedback.
+  - Implemented a prominent, floating green status Toast in the top right of the designer canvas to present save states and autohide after 3 seconds.
+  - Moved the manual "Save Fields" button to the top of the left sidebar, sticky above the toolbox library.
   - Implemented a custom leave warning dialog that intercepts page transitions or reloads if there are unsaved changes.
-  - Added click-and-drag selection bounding box highlighting and overlap checking to select multiple fields simultaneously.
+  - Implemented click-and-drag selection bounding box highlight (fixed overlay coordinates handler) to select multiple fields in parallel.
+  - Added click-to-deselect support when clicking directly on the canvas background.
   - Added an interactive first-time onboarding tutorial step-by-step help tour for toolbox library sections.
 - **Public Form Filler & Drafts**:
   - Added debounced drafts saving from the public signer form using new draft management API endpoints (`POST`/`PATCH`/`DELETE` under `/api/sign/[id]/draft`).
+  - Added auto-resolution fallback to scan `formDataJson` variables for the signer's name in draft save endpoints, avoiding "Anonymous Draft" logs when a name field has been typed.
   - Added a "Reset Form" button on the signer page with a custom React confirmation modal that clears progress, deletes drafts, and reloads the template layout.
 - **Dashboard & History**:
   - Updated admin dashboard to display Drafts in Progress statistics and highlight drafts in the recent submissions list.
   - Removed "Fields Payload" column and the "View Mapped Fields" details element from the templates history table cards.
+  - Made history list table rows clickable, triggering a custom modal overlay presenting a detailed metadata preview and list of form responses (works for both drafts and completed documents).
 - **Build Verification**: Local Next.js build compilation completed successfully.
 - **Status**: Completed, ready for deployment.

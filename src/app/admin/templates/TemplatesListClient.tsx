@@ -42,6 +42,7 @@ interface Submission {
   signedPdfPath: string;
   createdAt: string;
   sharepointUrl: string | null;
+  isDraft?: boolean;
 }
 
 interface TemplatesListClientProps {
@@ -53,6 +54,7 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
   const [searchQuery, setSearchQuery] = useState("");
   const [orgSortOrder, setOrgSortOrder] = useState<"asc" | "desc" | null>(null);
   const [currentTab, setCurrentTab] = useState<"active" | "archived">("active");
+  const [previewDoc, setPreviewDoc] = useState<Submission | null>(null);
 
   const handleSharePointTagClick = async (folderId: string) => {
     try {
@@ -499,12 +501,31 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
                                       <tbody>
                                         {filteredSubmissions.map((doc) => {
                                           const date = new Date(doc.createdAt).toLocaleString();
+                                          
+                                          // Find the resolved name in case it is Anonymous Draft
+                                          let displaySignerName = doc.signerName;
+                                          if (displaySignerName === "Anonymous Draft" || !displaySignerName) {
+                                            try {
+                                              const formData = JSON.parse(doc.formDataJson);
+                                              const fields = JSON.parse(tpl.fieldsJson) || [];
+                                              const nameField = fields.find((f: any) => f.type === "signer_name");
+                                              if (nameField && formData[nameField.id]) {
+                                                displaySignerName = formData[nameField.id];
+                                              }
+                                            } catch (e) {}
+                                          }
+
                                           return (
-                                            <tr key={doc.id} style={{ opacity: doc.isDraft ? 0.75 : 1 }}>
+                                            <tr 
+                                              key={doc.id} 
+                                              onClick={() => setPreviewDoc(doc)}
+                                              style={{ opacity: doc.isDraft ? 0.75 : 1, cursor: "pointer" }}
+                                              title="Click row to preview submission details"
+                                            >
                                               <td style={{ fontSize: "12px" }} suppressHydrationWarning>{date}</td>
                                               <td style={{ fontWeight: 600 }}>
                                                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                                  <span>{doc.signerName}</span>
+                                                  <span>{displaySignerName}</span>
                                                   {doc.isDraft && (
                                                     <span style={{ fontSize: "9px", padding: "1px 5px", borderRadius: "3px", background: "#f59e0b", color: "#fff", fontWeight: "bold" }}>
                                                       Draft
@@ -513,7 +534,7 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
                                                 </div>
                                               </td>
                                               <td style={{ fontSize: "12px" }}>{doc.signerEmail || "(Unspecified)"}</td>
-                                              <td style={{ textAlign: "right" }}>
+                                              <td style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
                                                 <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", alignItems: "center" }}>
                                                   {doc.isDraft ? (
                                                     <span style={{ fontSize: "11px", color: "var(--text-muted)", fontStyle: "italic", paddingRight: "6px" }}>
@@ -582,6 +603,118 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
           )}
         </div>
       </div>
+
+      {previewDoc && (() => {
+        let formData = {};
+        try {
+          formData = JSON.parse(previewDoc.formDataJson);
+        } catch (e) {}
+
+        return (
+          <div style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.75)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backdropFilter: "blur(4px)",
+          }} onClick={() => setPreviewDoc(null)}>
+            <div className="card-glass" style={{
+              width: "550px",
+              maxWidth: "90%",
+              padding: "24px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)",
+              border: "1px solid var(--border-color)",
+            }} onClick={(e) => e.stopPropagation()}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "bold" }}>Form Submission Preview</h3>
+                <button 
+                  onClick={() => setPreviewDoc(null)}
+                  style={{ background: "transparent", border: "none", fontSize: "20px", cursor: "pointer", color: "var(--text-muted)" }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)", paddingBottom: "16px" }}>
+                <div>
+                  <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Signer Name</span>
+                  <div style={{ fontWeight: 600, color: "var(--text-main)" }}>{previewDoc.signerName}</div>
+                </div>
+                <div>
+                  <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Signer Email</span>
+                  <div style={{ fontWeight: 600, color: "var(--text-main)" }}>{previewDoc.signerEmail || "(Not provided)"}</div>
+                </div>
+                <div>
+                  <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Date</span>
+                  <div style={{ fontWeight: 600, color: "var(--text-main)" }}>{new Date(previewDoc.createdAt).toLocaleString()}</div>
+                </div>
+                <div>
+                  <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Status</span>
+                  <div>
+                    {previewDoc.isDraft ? (
+                      <span style={{ background: "#f59e0b", color: "#fff", padding: "2px 8px", borderRadius: "4px", fontSize: "11px", fontWeight: "bold" }}>
+                        Draft in Progress
+                      </span>
+                    ) : (
+                      <span style={{ background: "#22c55e", color: "#fff", padding: "2px 8px", borderRadius: "4px", fontSize: "11px", fontWeight: "bold" }}>
+                        Completed Submission
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 style={{ margin: "0 0 8px 0", fontSize: "14px", fontWeight: "bold", color: "var(--text-main)" }}>Form Field Responses</h4>
+                {Object.keys(formData).length === 0 ? (
+                  <div style={{ fontSize: "13px", color: "var(--text-muted)", fontStyle: "italic", padding: "12px", background: "rgba(0,0,0,0.15)", borderRadius: "6px", textAlign: "center" }}>
+                    No responses entered yet.
+                  </div>
+                ) : (
+                  <div style={{ background: "rgba(0,0,0,0.25)", padding: "12px", borderRadius: "6px", maxHeight: "250px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {Object.entries(formData).map(([key, val]) => (
+                      <div key={key} style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.03)", paddingBottom: "6px", fontSize: "13px" }}>
+                        <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>{key}</span>
+                        <span style={{ color: "var(--text-main)", fontWeight: 600, wordBreak: "break-word", maxWidth: "60%" }}>{String(val)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}>
+                <button 
+                  onClick={() => setPreviewDoc(null)} 
+                  className="btn btn-secondary" 
+                  style={{ width: "auto" }}
+                >
+                  Close
+                </button>
+                {!previewDoc.isDraft && previewDoc.signedPdfPath && (
+                  <a
+                    href={`/api/download/signed/${getFilename(previewDoc.signedPdfPath)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-primary"
+                    style={{ width: "auto", textDecoration: "none", textAlign: "center", lineHeight: "1.5" }}
+                  >
+                    View Signed PDF
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

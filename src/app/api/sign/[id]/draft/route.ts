@@ -15,11 +15,22 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       return NextResponse.json({ error: "Template not found." }, { status: 404 });
     }
 
+    let resolvedSignerName = signerName;
+    if ((!resolvedSignerName || resolvedSignerName === "Anonymous Draft") && formData) {
+      try {
+        const fields = JSON.parse(template.fieldsJson) || [];
+        const nameField = fields.find((f: any) => f.type === "signer_name");
+        if (nameField && formData[nameField.id]) {
+          resolvedSignerName = formData[nameField.id];
+        }
+      } catch (e) {}
+    }
+
     // Create a new draft document in the database
     const draft = await prisma.signedDocument.create({
       data: {
         templateId: templateId,
-        signerName: signerName || "Anonymous Draft",
+        signerName: resolvedSignerName || "Anonymous Draft",
         signerEmail: signerEmail || "",
         formDataJson: JSON.stringify(formData || {}),
         isDraft: true,
@@ -51,11 +62,26 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       return NextResponse.json({ error: "Draft not found." }, { status: 404 });
     }
 
+    const template = await prisma.template.findUnique({
+      where: { id: templateId }
+    });
+
+    let resolvedSignerName = signerName;
+    if ((!resolvedSignerName || resolvedSignerName === "Anonymous Draft") && formData && template) {
+      try {
+        const fields = JSON.parse(template.fieldsJson) || [];
+        const nameField = fields.find((f: any) => f.type === "signer_name");
+        if (nameField && formData[nameField.id]) {
+          resolvedSignerName = formData[nameField.id];
+        }
+      } catch (e) {}
+    }
+
     // Update draft form responses
     const updated = await prisma.signedDocument.update({
       where: { id: draftId },
       data: {
-        signerName: signerName || existing.signerName,
+        signerName: resolvedSignerName || existing.signerName,
         signerEmail: signerEmail || existing.signerEmail,
         formDataJson: JSON.stringify(formData || {}),
       }

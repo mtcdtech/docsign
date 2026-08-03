@@ -156,6 +156,9 @@ export default function DesignCanvas({
         setAutoSavingStatus("saved");
         const now = new Date();
         setLastSaved(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+        setTimeout(() => {
+          setAutoSavingStatus("idle");
+        }, 3000);
       } catch (err) {
         console.error("Auto-save error:", err);
         setAutoSavingStatus("error");
@@ -343,6 +346,19 @@ export default function DesignCanvas({
   const handleSkipTour = () => {
     localStorage.setItem("docsign_designer_tour_completed", "true");
     setTourStep(null);
+  };
+
+  const handleOverlayMouseDown = (e: React.MouseEvent<HTMLDivElement>, pageIdx: number) => {
+    if (e.button !== 0) return;
+    if (e.target !== e.currentTarget) return;
+    e.preventDefault();
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    setDragSelectStart({ x, y, page: pageIdx });
+    setDragSelectCurrent({ x, y });
   };
 
   // Keyboard Actions Listener (Copy/Paste, Delete, Arrow moves)
@@ -1262,6 +1278,18 @@ export default function DesignCanvas({
         {/* Left Side: Drag Library & Configuration Panels */}
         <div style={{ width: "360px", minWidth: "360px", maxWidth: "360px", flexShrink: 0, display: "flex", flexDirection: "column", gap: "16px", position: "sticky", top: "100px", maxHeight: "calc(100vh - 140px)", overflowX: "hidden" }}>
           
+          {/* Pinned Save button area at top of sidebar */}
+          <div style={{ flexShrink: 0, paddingBottom: "12px", borderBottom: "1px solid var(--border-color)", background: "transparent" }}>
+            <button
+              onClick={handleSaveSchema}
+              disabled={saving}
+              className="btn btn-primary"
+              style={{ width: "100%", padding: "14px" }}
+            >
+              {saving ? "Saving Changes..." : "Save Fields"}
+            </button>
+          </div>
+
           {/* Scrollable sidebar cards container */}
           <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "16px", paddingRight: "4px" }}>
             
@@ -1843,27 +1871,7 @@ export default function DesignCanvas({
             </div>
           </div>
 
-          {/* Pinned Save button area at bottom of sidebar */}
-          <div style={{ flexShrink: 0, paddingTop: "12px", borderTop: "1px solid var(--border-color)", background: "transparent" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", fontSize: "11px", color: "var(--text-muted)", padding: "0 4px" }}>
-              <span>Status:</span>
-              <span style={{ fontWeight: "bold" }}>
-                {autoSavingStatus === "saving" && "⏳ Saving draft..."}
-                {autoSavingStatus === "saved" && `✓ Saved at ${lastSaved}`}
-                {autoSavingStatus === "error" && "⚠️ Auto-save error"}
-                {autoSavingStatus === "idle" && hasUnsavedChanges && "● Unsaved changes"}
-                {autoSavingStatus === "idle" && !hasUnsavedChanges && "✓ Saved"}
-              </span>
-            </div>
-            <button
-              onClick={handleSaveSchema}
-              disabled={saving}
-              className="btn btn-primary"
-              style={{ width: "100%", padding: "14px" }}
-            >
-              {saving ? "Saving Changes..." : "Save Fields Schema"}
-            </button>
-          </div>
+
 
         </div>
 
@@ -1895,6 +1903,11 @@ export default function DesignCanvas({
               {/* Placement & Interactivity Overlay Container */}
               <div
                 onMouseDown={(e) => handleOverlayMouseDown(e, pageIdx)}
+                onClick={(e) => {
+                  if (e.target === e.currentTarget) {
+                    setSelectedFieldIds([]);
+                  }
+                }}
                 style={{
                   position: "absolute",
                   top: 0,
@@ -2165,6 +2178,44 @@ export default function DesignCanvas({
           </div>
         );
       })()}
+      {/* Floating Auto-save Notification Badge at Top Right */}
+      {autoSavingStatus !== "idle" && (
+        <div style={{
+          position: "fixed",
+          top: "110px",
+          right: "24px",
+          zIndex: 10000,
+          backgroundColor: autoSavingStatus === "saved" ? "#22c55e" : (autoSavingStatus === "saving" ? "#3b82f6" : "#ef4444"),
+          color: "#ffffff",
+          padding: "10px 18px",
+          borderRadius: "24px",
+          fontSize: "13px",
+          fontWeight: "bold",
+          boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2)",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+        }}>
+          {autoSavingStatus === "saving" && (
+            <>
+              <span style={{ width: "12px", height: "12px", border: "2px solid #fff", borderTopColor: "transparent", borderRadius: "50%", display: "inline-block", animation: "spin 1s linear infinite" }} />
+              <span>Saving draft changes...</span>
+            </>
+          )}
+          {autoSavingStatus === "saved" && (
+            <>
+              <span>✓</span>
+              <span>All changes saved ({lastSaved})</span>
+            </>
+          )}
+          {autoSavingStatus === "error" && (
+            <>
+              <span>⚠️</span>
+              <span>Draft auto-save failed</span>
+            </>
+          )}
+        </div>
+      )}
     </>
   );
 }
