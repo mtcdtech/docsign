@@ -76,7 +76,10 @@ export default function SettingsForm({
 
   // Directory synchronizing states
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<{ success?: boolean; count?: number; error?: string } | null>(null);
+  const [isSyncingIam, setIsSyncingIam] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<{ success?: boolean; count?: number; error?: string; details?: string } | null>(null);
+  const [loginSearch, setLoginSearch] = useState("");
+  const [activitySearch, setActivitySearch] = useState("");
 
   // General feedback states
   const [dragOver, setDragOver] = useState(false);
@@ -296,6 +299,30 @@ export default function SettingsForm({
       setSyncStatus({ success: false, error: e.message || "Failed to synchronize directory." });
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  const handleSyncIamRegistry = async () => {
+    setIsSyncingIam(true);
+    setSyncStatus(null);
+    try {
+      const res = await fetch("/api/admin/sync-iam", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok || data.ok === false) {
+        throw new Error(data.error || "Sync IAM Registry failed.");
+      }
+      setSyncStatus({ 
+        success: true, 
+        count: (data.added || 0) + (data.updated || 0), 
+        details: `Imported: Added ${data.added || 0}, Updated ${data.updated || 0}, Deleted ${data.deleted || 0} user records.`
+      });
+      router.refresh();
+    } catch (e: any) {
+      setSyncStatus({ success: false, error: e.message || "Failed to synchronize directory from central IAM." });
+    } finally {
+      setIsSyncingIam(false);
     }
   };
 
@@ -815,11 +842,20 @@ export default function SettingsForm({
                 <button
                   type="button"
                   onClick={handleSyncDirectory}
-                  disabled={isSyncing}
+                  disabled={isSyncing || isSyncingIam}
+                  className="btn btn-secondary"
+                  style={{ width: "auto" }}
+                >
+                  {isSyncing ? "Syncing..." : "Sync Directory"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSyncIamRegistry}
+                  disabled={isSyncing || isSyncingIam}
                   className="btn btn-primary"
                   style={{ width: "auto" }}
                 >
-                  {isSyncing ? "Syncing Directory..." : "Sync Directory"}
+                  {isSyncingIam ? "Syncing Registry..." : "Sync IAM Registry"}
                 </button>
               </div>
             </div>
@@ -837,7 +873,7 @@ export default function SettingsForm({
                 }}
               >
                 {syncStatus.success
-                  ? `✓ Directory synchronized successfully! Imported/Updated ${syncStatus.count} user configurations.`
+                  ? `✓ Directory synchronized successfully! ${syncStatus.details || `Imported/Updated ${syncStatus.count} user configurations.`}`
                   : `⚠️ Sync failed: ${syncStatus.error}`}
               </div>
             )}
@@ -1197,69 +1233,176 @@ export default function SettingsForm({
           </div>
         );
       })()}
-      {activeTab === "audit" && (
-        <div className="card-glass">
-          <h2 style={{ marginBottom: "8px" }}>Login Audit History</h2>
-          <p style={{ fontSize: "14px", color: "var(--text-muted)", marginBottom: "20px" }}>
-            Tracks in-app sign-in events for SSO and credentials authentication.
-          </p>
+      {activeTab === "audit" && (() => {
+        const loginLogs = initialAuditLogs
+          .filter((log) => log.action.includes("Login"))
+          .filter((log) => {
+            const term = loginSearch.toLowerCase();
+            return log.email.toLowerCase().includes(term) || log.action.toLowerCase().includes(term);
+          });
 
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px" }}>
-              <thead>
-                <tr style={{ borderBottom: "1px solid var(--border-color)", color: "var(--text-muted)" }}>
-                  <th style={{ padding: "12px 8px" }}>User Email</th>
-                  <th style={{ padding: "12px 8px" }}>Login Event Type</th>
-                  <th style={{ padding: "12px 8px" }}>Timestamp</th>
-                </tr>
-              </thead>
-              <tbody>
-                {initialAuditLogs.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} style={{ padding: "24px", textAlign: "center", color: "var(--text-muted)" }}>
-                      No sign-in audit logs recorded yet.
-                    </td>
-                  </tr>
-                ) : (
-                  initialAuditLogs.map((log) => (
-                    <tr
-                      key={log.id}
-                      style={{
-                        borderBottom: "1px solid rgba(255, 255, 255, 0.03)",
-                        transition: "background var(--transition-fast)",
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.01)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                    >
-                      <td style={{ padding: "12px 8px", fontFamily: "monospace", fontWeight: "500" }}>
-                        {log.email}
-                      </td>
-                      <td style={{ padding: "12px 8px" }}>
-                        <span
-                          style={{
-                            fontSize: "12px",
-                            padding: "3px 8px",
-                            borderRadius: "4px",
-                            fontWeight: "500",
-                            background:
-                              log.action === "SSO Login" ? "rgba(34, 197, 94, 0.12)" : "rgba(79, 70, 229, 0.12)",
-                            color: log.action === "SSO Login" ? "#4ade80" : "#818cf8",
-                          }}
-                        >
-                          {log.action}
-                        </span>
-                      </td>
-                      <td style={{ padding: "12px 8px", color: "var(--text-muted)" }} suppressHydrationWarning>
-                        {new Date(log.createdAt).toLocaleString()}
-                      </td>
+        const activityLogs = initialAuditLogs
+          .filter((log) => !log.action.includes("Login"))
+          .filter((log) => {
+            const term = activitySearch.toLowerCase();
+            return log.email.toLowerCase().includes(term) || log.action.toLowerCase().includes(term);
+          });
+
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            {/* Card 1: Sign-In Events */}
+            <div className="card-glass">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
+                <div>
+                  <h2 style={{ margin: 0 }}>User Sign-In Logs</h2>
+                  <p style={{ fontSize: "14px", color: "var(--text-muted)", margin: 0 }}>
+                    Tracks credentials and SSO login history.
+                  </p>
+                </div>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={loginSearch}
+                  onChange={(e) => setLoginSearch(e.target.value)}
+                  placeholder="Search login events by user email..."
+                  style={{ width: "300px", padding: "8px 12px", fontSize: "13px" }}
+                />
+              </div>
+
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid var(--border-color)", color: "var(--text-muted)" }}>
+                      <th style={{ padding: "12px 8px" }}>User Email</th>
+                      <th style={{ padding: "12px 8px" }}>Event Type</th>
+                      <th style={{ padding: "12px 8px" }}>Timestamp</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {loginLogs.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} style={{ padding: "24px", textAlign: "center", color: "var(--text-muted)" }}>
+                          No sign-in logs found matching search.
+                        </td>
+                      </tr>
+                    ) : (
+                      loginLogs.map((log) => (
+                        <tr
+                          key={log.id}
+                          style={{
+                            borderBottom: "1px solid rgba(255, 255, 255, 0.03)",
+                            transition: "background var(--transition-fast)",
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.01)")}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                        >
+                          <td style={{ padding: "12px 8px", fontFamily: "monospace", fontWeight: "500" }}>
+                            {log.email}
+                          </td>
+                          <td style={{ padding: "12px 8px" }}>
+                            <span
+                              style={{
+                                fontSize: "12px",
+                                padding: "3px 8px",
+                                borderRadius: "4px",
+                                fontWeight: "500",
+                                background: log.action === "SSO Login" ? "rgba(34, 197, 94, 0.12)" : "rgba(79, 70, 229, 0.12)",
+                                color: log.action === "SSO Login" ? "#4ade80" : "#818cf8",
+                              }}
+                            >
+                              {log.action}
+                            </span>
+                          </td>
+                          <td style={{ padding: "12px 8px", color: "var(--text-muted)" }} suppressHydrationWarning>
+                            {new Date(log.createdAt).toLocaleString()}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Card 2: Template & System Activities */}
+            <div className="card-glass">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
+                <div>
+                  <h2 style={{ margin: 0 }}>Template & System Activity Logs</h2>
+                  <p style={{ fontSize: "14px", color: "var(--text-muted)", margin: 0 }}>
+                    Tracks template creations, layout updates, global configurations changes, and deletions.
+                  </p>
+                </div>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={activitySearch}
+                  onChange={(e) => setActivitySearch(e.target.value)}
+                  placeholder="Search template activity by user email..."
+                  style={{ width: "300px", padding: "8px 12px", fontSize: "13px" }}
+                />
+              </div>
+
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid var(--border-color)", color: "var(--text-muted)" }}>
+                      <th style={{ padding: "12px 8px" }}>User Email</th>
+                      <th style={{ padding: "12px 8px" }}>Action / Event Details</th>
+                      <th style={{ padding: "12px 8px" }}>Timestamp</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activityLogs.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} style={{ padding: "24px", textAlign: "center", color: "var(--text-muted)" }}>
+                          No activity logs found matching search.
+                        </td>
+                      </tr>
+                    ) : (
+                      activityLogs.map((log) => {
+                        const isDelete = log.action.toLowerCase().includes("delete");
+                        return (
+                          <tr
+                            key={log.id}
+                            style={{
+                              borderBottom: "1px solid rgba(255, 255, 255, 0.03)",
+                              transition: "background var(--transition-fast)",
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.01)")}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                          >
+                            <td style={{ padding: "12px 8px", fontFamily: "monospace", fontWeight: "500" }}>
+                              {log.email}
+                            </td>
+                            <td style={{ padding: "12px 8px" }}>
+                              <span
+                                style={{
+                                  fontSize: "12px",
+                                  padding: "3px 8px",
+                                  borderRadius: "4px",
+                                  fontWeight: "500",
+                                  background: isDelete ? "rgba(239, 68, 68, 0.12)" : "rgba(245, 158, 11, 0.12)",
+                                  color: isDelete ? "#f87171" : "#fbbf24",
+                                }}
+                              >
+                                {log.action}
+                              </span>
+                            </td>
+                            <td style={{ padding: "12px 8px", color: "var(--text-muted)" }} suppressHydrationWarning>
+                              {new Date(log.createdAt).toLocaleString()}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

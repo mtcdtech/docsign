@@ -66,6 +66,20 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       data: updateData,
     });
 
+    try {
+      const isLayoutChange = fieldsJson !== undefined;
+      await prisma.auditLog.create({
+        data: {
+          email: user.email.toLowerCase(),
+          action: isLayoutChange 
+            ? `Saved template layout: "${updated.title}"` 
+            : `Updated template settings: "${updated.title}"`,
+        }
+      });
+    } catch (auditErr) {
+      console.error("Failed to write template update audit log:", auditErr);
+    }
+
     return NextResponse.json({ ok: true, template: updated });
   } catch (e: any) {
     console.error("Failed to patch template:", e);
@@ -109,9 +123,19 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       console.error("Failed to delete local template PDF file:", fsErr);
     }
 
-    // Delete from DB (will cascade or fail if references exist; let's delete doc links or let prisma catch it)
     await prisma.signedDocument.deleteMany({ where: { templateId } });
     await prisma.template.delete({ where: { id: templateId } });
+
+    try {
+      await prisma.auditLog.create({
+        data: {
+          email: user.email.toLowerCase(),
+          action: `Deleted Template: "${template.title}"`,
+        }
+      });
+    } catch (auditErr) {
+      console.error("Failed to write template delete audit log:", auditErr);
+    }
 
     return NextResponse.json({ ok: true });
   } catch (e: any) {

@@ -96,3 +96,13 @@
   - Made history list table rows clickable, triggering a custom modal overlay presenting a detailed metadata preview and list of form responses (works for both drafts and completed documents).
 - **Build Verification**: Local Next.js build compilation completed successfully.
 - **Status**: Completed, ready for deployment.
+
+### [2026-08-03] Dashboard Previews, Searchable Logs, IAM Sync & Selection Fixes (v0.12.2)
+- **Continuous Save Notification**: Rendered a persistent status indicator in the top right header of the template designer (displaying Saved, Saving..., or Unsaved changes) linked to the auto-save loop.
+- **Actual Form State Preview Modal**: Built a client-side dynamic preview modal that loads PDF.js dynamically, renders page canvases, and overlays signature images and pre-filled text entries at their correct coordinate percentages.
+- **Dashboard Preview Modal & Client Integration**: Extracted the recent submissions table from the dashboard server component into a client component `SubmissionsListClient.tsx`. Mounted the dynamic FormPreviewModal on row-clicks to allow direct inspection of both completed forms and drafts in progress.
+- **Move Sync IAM Button**: Removed the Sync IAM button from the main dashboard overview header and integrated it as a primary action next to "Sync Directory" inside the Settings Panel "User Directory" tab.
+- **Searchable Audit Logs**: Split the Audit History settings tab into stacked card sections: "User Sign-In Logs" and "Template & System Activity Logs", both searchable via local text filter inputs. Added Prisma audit log creation on template deletion.
+- **Fix Drag Selection Box**: Added `px` unit string conversions to CSS positioning parameters (left, top, width, height) of the drag-selection outline overlay, and added `userSelect: "none"` styles to prevent browser text-selection blocks.
+- **Next.js Production Build**: Marked `/api/admin/audit` route as dynamic to avoid static pre-generation warnings during webpack phase. Production build compiled cleanly with zero compilation errors.
+- **Status**: Completed.

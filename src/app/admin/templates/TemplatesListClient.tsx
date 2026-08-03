@@ -24,6 +24,7 @@ interface Template {
   fieldsJson: string;
   emailUser: boolean;
   emailLeader: boolean;
+  emailParent: boolean;
   notificationEmails: string | null;
   saveSharepoint: boolean;
   sharepointFolderId: string | null;
@@ -346,21 +347,29 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
                           <div style={{ display: "flex", gap: "6px" }}>
                             {tpl.emailUser && (
                               <span
-                                title={`Signer Copy: Enabled\nLeader Copy: ${tpl.emailLeader ? "Enabled" : "Disabled"}${tpl.notificationEmails ? `\nRecipients: ${tpl.notificationEmails}` : ""}`}
+                                title={`Signer Copy: Enabled\nParent Copy: ${tpl.emailParent ? "Enabled" : "Disabled"}\nLeader Copy: ${tpl.emailLeader ? "Enabled" : "Disabled"}${tpl.notificationEmails ? `\nRecipients: ${tpl.notificationEmails}` : ""}`}
                                 style={{ color: "var(--primary-color)", fontSize: "11px", background: "rgba(79, 70, 229, 0.1)", padding: "4px 8px", borderRadius: "4px", cursor: "help", fontWeight: "bold" }}
                               >
                                 Signer
                               </span>
                             )}
+                            {tpl.emailParent && (
+                              <span
+                                title={`Signer Copy: ${tpl.emailUser ? "Enabled" : "Disabled"}\nParent Copy: Enabled\nLeader Copy: ${tpl.emailLeader ? "Enabled" : "Disabled"}${tpl.notificationEmails ? `\nRecipients: ${tpl.notificationEmails}` : ""}`}
+                                style={{ color: "#10b981", fontSize: "11px", background: "rgba(16, 185, 129, 0.1)", padding: "4px 8px", borderRadius: "4px", cursor: "help", fontWeight: "bold" }}
+                              >
+                                Parent
+                              </span>
+                            )}
                             {tpl.emailLeader && (
                               <span
-                                title={`Signer Copy: ${tpl.emailUser ? "Enabled" : "Disabled"}\nLeader Copy: Enabled${tpl.notificationEmails ? `\nRecipients: ${tpl.notificationEmails}` : ""}`}
+                                title={`Signer Copy: ${tpl.emailUser ? "Enabled" : "Disabled"}\nParent Copy: ${tpl.emailParent ? "Enabled" : "Disabled"}\nLeader Copy: Enabled${tpl.notificationEmails ? `\nRecipients: ${tpl.notificationEmails}` : ""}`}
                                 style={{ color: "#f59e0b", fontSize: "11px", background: "rgba(245, 158, 11, 0.1)", padding: "4px 8px", borderRadius: "4px", cursor: "help", fontWeight: "bold" }}
                               >
                                 Leaders
                               </span>
                             )}
-                            {!tpl.emailUser && !tpl.emailLeader && (
+                            {!tpl.emailUser && !tpl.emailParent && !tpl.emailLeader && (
                               <span style={{ color: "var(--text-muted)", fontSize: "12px" }}>Disabled</span>
                             )}
                           </div>

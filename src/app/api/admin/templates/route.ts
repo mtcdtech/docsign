@@ -121,6 +121,17 @@ export async function POST(req: Request) {
       },
     });
 
+    try {
+      await prisma.auditLog.create({
+        data: {
+          email: user.email.toLowerCase(),
+          action: `Created Template: "${title}" (slug: ${cleanSlug})`,
+        }
+      });
+    } catch (auditErr) {
+      console.error("Failed to write template creation audit log:", auditErr);
+    }
+
     return NextResponse.json({ ok: true, templateId: newTemplate.id });
   } catch (e: any) {
     console.error("Failed to create template:", e);

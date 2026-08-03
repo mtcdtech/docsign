@@ -41,16 +41,15 @@
 - Completed Pre-Flip Checklist for docsign: verified version (v0.11.1), confirmed all 31 privileged users (5 Admin, 26 OrgLeader) are fully linked to Microsoft identities, and confirmed no unlinked shared mailbox grants exist.
 - Successfully executed database backfill in production container, populating `mtcdPersonId` for 62 existing users (with 5 expected conflicts handled).
 
-- Completed Form Designer & Public Form Filler Enhancements (v0.12.0):
+- Completed Form Designer & Public Form Filler Enhancements (v0.12.0 - v0.12.2):
   - Database Schema: Added `emailParent`, `isDraft`, `emailedParent` columns and applied schema push.
   - SMTP: Fixed transporter TLS configuration, removing SSLv3 to support Office 365.
-  - Designer: Implemented auto-saving loop, custom unsaved warning prompt, click-and-drag multi-field selection box, and onboarding help tour.
+  - Designer: Implemented debounced auto-saving, persistent headers status indicator, custom unsaved warning prompt, click-and-drag multi-field selection box with proper pixel unit mappings, canvas background click-to-deselect, and onboarding tour.
   - Signer Form: Added db-backed drafts auto-saving, "Reset Form" button with custom confirmation modal.
-  - Admin: Updated dashboard stats/submissions for drafts tracking, removed mapped fields payload details.
+  - Admin: Extracted recent submissions to a client component, implemented dynamic row-click preview modal rendering overlaid signer responses on page canvases, relocated Sync IAM Registry button to Settings panel, and split Audit Logs into separate searchable cards for Logins and System Activities.
 
 ## What is In Progress
-- Deploying the v0.12.0 release to the production Portainer stack.
-- Verifying the newly implemented feature set in the staging/production environments.
+- Final verification of v0.12.2 in production environment.
 
 ## Known Risks & Assumptions
 - **OAuth Callback Domain**: NextAuth and Authentik are configured to work against `https://docsign.server.mtcd.org`. Any local test verification of SSO logins will fail or require mocking.

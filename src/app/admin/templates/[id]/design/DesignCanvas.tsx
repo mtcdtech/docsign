@@ -156,9 +156,6 @@ export default function DesignCanvas({
         setAutoSavingStatus("saved");
         const now = new Date();
         setLastSaved(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-        setTimeout(() => {
-          setAutoSavingStatus("idle");
-        }, 3000);
       } catch (err) {
         console.error("Auto-save error:", err);
         setAutoSavingStatus("error");
@@ -1915,6 +1912,9 @@ export default function DesignCanvas({
                   width: "100%",
                   height: "100%",
                   zIndex: 10,
+                  userSelect: "none",
+                  WebkitUserSelect: "none",
+                  MozUserSelect: "none",
                 }}
               >
                 {/* Drag Selection Box Overlay */}
@@ -1922,10 +1922,10 @@ export default function DesignCanvas({
                   <div
                     style={{
                       position: "absolute",
-                      left: Math.min(dragSelectStart.x, dragSelectCurrent.x),
-                      top: Math.min(dragSelectStart.y, dragSelectCurrent.y),
-                      width: Math.abs(dragSelectCurrent.x - dragSelectStart.x),
-                      height: Math.abs(dragSelectCurrent.y - dragSelectStart.y),
+                      left: `${Math.min(dragSelectStart.x, dragSelectCurrent.x)}px`,
+                      top: `${Math.min(dragSelectStart.y, dragSelectCurrent.y)}px`,
+                      width: `${Math.max(1, Math.abs(dragSelectCurrent.x - dragSelectStart.x))}px`,
+                      height: `${Math.max(1, Math.abs(dragSelectCurrent.y - dragSelectStart.y))}px`,
                       border: "1.5px dashed var(--primary-color)",
                       backgroundColor: "rgba(79, 70, 229, 0.15)",
                       pointerEvents: "none",
@@ -2178,44 +2178,55 @@ export default function DesignCanvas({
           </div>
         );
       })()}
-      {/* Floating Auto-save Notification Badge at Top Right */}
-      {autoSavingStatus !== "idle" && (
-        <div style={{
-          position: "fixed",
-          top: "110px",
-          right: "24px",
-          zIndex: 10000,
-          backgroundColor: autoSavingStatus === "saved" ? "#22c55e" : (autoSavingStatus === "saving" ? "#3b82f6" : "#ef4444"),
-          color: "#ffffff",
-          padding: "10px 18px",
-          borderRadius: "24px",
-          fontSize: "13px",
-          fontWeight: "bold",
-          boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2)",
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-        }}>
-          {autoSavingStatus === "saving" && (
-            <>
-              <span style={{ width: "12px", height: "12px", border: "2px solid #fff", borderTopColor: "transparent", borderRadius: "50%", display: "inline-block", animation: "spin 1s linear infinite" }} />
-              <span>Saving draft changes...</span>
-            </>
-          )}
-          {autoSavingStatus === "saved" && (
-            <>
-              <span>✓</span>
-              <span>All changes saved ({lastSaved})</span>
-            </>
-          )}
-          {autoSavingStatus === "error" && (
-            <>
-              <span>⚠️</span>
-              <span>Draft auto-save failed</span>
-            </>
-          )}
-        </div>
-      )}
+      {/* Continuous Saved Notification in Header Top Right */}
+      <div style={{
+        position: "fixed",
+        top: "28px",
+        right: "40px",
+        zIndex: 10000,
+        display: "flex",
+        alignItems: "center",
+        gap: "6px",
+        fontSize: "13px",
+        fontWeight: 600,
+        padding: "6px 12px",
+        borderRadius: "16px",
+        backgroundColor: (autoSavingStatus === "saved" || (!hasUnsavedChanges && autoSavingStatus !== "saving"))
+          ? "rgba(34, 197, 94, 0.15)"
+          : (autoSavingStatus === "saving" ? "rgba(59, 130, 246, 0.15)" : "rgba(239, 68, 68, 0.15)"),
+        color: (autoSavingStatus === "saved" || (!hasUnsavedChanges && autoSavingStatus !== "saving"))
+          ? "#22c55e"
+          : (autoSavingStatus === "saving" ? "#3b82f6" : "#ef4444"),
+        border: `1px solid ${
+          (autoSavingStatus === "saved" || (!hasUnsavedChanges && autoSavingStatus !== "saving"))
+            ? "rgba(34, 197, 94, 0.3)"
+            : (autoSavingStatus === "saving" ? "rgba(59, 130, 246, 0.3)" : "rgba(239, 68, 68, 0.3)")
+        }`,
+        boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+        transition: "all 0.3s ease",
+      }}>
+        {autoSavingStatus === "saving" ? (
+          <>
+            <span style={{ width: "8px", height: "8px", border: "1.5px solid currentColor", borderTopColor: "transparent", borderRadius: "50%", display: "inline-block", animation: "spin 1s linear infinite" }} />
+            <span>Saving...</span>
+          </>
+        ) : (autoSavingStatus === "saved" || (!hasUnsavedChanges && autoSavingStatus !== "saving" && autoSavingStatus !== "error")) ? (
+          <>
+            <span style={{ fontSize: "14px" }}>✓</span>
+            <span>Saved</span>
+          </>
+        ) : autoSavingStatus === "error" ? (
+          <>
+            <span style={{ fontSize: "14px" }}>⚠️</span>
+            <span>Auto-save Error</span>
+          </>
+        ) : (
+          <>
+            <span style={{ fontSize: "14px" }}>●</span>
+            <span>Unsaved Changes</span>
+          </>
+        )}
+      </div>
     </>
   );
 }
