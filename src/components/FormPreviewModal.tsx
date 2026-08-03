@@ -177,7 +177,7 @@ export default function FormPreviewModal({ submission, template, onClose }: Form
           </button>
         </div>
 
-        <div style={{ flex: 1, overflowY: "auto", background: "rgba(0,0,0,0.3)", borderRadius: "8px", padding: "20px", display: "flex", flexDirection: "column", gap: "24px", alignItems: "center", position: "relative" }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", background: "rgba(0,0,0,0.3)", borderRadius: "8px", padding: "20px", display: "flex", flexDirection: "column", gap: "24px", alignItems: "center", position: "relative" }}>
           {loading && (
             <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", color: "var(--text-muted)", fontSize: "14px" }}>
               Generating form state preview...

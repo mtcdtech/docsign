@@ -137,6 +137,33 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
     return destinations;
   };
 
+  const handleExit = async () => {
+    if (signerName || signerEmail || Object.keys(formData).length > 0) {
+      try {
+        if (draftId) {
+          await fetch(`/api/sign/${template.id}/draft`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ draftId, signerName, signerEmail, formData })
+          });
+        } else {
+          const res = await fetch(`/api/sign/${template.id}/draft`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ signerName, signerEmail, formData })
+          });
+          const data = await res.json();
+          if (res.ok && data.draftId) {
+            localStorage.setItem(`docsign_draft_id_${template.id}`, data.draftId);
+          }
+        }
+      } catch (err) {
+        console.error("Error saving draft on exit:", err);
+      }
+    }
+    window.location.href = "/";
+  };
+
   // Load progress from browser localStorage if available
   useEffect(() => {
     const saved = localStorage.getItem(`docsign_progress_${template.id}`);
@@ -154,6 +181,23 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
     const savedDraftId = localStorage.getItem(`docsign_draft_id_${template.id}`);
     if (savedDraftId) {
       setDraftId(savedDraftId);
+      fetch(`/api/sign/${template.id}/draft?draftId=${savedDraftId}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.ok) {
+            if (data.signerName) setSignerName(data.signerName);
+            if (data.signerEmail) setSignerEmail(data.signerEmail);
+            if (data.formData) setFormData(data.formData);
+          } else if (data.error === "Draft not found.") {
+            localStorage.removeItem(`docsign_draft_id_${template.id}`);
+            localStorage.removeItem(`docsign_progress_${template.id}`);
+            setDraftId(null);
+            setSignerName("");
+            setSignerEmail("");
+            setFormData({});
+          }
+        })
+        .catch((err) => console.error("Error restoring draft:", err));
     }
   }, [template.id]);
 
@@ -683,7 +727,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
 
             <button
               type="button"
-              onClick={() => window.location.href = "/"}
+              onClick={handleExit}
               className="btn btn-secondary"
               style={{ width: isMobile ? "36px" : "auto", minWidth: "36px", flexShrink: 0, height: "36px", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "13px", padding: isMobile ? "0" : "0 16px" }}
               title="Exit signing workspace"

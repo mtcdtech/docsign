@@ -94,6 +94,35 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 }
 
+export async function GET(req: Request, { params }: { params: { id: string } }) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const draftId = searchParams.get("draftId");
+
+    if (!draftId) {
+      return NextResponse.json({ error: "Missing draft ID." }, { status: 400 });
+    }
+
+    const draft = await prisma.signedDocument.findUnique({
+      where: { id: draftId }
+    });
+
+    if (!draft || !draft.isDraft) {
+      return NextResponse.json({ error: "Draft not found." }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      signerName: draft.signerName,
+      signerEmail: draft.signerEmail,
+      formData: JSON.parse(draft.formDataJson || "{}"),
+    });
+  } catch (e: any) {
+    console.error("Error fetching draft document:", e);
+    return NextResponse.json({ ok: false, error: e.message || "Failed to fetch draft" }, { status: 500 });
+  }
+}
+
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
   try {
     const { searchParams } = new URL(req.url);
