@@ -113,6 +113,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     // 4. Trigger Email Dispatches
     let emailedUser = false;
     let emailedLeader = false;
+    const clientIp = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+    const userAgent = req.headers.get("user-agent") || "unknown";
 
     // Email to signer
     if (template.emailUser) {
@@ -135,6 +137,15 @@ export async function POST(req: Request, { params }: { params: { id: string } })
           html: htmlContent,
           attachmentPath: outputPath,
           attachmentName: `${template.title}_Signed.pdf`
+        });
+
+        await prisma.auditLog.create({
+          data: {
+            email: signerEmail,
+            action: `Sent Email Copy to Signer: ${signerEmail} (doc: ${template.title})`,
+            ip: clientIp,
+            userAgent: userAgent
+          }
         });
 
         // Collect and email any custom_email fields (e.g. parent_email)
@@ -161,6 +172,15 @@ export async function POST(req: Request, { params }: { params: { id: string } })
               html: htmlContent,
               attachmentPath: outputPath,
               attachmentName: `${template.title}_Signed.pdf`
+            });
+
+            await prisma.auditLog.create({
+              data: {
+                email: email,
+                action: `Sent Custom Email Copy to: ${email} (doc: ${template.title})`,
+                ip: clientIp,
+                userAgent: userAgent
+              }
             });
           } catch (customEmailErr) {
             console.error(`Failed to send custom copy email to ${email}:`, customEmailErr);
@@ -205,6 +225,15 @@ export async function POST(req: Request, { params }: { params: { id: string } })
                 html: htmlContent,
                 attachmentPath: outputPath,
                 attachmentName: `${template.title}_${cleanSignerName}.pdf`
+              });
+
+              await prisma.auditLog.create({
+                data: {
+                  email: email,
+                  action: `Sent Leader Notification Email to: ${email} (doc: ${template.title}, signer: ${signerName})`,
+                  ip: clientIp,
+                  userAgent: userAgent
+                }
               });
             } catch (mailErr) {
               console.error(`Failed to send notification email to leader ${email}:`, mailErr);
@@ -251,6 +280,15 @@ export async function POST(req: Request, { params }: { params: { id: string } })
                 html: htmlContent,
                 attachmentPath: outputPath,
                 attachmentName: `${template.title}_Signed.pdf`
+              });
+
+              await prisma.auditLog.create({
+                data: {
+                  email: email,
+                  action: `Sent Parent/Guardian Email Copy to: ${email} (doc: ${template.title})`,
+                  ip: clientIp,
+                  userAgent: userAgent
+                }
               });
             } catch (mailErr) {
               console.error(`Failed to send parent email copy to ${email}:`, mailErr);

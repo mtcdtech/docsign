@@ -150,3 +150,7 @@
 ### [2026-08-04] SMTP Diagnostic Logging Enhancement (v0.12.10)
 - **SMTP Detailed Logging**: Expanded nodemailer success and catch block `console` logs inside [mail.ts](file:///Users/benny2168/Antigravity/docsign/src/lib/mail.ts) to explicitly output the target `to` address and email `subject`. This enables auditing exactly which messages are successfully dispatched to users vs leaders in production telemetry.
 - **Status**: Completed.
+
+### [2026-08-04] Audit Log Tracking for Email Dispatches (v0.12.11)
+- **Email Audit Logs**: Added prisma-backed `AuditLog` entries for every successful email delivery action in [route.ts](file:///Users/benny2168/Antigravity/docsign/src/app/api/sign/%5Bid%5D/route.ts) (including signer copies, custom copy fields, parent/guardian copies, and organization leader notifications), making all sent emails searchable and visible in the dashboard system audit log.
+- **Status**: Completed.
