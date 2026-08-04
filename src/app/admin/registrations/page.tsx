@@ -87,6 +87,13 @@ export default async function RegistrationsListPage() {
     };
   });
 
+  // Load timezone setting
+  let portalTimezone = "America/Chicago";
+  try {
+    const tzSetting = await prisma.setting.findFirst({ where: { key: "portal_timezone" } });
+    if (tzSetting?.value) portalTimezone = tzSetting.value;
+  } catch (e) {}
+
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
@@ -99,7 +106,7 @@ export default async function RegistrationsListPage() {
         </Link>
       </div>
 
-      <RegistrationsListClient initialRegistrations={registrationsMapped} />
+      <RegistrationsListClient initialRegistrations={registrationsMapped} portalTimezone={portalTimezone} />
     </div>
   );
 }

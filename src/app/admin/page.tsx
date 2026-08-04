@@ -15,6 +15,13 @@ export default async function AdminDashboard() {
   const user = session.user as any;
   const isGlobalAdmin = user.role === "Admin";
 
+  // Load timezone setting
+  let portalTimezone = "America/Chicago";
+  try {
+    const tzSetting = await prisma.setting.findFirst({ where: { key: "portal_timezone" } });
+    if (tzSetting?.value) portalTimezone = tzSetting.value;
+  } catch (e) {}
+
   let signedDocs = [];
   let auditLogs: any[] = [];
   let stats = { templatesCount: 0, docsCount: 0, draftsCount: 0 };
@@ -134,12 +141,12 @@ export default async function AdminDashboard() {
           <p style={{ margin: 0, fontSize: "13px" }}>List of signed PDF documents and processing results.</p>
         </div>
 
-        <SubmissionsListClient signedDocs={signedDocs} />
+        <SubmissionsListClient signedDocs={signedDocs} portalTimezone={portalTimezone} />
       </div>
 
       {isGlobalAdmin && (
         <div style={{ marginTop: "32px" }}>
-          <AuditLogsDashboardClient initialAuditLogs={auditLogs} />
+          <AuditLogsDashboardClient initialAuditLogs={auditLogs} portalTimezone={portalTimezone} />
         </div>
       )}
     </div>

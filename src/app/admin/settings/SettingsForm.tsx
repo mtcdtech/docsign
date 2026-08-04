@@ -40,6 +40,7 @@ interface SettingsFormProps {
   initialAzureClientSecret: string;
   initialPcoApplicationId: string;
   initialPcoSecret: string;
+  initialPortalTimezone: string;
   initialOrganizations: Organization[];
   initialUsers: User[];
   initialAuditLogs: AuditLog[];
@@ -60,6 +61,7 @@ export default function SettingsForm({
   initialAzureClientSecret,
   initialPcoApplicationId,
   initialPcoSecret,
+  initialPortalTimezone,
   initialOrganizations,
   initialUsers,
   initialAuditLogs,
@@ -85,6 +87,7 @@ export default function SettingsForm({
   const [azureClientSecret, setAzureClientSecret] = useState(initialAzureClientSecret || "");
   const [pcoApplicationId, setPcoApplicationId] = useState(initialPcoApplicationId || "");
   const [pcoSecret, setPcoSecret] = useState(initialPcoSecret || "");
+  const [portalTimezone, setPortalTimezone] = useState(initialPortalTimezone || "America/Chicago");
 
   // Directory synchronizing states
   const [isSyncing, setIsSyncing] = useState(false);
@@ -258,6 +261,7 @@ export default function SettingsForm({
         azure_client_secret: fieldsToUpdate.azure_client_secret ?? azureClientSecret,
         pco_application_id: fieldsToUpdate.pco_application_id ?? pcoApplicationId,
         pco_secret: fieldsToUpdate.pco_secret ?? pcoSecret,
+        portal_timezone: fieldsToUpdate.portal_timezone ?? portalTimezone,
       };
 
       const res = await fetch("/api/admin/settings", {
@@ -561,6 +565,31 @@ export default function SettingsForm({
                 <option value="light" style={{ background: "var(--bg-card)", color: "var(--text-main)" }}>
                   Light Mode
                 </option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Portal Timezone</label>
+              <select
+                className="form-input"
+                value={portalTimezone}
+                onChange={(e) => setPortalTimezone(e.target.value)}
+                style={{
+                  background: "rgba(0,0,0,0.2)",
+                  cursor: "pointer",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "var(--radius-sm)",
+                  color: "var(--text-main)",
+                }}
+              >
+                <option value="America/New_York">Eastern Time (New York)</option>
+                <option value="America/Chicago">Central Time (Chicago / Dallas)</option>
+                <option value="America/Denver">Mountain Time (Denver)</option>
+                <option value="America/Los_Angeles">Pacific Time (Los Angeles)</option>
+                <option value="America/Phoenix">Arizona Time (Phoenix)</option>
+                <option value="America/Anchorage">Alaska Time</option>
+                <option value="Pacific/Honolulu">Hawaii Time</option>
+                <option value="UTC">Coordinated Universal Time (UTC)</option>
               </select>
             </div>
 

@@ -34,9 +34,10 @@ interface Submission {
 
 interface SubmissionsListClientProps {
   signedDocs: Submission[];
+  portalTimezone?: string;
 }
 
-export default function SubmissionsListClient({ signedDocs }: SubmissionsListClientProps) {
+export default function SubmissionsListClient({ signedDocs, portalTimezone = "America/Chicago" }: SubmissionsListClientProps) {
   const [previewDoc, setPreviewDoc] = useState<Submission | null>(null);
 
   return (
@@ -95,7 +96,7 @@ export default function SubmissionsListClient({ signedDocs }: SubmissionsListCli
                     </td>
                     <td>{doc.template.title}</td>
                     <td>{doc.template.organization.name}</td>
-                    <td suppressHydrationWarning>{new Date(doc.createdAt).toLocaleString()}</td>
+                    <td suppressHydrationWarning>{new Date(doc.createdAt).toLocaleString("en-US", { timeZone: portalTimezone })}</td>
                     <td onClick={(e) => e.stopPropagation()}>
                       {doc.isDraft ? (
                         <span style={{ fontSize: "11px", color: "var(--text-muted)", fontStyle: "italic" }}>

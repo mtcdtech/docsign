@@ -33,6 +33,7 @@ export default async function SettingsPage() {
     const portalLogoLight = settingsMap["portal_logo_light"] || "";
     const portalLogoDark = settingsMap["portal_logo_dark"] || "";
     const themeMode = settingsMap["theme_mode"] || "dark";
+    const portalTimezone = settingsMap["portal_timezone"] || "America/Chicago";
     const centralIamUrl = settingsMap["central_iam_url"] || "https://admin.server.mtcd.org";
     const azureTenantId = settingsMap["azure_tenant_id"] || "";
     const azureClientId = settingsMap["azure_client_id"] || "";
@@ -82,6 +83,7 @@ export default async function SettingsPage() {
             initialAzureClientSecret={azureClientSecret}
             initialPcoApplicationId={pcoApplicationId}
             initialPcoSecret={pcoSecret}
+            initialPortalTimezone={portalTimezone}
             initialOrganizations={organizations}
             initialUsers={users}
             initialAuditLogs={auditLogs}

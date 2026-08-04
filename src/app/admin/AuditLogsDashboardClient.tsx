@@ -13,9 +13,10 @@ interface AuditLog {
 
 interface AuditLogsDashboardClientProps {
   initialAuditLogs: AuditLog[];
+  portalTimezone?: string;
 }
 
-export default function AuditLogsDashboardClient({ initialAuditLogs }: AuditLogsDashboardClientProps) {
+export default function AuditLogsDashboardClient({ initialAuditLogs, portalTimezone = "America/Chicago" }: AuditLogsDashboardClientProps) {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<"all" | "logins" | "edits" | "deletions" | "emails">("all");
@@ -127,7 +128,7 @@ export default function AuditLogsDashboardClient({ initialAuditLogs }: AuditLogs
           </div>
 
           {/* Table */}
-          <div style={{ overflowX: "auto", background: "rgba(0,0,0,0.15)", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+          <div style={{ overflowX: "auto", background: "transparent", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border-color)", color: "var(--text-muted)", background: "rgba(255,255,255,0.02)" }}>
@@ -190,7 +191,7 @@ export default function AuditLogsDashboardClient({ initialAuditLogs }: AuditLogs
                           </div>
                         </td>
                         <td style={{ padding: "12px 16px", color: "var(--text-muted)" }} suppressHydrationWarning>
-                          {new Date(log.createdAt).toLocaleString()}
+                          {new Date(log.createdAt).toLocaleString("en-US", { timeZone: portalTimezone })}
                         </td>
                       </tr>
                     );

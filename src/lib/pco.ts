@@ -253,8 +253,8 @@ export async function getPcoRegistrationAttendees(signupId: string): Promise<Pco
     "Accept": "application/vnd.api+json"
   };
 
-  // Fetch up to 100 attendees registered for that signup, including answers
-  const url = `https://api.planningcenteronline.com/registrations/v2/signups/${signupId}/attendees?per_page=100&include=answers`;
+  // Fetch up to 100 attendees registered for that signup, including person
+  const url = `https://api.planningcenteronline.com/registrations/v2/signups/${signupId}/attendees?per_page=100&include=person`;
   const res = await fetch(url, { headers: pcoHeaders });
   
   if (!res.ok) {
@@ -263,27 +263,66 @@ export async function getPcoRegistrationAttendees(signupId: string): Promise<Pco
 
   const json = await res.json();
   const data = json.data || [];
-  const included = json.included || [];
+
+  // Extract unique person IDs
+  const personIds: string[] = [];
+  const attendeePersonMap = new Map<string, string>(); // attendeeId -> personId
+
+  data.forEach((att: any) => {
+    const personId = att.relationships?.person?.data?.id;
+    if (personId) {
+      personIds.push(personId);
+      attendeePersonMap.set(att.id, personId);
+    }
+  });
+
+  const personInfoMap = new Map<string, { name: string; email: string }>();
+
+  // Batch query person info from People API if we have any person IDs
+  if (personIds.length > 0) {
+    const peopleUrl = `https://api.planningcenteronline.com/people/v2/people?where[id]=${personIds.join(",")}&include=emails&per_page=100`;
+    const peopleRes = await fetch(peopleUrl, { headers: pcoHeaders });
+    if (peopleRes.ok) {
+      const peopleJson = await peopleRes.json();
+      const peopleData = peopleJson.data || [];
+      const peopleIncluded = peopleJson.included || [];
+
+      peopleData.forEach((person: any) => {
+        const first = person.attributes?.first_name || "";
+        const last = person.attributes?.last_name || "";
+        const fullName = person.attributes?.name || `${first} ${last}`.trim();
+        
+        // Find emails for this person in included
+        const emailRefs = person.relationships?.emails?.data || [];
+        let emailAddress = "";
+
+        for (const ref of emailRefs) {
+          const emailObj = peopleIncluded.find((item: any) => item.type === "Email" && item.id === ref.id);
+          if (emailObj?.attributes?.address) {
+            emailAddress = emailObj.attributes.address;
+            if (emailObj.attributes.primary) {
+              break; // Stop at primary email
+            }
+          }
+        }
+
+        personInfoMap.set(person.id, {
+          name: fullName,
+          email: emailAddress.trim().toLowerCase()
+        });
+      });
+    }
+  }
 
   return data.map((att: any) => {
-    const first = att.attributes?.first_name || "";
-    const last = att.attributes?.last_name || "";
-    const email = att.attributes?.email || "";
-    
-    // Resolve answers relationships
-    const answerRefs = att.relationships?.answers?.data || [];
-    const answers = answerRefs.map((ref: any) => {
-      const match = included.find((item: any) => item.type === "Answer" && item.id === ref.id);
-      const questionId = match?.relationships?.question?.data?.id || "";
-      const value = match?.attributes?.value || null;
-      return { questionId, value };
-    });
+    const personId = attendeePersonMap.get(att.id);
+    const info = personId ? personInfoMap.get(personId) : null;
 
     return {
       id: att.id,
-      name: `${first} ${last}`.trim(),
-      email: email.trim().toLowerCase(),
-      answers
+      name: info?.name || "Unknown Name",
+      email: info?.email || "",
+      answers: []
     };
   });
 }

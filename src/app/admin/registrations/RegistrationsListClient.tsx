@@ -36,6 +36,7 @@ interface RegistrationWithDetails {
 
 interface RegistrationsListClientProps {
   initialRegistrations: RegistrationWithDetails[];
+  portalTimezone?: string;
 }
 
 function RegistrationCard({
@@ -43,13 +44,15 @@ function RegistrationCard({
   handleCopyLink,
   copiedId,
   handleToggleArchive,
-  handleDeleteRegistration
+  handleDeleteRegistration,
+  portalTimezone
 }: {
   reg: RegistrationWithDetails;
   handleCopyLink: (slug: string, id: string) => void;
   copiedId: string | null;
   handleToggleArchive: (reg: RegistrationWithDetails) => void;
   handleDeleteRegistration: (id: string) => void;
+  portalTimezone: string;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [attendees, setAttendees] = useState<Attendee[]>([]);
@@ -112,7 +115,7 @@ function RegistrationCard({
             </span>
           </div>
           <div style={{ fontSize: "11.5px", color: "var(--text-muted)", marginTop: "6px", display: "flex", flexWrap: "wrap", gap: "12px" }}>
-            <span>Created: {new Date(reg.createdAt).toLocaleDateString()}</span>
+            <span>Created: {new Date(reg.createdAt).toLocaleDateString("en-US", { timeZone: portalTimezone })}</span>
             {reg.pcoSignupId ? (
               <span style={{ color: "var(--primary-color)", fontWeight: "bold" }}>
                 🔗 PCO connected (ID: {reg.pcoSignupId})
@@ -234,7 +237,7 @@ function RegistrationCard({
               No attendees registered in PCO yet.
             </div>
           ) : (
-            <div style={{ overflowX: "auto", maxHeight: "300px", background: "rgba(0,0,0,0.15)", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
+            <div style={{ overflowX: "auto", maxHeight: "300px", background: "transparent", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid var(--border-color)", background: "rgba(255,255,255,0.01)", color: "var(--text-muted)" }}>
@@ -302,11 +305,11 @@ function RegistrationCard({
   );
 }
 
-export default function RegistrationsListClient({ initialRegistrations }: RegistrationsListClientProps) {
+export default function RegistrationsListClient({ initialRegistrations, portalTimezone = "America/Chicago" }: RegistrationsListClientProps) {
   const router = useRouter();
   const [registrations, setRegistrations] = useState<RegistrationWithDetails[]>(initialRegistrations);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterTab, setFilterTab] = useState<"all" | "active" | "archived">("active");
+  const [filterTab, setFilterTab] = useState<"active" | "archived" | "all">("active");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Handle URL Copy
@@ -461,6 +464,7 @@ export default function RegistrationsListClient({ initialRegistrations }: Regist
               copiedId={copiedId}
               handleToggleArchive={handleToggleArchive}
               handleDeleteRegistration={handleDeleteRegistration}
+              portalTimezone={portalTimezone}
             />
           ))}
         </div>

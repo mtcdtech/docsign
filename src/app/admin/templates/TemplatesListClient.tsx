@@ -49,9 +49,10 @@ interface Submission {
 
 interface TemplatesListClientProps {
   templates: Template[];
+  portalTimezone?: string;
 }
 
-export default function TemplatesListClient({ templates: initialTemplates }: TemplatesListClientProps) {
+export default function TemplatesListClient({ templates: initialTemplates, portalTimezone = "America/Chicago" }: TemplatesListClientProps) {
   const [templates, setTemplates] = useState<Template[]>(initialTemplates);
   const [searchQuery, setSearchQuery] = useState("");
   const [orgSortOrder, setOrgSortOrder] = useState<"asc" | "desc" | null>(null);
@@ -510,7 +511,7 @@ export default function TemplatesListClient({ templates: initialTemplates }: Tem
                                       </thead>
                                       <tbody>
                                         {filteredSubmissions.map((doc) => {
-                                          const date = new Date(doc.createdAt).toLocaleString();
+                                          const date = new Date(doc.createdAt).toLocaleString("en-US", { timeZone: portalTimezone });
                                           
                                           // Find the resolved name in case it is Anonymous Draft
                                           let displaySignerName = doc.signerName;
