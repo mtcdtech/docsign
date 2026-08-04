@@ -23,7 +23,7 @@ export default async function LoginPage() {
       return acc;
     }, {} as Record<string, string>);
     if (settingsMap["portal_title"]) portalTitle = settingsMap["portal_title"];
-    if (settingsMap["portal_logo"]) portalLogo = settingsMap["portal_logo"];
+    portalLogo = settingsMap["portal_logo_dark"] || settingsMap["portal_logo_light"] || "";
   } catch (e) {}
 
   return (

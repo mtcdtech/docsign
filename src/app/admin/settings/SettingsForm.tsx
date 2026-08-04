@@ -89,6 +89,11 @@ export default function SettingsForm({
   const [pcoSecret, setPcoSecret] = useState(initialPcoSecret || "");
   const [portalTimezone, setPortalTimezone] = useState(initialPortalTimezone || "America/Chicago");
 
+  // Drag and drop states for global logos
+  const [isDraggingLight, setIsDraggingLight] = useState(false);
+  const [isDraggingDark, setIsDraggingDark] = useState(false);
+  const [draggingOrg, setDraggingOrg] = useState<Record<string, "light" | "dark" | null>>({});
+
   // Directory synchronizing states
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSyncingIam, setIsSyncingIam] = useState(false);
@@ -357,6 +362,50 @@ export default function SettingsForm({
     setDragOver(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       processFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleDragOverLight = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingLight(true);
+  };
+  const handleDragLeaveLight = () => {
+    setIsDraggingLight(false);
+  };
+  const handleDropLight = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingLight(false);
+    if (e.dataTransfer.files?.[0]) {
+      handleLogoUpload("light", e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleDragOverDark = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingDark(true);
+  };
+  const handleDragLeaveDark = () => {
+    setIsDraggingDark(false);
+  };
+  const handleDropDark = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingDark(false);
+    if (e.dataTransfer.files?.[0]) {
+      handleLogoUpload("dark", e.dataTransfer.files[0]);
+    }
+  };
+  const handleOrgDragOver = (e: React.DragEvent, orgId: string, type: "light" | "dark") => {
+    e.preventDefault();
+    setDraggingOrg(prev => ({ ...prev, [orgId]: type }));
+  };
+  const handleOrgDragLeave = (orgId: string) => {
+    setDraggingOrg(prev => ({ ...prev, [orgId]: null }));
+  };
+  const handleOrgDrop = (e: React.DragEvent, orgId: string, type: "light" | "dark") => {
+    e.preventDefault();
+    setDraggingOrg(prev => ({ ...prev, [orgId]: null }));
+    if (e.dataTransfer.files?.[0]) {
+      handleOrgLogoUpload(orgId, type, e.dataTransfer.files[0]);
     }
   };
 
@@ -759,15 +808,27 @@ export default function SettingsForm({
               {/* App Logo Light Mode */}
               <div className="form-group" style={{ flex: 1, minWidth: "260px" }}>
                 <label className="form-label">App Logo (Light Mode)</label>
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "20px", border: "1px solid var(--border-color)", borderRadius: "8px", background: "rgba(255,255,255,0.01)" }}>
-                  {logoLight ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                      <img src={logoLight} alt="Light logo preview" style={{ maxHeight: "40px", maxWidth: "160px", objectFit: "contain", background: "#f0f0f0", padding: "4px", borderRadius: "4px" }} />
-                      <button type="button" className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "12px", width: "auto", color: "#ef4444" }} onClick={(e) => clearLogo("light", e)}>Remove</button>
-                    </div>
-                  ) : (
-                    <span style={{ fontSize: "12px", color: "var(--text-muted)", fontStyle: "italic" }}>No logo uploaded</span>
-                  )}
+                <div
+                  style={{
+                    border: isDraggingLight ? "2px dashed var(--primary-color)" : "2px dashed var(--border-color)",
+                    borderRadius: "var(--radius-lg)",
+                    padding: "24px 16px",
+                    textAlign: "center",
+                    background: isDraggingLight ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.01)",
+                    cursor: "pointer",
+                    transition: "all var(--transition-fast)",
+                    position: "relative",
+                    minHeight: "140px",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                  onDragOver={handleDragOverLight}
+                  onDragLeave={handleDragLeaveLight}
+                  onDrop={handleDropLight}
+                  onClick={() => document.getElementById("logo-light-file-input")?.click()}
+                >
                   <input
                     type="file"
                     accept="image/*"
@@ -777,24 +838,53 @@ export default function SettingsForm({
                     }}
                     style={{ display: "none" }}
                   />
-                  <button type="button" className="btn btn-secondary" style={{ padding: "8px 16px", fontSize: "13px", width: "auto" }} onClick={() => document.getElementById("logo-light-file-input")?.click()}>
-                    Upload Logo
-                  </button>
+                  {logoLight ? (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", width: "100%" }}>
+                      <img src={logoLight} alt="Light logo preview" style={{ maxHeight: "50px", maxWidth: "200px", objectFit: "contain", background: "#f0f0f0", padding: "6px", borderRadius: "4px" }} />
+                      <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Drag or click to replace logo</span>
+                      <button 
+                        type="button" 
+                        className="btn" 
+                        style={{ position: "absolute", top: "10px", right: "10px", padding: "4px 8px", fontSize: "10px", width: "auto", background: "rgba(239,68,68,0.15)", color: "#f87171", border: "1px solid rgba(239,68,68,0.2)" }} 
+                        onClick={(e) => clearLogo("light", e)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                      <div style={{ fontSize: "28px", marginBottom: "8px" }}>🖼️</div>
+                      <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-main)", marginBottom: "4px" }}>Click to select or drag logo here</div>
+                      <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>Suggested height: 40px–60px (Light bg)</div>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* App Logo Dark Mode */}
               <div className="form-group" style={{ flex: 1, minWidth: "260px" }}>
                 <label className="form-label">App Logo (Dark Mode)</label>
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "20px", border: "1px solid var(--border-color)", borderRadius: "8px", background: "rgba(255,255,255,0.01)" }}>
-                  {logoDark ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                      <img src={logoDark} alt="Dark logo preview" style={{ maxHeight: "40px", maxWidth: "160px", objectFit: "contain", background: "#18181b", padding: "4px", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "4px" }} />
-                      <button type="button" className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "12px", width: "auto", color: "#ef4444" }} onClick={(e) => clearLogo("dark", e)}>Remove</button>
-                    </div>
-                  ) : (
-                    <span style={{ fontSize: "12px", color: "var(--text-muted)", fontStyle: "italic" }}>No logo uploaded</span>
-                  )}
+                <div
+                  style={{
+                    border: isDraggingDark ? "2px dashed var(--primary-color)" : "2px dashed var(--border-color)",
+                    borderRadius: "var(--radius-lg)",
+                    padding: "24px 16px",
+                    textAlign: "center",
+                    background: isDraggingDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.01)",
+                    cursor: "pointer",
+                    transition: "all var(--transition-fast)",
+                    position: "relative",
+                    minHeight: "140px",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                  onDragOver={handleDragOverDark}
+                  onDragLeave={handleDragLeaveDark}
+                  onDrop={handleDropDark}
+                  onClick={() => document.getElementById("logo-dark-file-input")?.click()}
+                >
                   <input
                     type="file"
                     accept="image/*"
@@ -804,9 +894,26 @@ export default function SettingsForm({
                     }}
                     style={{ display: "none" }}
                   />
-                  <button type="button" className="btn btn-secondary" style={{ padding: "8px 16px", fontSize: "13px", width: "auto" }} onClick={() => document.getElementById("logo-dark-file-input")?.click()}>
-                    Upload Logo
-                  </button>
+                  {logoDark ? (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", width: "100%" }}>
+                      <img src={logoDark} alt="Dark logo preview" style={{ maxHeight: "50px", maxWidth: "200px", objectFit: "contain", background: "#18181b", padding: "6px", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "4px" }} />
+                      <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Drag or click to replace logo</span>
+                      <button 
+                        type="button" 
+                        className="btn" 
+                        style={{ position: "absolute", top: "10px", right: "10px", padding: "4px 8px", fontSize: "10px", width: "auto", background: "rgba(239,68,68,0.15)", color: "#f87171", border: "1px solid rgba(239,68,68,0.2)" }} 
+                        onClick={(e) => clearLogo("dark", e)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                      <div style={{ fontSize: "28px", marginBottom: "8px" }}>🖼️</div>
+                      <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-main)", marginBottom: "4px" }}>Click to select or drag logo here</div>
+                      <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>Suggested height: 40px–60px (Dark bg)</div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -888,17 +995,28 @@ export default function SettingsForm({
                   <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>ID: {org.id}</span>
                 </div>
                 {/* Light Logo Uploader */}
-                <div style={{ flex: "1 1 200px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                <div style={{ flex: "1 1 220px", display: "flex", flexDirection: "column", gap: "6px" }}>
                   <label style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: "600" }}>Light Mode Logo</label>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    {org.logoLight ? (
-                      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: "8px" }}>
-                        <img src={org.logoLight} alt="Light logo preview" style={{ maxHeight: "36px", maxWidth: "120px", objectFit: "contain", background: "#f0f0f0", padding: "4px", borderRadius: "4px" }} />
-                        <button type="button" className="btn btn-secondary" style={{ padding: "4px 8px", fontSize: "11px", width: "auto", color: "#ef4444" }} onClick={() => handleOrgLogoClear(org.id, "light")}>Remove</button>
-                      </div>
-                    ) : (
-                      <span style={{ fontSize: "11px", color: "var(--text-muted)", fontStyle: "italic" }}>No logo uploaded</span>
-                    )}
+                  <div
+                    style={{
+                      border: draggingOrg[org.id] === "light" ? "1px dashed var(--primary-color)" : "1px dashed var(--border-color)",
+                      borderRadius: "6px",
+                      padding: "12px",
+                      textAlign: "center",
+                      background: draggingOrg[org.id] === "light" ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.005)",
+                      cursor: "pointer",
+                      transition: "all var(--transition-fast)",
+                      position: "relative",
+                      minHeight: "72px",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center"
+                    }}
+                    onDragOver={(e) => handleOrgDragOver(e, org.id, "light")}
+                    onDragLeave={() => handleOrgDragLeave(org.id)}
+                    onDrop={(e) => handleOrgDrop(e, org.id, "light")}
+                    onClick={() => document.getElementById(`org-logo-light-${org.id}`)?.click()}
+                  >
                     <input
                       type="file"
                       accept="image/*"
@@ -908,23 +1026,50 @@ export default function SettingsForm({
                       }}
                       style={{ display: "none" }}
                     />
-                    <button type="button" className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "12px", width: "auto" }} onClick={() => document.getElementById(`org-logo-light-${org.id}`)?.click()}>
-                      Upload
-                    </button>
-                  </div>
-                </div>
-                {/* Dark Logo Uploader */}
-                <div style={{ flex: "1 1 200px", display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: "600" }}>Dark Mode Logo</label>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    {org.logoDark ? (
-                      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: "8px" }}>
-                        <img src={org.logoDark} alt="Dark logo preview" style={{ maxHeight: "36px", maxWidth: "120px", objectFit: "contain", background: "#18181b", padding: "4px", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "4px" }} />
-                        <button type="button" className="btn btn-secondary" style={{ padding: "4px 8px", fontSize: "11px", width: "auto", color: "#ef4444" }} onClick={() => handleOrgLogoClear(org.id, "dark")}>Remove</button>
+                    {org.logoLight ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%" }}>
+                        <img src={org.logoLight} alt="Light logo preview" style={{ maxHeight: "36px", maxWidth: "120px", objectFit: "contain", background: "#f0f0f0", padding: "4px", borderRadius: "4px" }} />
+                        <span style={{ fontSize: "10px", color: "var(--text-muted)", flex: 1, textAlign: "left" }}>Replace logo</span>
+                        <button 
+                          type="button" 
+                          className="btn" 
+                          style={{ padding: "4px 8px", fontSize: "10px", width: "auto", background: "rgba(239,68,68,0.12)", color: "#f87171", border: "1px solid rgba(239,68,68,0.2)" }} 
+                          onClick={(e) => { e.stopPropagation(); handleOrgLogoClear(org.id, "light"); }}
+                        >
+                          Remove
+                        </button>
                       </div>
                     ) : (
-                      <span style={{ fontSize: "11px", color: "var(--text-muted)", fontStyle: "italic" }}>No logo uploaded</span>
+                      <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                        Click or drag image here
+                      </div>
                     )}
+                  </div>
+                </div>
+
+                {/* Dark Logo Uploader */}
+                <div style={{ flex: "1 1 220px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <label style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: "600" }}>Dark Mode Logo</label>
+                  <div
+                    style={{
+                      border: draggingOrg[org.id] === "dark" ? "1px dashed var(--primary-color)" : "1px dashed var(--border-color)",
+                      borderRadius: "6px",
+                      padding: "12px",
+                      textAlign: "center",
+                      background: draggingOrg[org.id] === "dark" ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.005)",
+                      cursor: "pointer",
+                      transition: "all var(--transition-fast)",
+                      position: "relative",
+                      minHeight: "72px",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center"
+                    }}
+                    onDragOver={(e) => handleOrgDragOver(e, org.id, "dark")}
+                    onDragLeave={() => handleOrgDragLeave(org.id)}
+                    onDrop={(e) => handleOrgDrop(e, org.id, "dark")}
+                    onClick={() => document.getElementById(`org-logo-dark-${org.id}`)?.click()}
+                  >
                     <input
                       type="file"
                       accept="image/*"
@@ -934,9 +1079,24 @@ export default function SettingsForm({
                       }}
                       style={{ display: "none" }}
                     />
-                    <button type="button" className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "12px", width: "auto" }} onClick={() => document.getElementById(`org-logo-dark-${org.id}`)?.click()}>
-                      Upload
-                    </button>
+                    {org.logoDark ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%" }}>
+                        <img src={org.logoDark} alt="Dark logo preview" style={{ maxHeight: "36px", maxWidth: "120px", objectFit: "contain", background: "#18181b", padding: "4px", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "4px" }} />
+                        <span style={{ fontSize: "10px", color: "var(--text-muted)", flex: 1, textAlign: "left" }}>Replace logo</span>
+                        <button 
+                          type="button" 
+                          className="btn" 
+                          style={{ padding: "4px 8px", fontSize: "10px", width: "auto", background: "rgba(239,68,68,0.12)", color: "#f87171", border: "1px solid rgba(239,68,68,0.2)" }} 
+                          onClick={(e) => { e.stopPropagation(); handleOrgLogoClear(org.id, "dark"); }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                        Click or drag image here
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

@@ -42,7 +42,7 @@ export default async function RootLayout({
     if (settingsMap["primary_color"]) primaryColor = settingsMap["primary_color"];
     if (settingsMap["primary_hover"]) primaryHover = settingsMap["primary_hover"];
     if (settingsMap["portal_title"]) portalTitle = settingsMap["portal_title"];
-    if (settingsMap["portal_logo"]) portalLogo = settingsMap["portal_logo"];
+    portalLogo = settingsMap["portal_logo_dark"] || settingsMap["portal_logo_light"] || "";
     if (settingsMap["theme_mode"]) themeMode = settingsMap["theme_mode"];
   } catch (dbErr) {
     // Falls back to defaults if database is not ready

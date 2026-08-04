@@ -22,7 +22,8 @@ export default async function AdminLayout({
   const isGlobalAdmin = user.role === "Admin";
 
   let portalTitle = "DocSign Portal";
-  let portalLogo = "";
+  let portalLogoLight = "";
+  let portalLogoDark = "";
   try {
     const settings = await prisma.setting.findMany();
     const settingsMap = settings.reduce((acc, curr) => {
@@ -30,12 +31,13 @@ export default async function AdminLayout({
       return acc;
     }, {} as Record<string, string>);
     if (settingsMap["portal_title"]) portalTitle = settingsMap["portal_title"];
-    if (settingsMap["portal_logo"]) portalLogo = settingsMap["portal_logo"];
+    if (settingsMap["portal_logo_light"]) portalLogoLight = settingsMap["portal_logo_light"];
+    if (settingsMap["portal_logo_dark"]) portalLogoDark = settingsMap["portal_logo_dark"];
   } catch (e) {}
 
   return (
     <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
-      <AdminNavbar user={user} isGlobalAdmin={isGlobalAdmin} portalTitle={portalTitle} portalLogo={portalLogo} />
+      <AdminNavbar user={user} isGlobalAdmin={isGlobalAdmin} portalTitle={portalTitle} portalLogoLight={portalLogoLight} portalLogoDark={portalLogoDark} />
       <div style={{ flex: 1, padding: "40px 20px", maxWidth: "1200px", width: "100%", margin: "0 auto" }}>
         {children}
       </div>

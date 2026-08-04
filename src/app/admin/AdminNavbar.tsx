@@ -13,10 +13,11 @@ interface AdminNavbarProps {
   };
   isGlobalAdmin: boolean;
   portalTitle: string;
-  portalLogo: string;
+  portalLogoLight: string;
+  portalLogoDark: string;
 }
 
-export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLogo }: AdminNavbarProps) {
+export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLogoLight, portalLogoDark }: AdminNavbarProps) {
   const pathname = usePathname();
   const [theme, setTheme] = React.useState<"dark" | "light">("dark");
 
@@ -61,13 +62,16 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
         {/* Branding */}
         <div style={{ display: "flex", alignItems: "center", gap: "28px" }}>
           <Link href="/admin" style={{ textDecoration: "none", color: "var(--text-main)", fontWeight: 800, fontSize: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
-            {portalLogo && (
-              <img
-                src={portalLogo}
-                alt="Logo"
-                style={{ height: "28px", maxWidth: "120px", objectFit: "contain" }}
-              />
-            )}
+            {(() => {
+              const activeLogo = theme === "light" ? (portalLogoLight || portalLogoDark) : (portalLogoDark || portalLogoLight);
+              return activeLogo ? (
+                <img
+                  src={activeLogo}
+                  alt="Logo"
+                  style={{ height: "28px", maxWidth: "120px", objectFit: "contain" }}
+                />
+              ) : null;
+            })()}
             <span>{portalTitle}</span>
           </Link>
 
