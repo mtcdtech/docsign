@@ -154,3 +154,7 @@
 ### [2026-08-04] Audit Log Tracking for Email Dispatches (v0.12.11)
 - **Email Audit Logs**: Added prisma-backed `AuditLog` entries for every successful email delivery action in [route.ts](file:///Users/benny2168/Antigravity/docsign/src/app/api/sign/%5Bid%5D/route.ts) (including signer copies, custom copy fields, parent/guardian copies, and organization leader notifications), making all sent emails searchable and visible in the dashboard system audit log.
 - **Status**: Completed.
+
+### [2026-08-04] Docker Env Passthrough Setup for Custom Credentials (v0.12.12)
+- **Compose Passthrough syntax**: Converted key parameters (`AZURE_AD_CLIENT_ID`, `AZURE_AD_TENANT_ID`, `AZURE_AD_CLIENT_SECRET`, `SMTP_USER`, `SMTP_PASS`, `SMTP_HOST`, `SMTP_PORT`, `ADMIN_PASSWORD`) into standard passthrough notation (omitting trailing `=` sign) inside [docker-compose.portainer.yml](file:///Users/benny2168/Antigravity/docsign/docker-compose.portainer.yml) and [docker-compose.yml](file:///Users/benny2168/Antigravity/docsign/docker-compose.yml). This ensures redeploying stack updates via API does not overwrite/reset custom environment variables configured inside the Portainer Stack UI.
+- **Status**: Completed.
