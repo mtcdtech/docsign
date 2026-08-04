@@ -1,22 +1,17 @@
-# DocSign - Notes for Next Session
+# Notes for Next Session
 
-## Most Logical Next Steps
-1. Verify SMTP email dispatches:
-   - Provide the Azure Communication Services SMTP credentials inside the Portainer environment settings (`AZURE_AD_CLIENT_ID`, `AZURE_AD_TENANT_ID`, `AZURE_AD_CLIENT_SECRET`).
-   - Submit a completed signature form and confirm that the signer and custom email targets receive their copies immediately.
-   - Confirm that the email is received as coming directly from `docsign@mtcd.org`.
-2. Verify the portal-based PDF Form State Preview Modal:
-   - Click a submission row on the main dashboard (Recent Submissions).
-   - Click a submission row on the templates history card.
-   - Verify both modals render as full-screen overlays (not stretched or cut off), scrolling multi-page documents correctly within card boundaries (`maxHeight: 85vh`).
-3. Verify the new dashboard System Audit Log card default-collapsed display and expand/collapse triggers.
-4. Verify designer auto-save loops and drag-selection.
+Here is the recommended starting point and next steps for the next session.
 
-## Open Questions & Uncertainties
-- None.
-
-## Validation Still Needed
-- Verify email copy delivery on the live server.
-
-## Blockers
-- None.
+## Next Steps & Verification Checklist
+1. **Planning Center Online Environment Setup**:
+   - Confirm that `PCO_APPLICATION_ID` and `PCO_SECRET` are added to the stack environment variables on Portainer (or in the local `.env`).
+2. **Template Testing**:
+   - Log in to the Admin Panel at `https://docsign.server.mtcd.org`.
+   - Edit an existing waiver template (or create a new one).
+   - Check the **Enable Planning Center Online (PCO) Registrations Sync** checkbox.
+   - Enter a valid **PCO Signup ID** (from PCO Registrations) and the **PCO Custom Question Title** (e.g. `"Waiver Signed?"`).
+   - Copy the PCO shared link generated in the settings panel.
+3. **Submit a test signature**:
+   - Access the copied link with `?pco_attendee_id=<test_attendee_id>` appended.
+   - Complete the signature.
+   - Check the system audit logs in the Admin Dashboard to verify that the PCO sync was triggered, and verify in the PCO Registrations portal that the custom question is automatically checked off as "Yes"!
