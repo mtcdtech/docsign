@@ -2,20 +2,28 @@
 
 Here is the recommended starting point and next steps for the next session.
 
-## Verification Checklist for Combined Signing Sessions
+## Verification Checklist for Registrations & Branding (v0.14.0)
 
-1. **Verify Sessions Administration**:
-   - Access the Admin Dashboard and check that the **Sessions** tab appears in the top navigation bar.
-   - Go to `/admin/sessions` and click **+ Create Session**.
-   - Input a title (e.g. `"Retreat Forms Pack"`), set organization, and select multiple templates.
-   - Use the ▲ and ▼ buttons to order them, and click **Create Session**.
+1. **Verify Global Settings & Branding**:
+   - Access the Admin Dashboard and go to the **Settings** page.
+   - Under the **Theming & Logo** tab, upload **App Logo (Light Mode)** and **App Logo (Dark Mode)**. Change your system theme preference and verify that the logo changes dynamically.
+   - Go to the **Organization Branding** tab, find an organization, and upload **Light Mode** and **Dark Mode** logos.
 
-2. **Verify Public Sequential Sign Wizard**:
-   - Copy the generated session URL.
-   - Access the link in a private tab: `https://docsign.server.mtcd.org/session/<slug>?pco_attendee_id=<test_id>`.
-   - Go through the signature process of the first form.
-   - Check that it submits and automatically routes you to the second form, pre-populating your name and email.
-   - Complete the remaining forms and verify that the final success screen displays download buttons for all signed documents.
+2. **Verify Registration Form PCO Setup**:
+   - Go to `/admin/registrations` and click **+ Create Registration**.
+   - Input a title, slug, select an organization, check multiple templates, and enter a valid **Planning Center Signup ID**.
+   - Arrange the templates in order and click **Create Registration**.
 
-3. **Verify Audit Trail**:
-   - Check the **System Audit Log** to ensure that all submissions are correctly logged and that any PCO integrations associated with the templates were successfully triggered during completion!
+3. **Verify PCO Attendees Grid & Live Tracking**:
+   - In the registrations table, click on the title of the newly created registration to access the details dashboard: `/admin/registrations/[id]`.
+   - Verify that the list table displays registrants fetched from Planning Center, with their names, emails, and form completion checklist statuses showing "Not Started" / "Partial".
+   - Submit a test signature sequence using a registrant's email.
+   - Re-visit the dashboard, click **🔄 Reload List**, and check that the registrant's status changed to **Completed** or **Partial**, displaying checkmarks on completed forms.
+   - Click the **Sync PCO** button on the row to verify manual check-off triggers.
+
+4. **Verify Email Logo Layouts**:
+   - Check the sent confirmation emails. Verify that both the **App Logo** and **Organization Logo** render side-by-side inside the dark header block cleanly.
+
+5. **Verify Audit Log Contrast**:
+   - Go to the Admin Dashboard and expand the **System Audit Log** card.
+   - Confirm that the gray background spans are removed and that the event actions (Login, Create, Delete, Email) display high-contrast bold color coding.
