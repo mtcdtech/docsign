@@ -170,3 +170,8 @@
 ### [2026-08-04] Custom Email Subject Line Phishing/Spam Bypassing (v0.12.15)
 - **Spam/Phishing Filter Bypassing**: Re-labeled all email subject headers inside [route.ts](file:///Users/benny2168/Antigravity/docsign/src/app/api/sign/%5Bid%5D/route.ts) with the custom prefix `MTCD DocSign - Completed:`, `MTCD DocSign - Parent/Guardian Copy:`, `MTCD DocSign - Copy:`, and `MTCD DocSign - New Signature:`. This prevents Exchange Online Protection (EOP) spam filters from flagging and dropping external dispatches that match the generic `"Signed Document: "` phishing pattern signatures.
 - **Status**: Completed.
+
+### [2026-08-04] System Audit Log Email Category & Contrast Improvement (v0.12.16)
+- **Emails Log Filter**: Added a distinct `📧 Emails` button to the Quick Filters block in [AuditLogsDashboardClient.tsx](file:///Users/benny2168/Antigravity/docsign/src/app/admin/AuditLogsDashboardClient.tsx). This filters audit trail rows to display only email dispatch events.
+- **Log Contrast Boost**: Increased the background opacity of all action description tags in [AuditLogsDashboardClient.tsx](file:///Users/benny2168/Antigravity/docsign/src/app/admin/AuditLogsDashboardClient.tsx) to `0.18` (from `0.12`) to make them stand out. Programmed a soft cyan tag style specifically for Email events (`bg = "rgba(6, 182, 212, 0.18)"`, `fg = "#22d3ee"`) to make them highly legible.
+- **Status**: Completed.

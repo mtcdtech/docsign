@@ -18,7 +18,7 @@ interface AuditLogsDashboardClientProps {
 export default function AuditLogsDashboardClient({ initialAuditLogs }: AuditLogsDashboardClientProps) {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [search, setSearch] = useState("");
-  const [filterType, setFilterType] = useState<"all" | "logins" | "edits" | "deletions">("all");
+  const [filterType, setFilterType] = useState<"all" | "logins" | "edits" | "deletions" | "emails">("all");
 
   const filteredLogs = initialAuditLogs.filter((log) => {
     // 1. Filter by search term (email / action)
@@ -38,6 +38,9 @@ export default function AuditLogsDashboardClient({ initialAuditLogs }: AuditLogs
     }
     if (filterType === "deletions") {
       return log.action.toLowerCase().includes("delete");
+    }
+    if (filterType === "emails") {
+      return log.action.toLowerCase().includes("email") || log.action.toLowerCase().includes("mail");
     }
     return true;
   });
@@ -78,13 +81,14 @@ export default function AuditLogsDashboardClient({ initialAuditLogs }: AuditLogs
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px", borderTop: "1px solid var(--border-color)", paddingTop: "20px" }}>
             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-              {(["all", "logins", "edits", "deletions"] as const).map((type) => {
+              {(["all", "logins", "edits", "deletions", "emails"] as const).map((type) => {
                 const isActive = filterType === type;
                 const labels = {
                   all: "All Events",
                   logins: "🔐 Logins",
                   edits: "✏️ Creations & Edits",
-                  deletions: "🗑 Deletions"
+                  deletions: "🗑 Deletions",
+                  emails: "📧 Emails"
                 };
 
                 return (
@@ -144,6 +148,21 @@ export default function AuditLogsDashboardClient({ initialAuditLogs }: AuditLogs
                   filteredLogs.map((log) => {
                     const isLogin = log.action.includes("Login");
                     const isDelete = log.action.toLowerCase().includes("delete");
+                    const isEmail = log.action.toLowerCase().includes("email") || log.action.toLowerCase().includes("mail");
+
+                    let bg = "rgba(245, 158, 11, 0.18)";
+                    let fg = "#fbbf24";
+                    
+                    if (isLogin) {
+                      bg = log.action === "SSO Login" ? "rgba(34, 197, 94, 0.18)" : "rgba(79, 70, 229, 0.18)";
+                      fg = log.action === "SSO Login" ? "#4ade80" : "#a5b4fc";
+                    } else if (isDelete) {
+                      bg = "rgba(239, 68, 68, 0.18)";
+                      fg = "#f87171";
+                    } else if (isEmail) {
+                      bg = "rgba(6, 182, 212, 0.18)";
+                      fg = "#22d3ee";
+                    }
 
                     return (
                       <tr
@@ -165,12 +184,8 @@ export default function AuditLogsDashboardClient({ initialAuditLogs }: AuditLogs
                               padding: "4px 10px",
                               borderRadius: "4px",
                               fontWeight: "500",
-                              background: isLogin 
-                                ? (log.action === "SSO Login" ? "rgba(34, 197, 94, 0.12)" : "rgba(79, 70, 229, 0.12)")
-                                : (isDelete ? "rgba(239, 68, 68, 0.12)" : "rgba(245, 158, 11, 0.12)"),
-                              color: isLogin 
-                                ? (log.action === "SSO Login" ? "#4ade80" : "#818cf8")
-                                : (isDelete ? "#f87171" : "#fbbf24"),
+                              background: bg,
+                              color: fg,
                             }}
                           >
                             {log.action}
