@@ -175,3 +175,7 @@
 - **Emails Log Filter**: Added a distinct `📧 Emails` button to the Quick Filters block in [AuditLogsDashboardClient.tsx](file:///Users/benny2168/Antigravity/docsign/src/app/admin/AuditLogsDashboardClient.tsx). This filters audit trail rows to display only email dispatch events.
 - **Log Contrast Boost**: Increased the background opacity of all action description tags in [AuditLogsDashboardClient.tsx](file:///Users/benny2168/Antigravity/docsign/src/app/admin/AuditLogsDashboardClient.tsx) to `0.18` (from `0.12`) to make them stand out. Programmed a soft cyan tag style specifically for Email events (`bg = "rgba(6, 182, 212, 0.18)"`, `fg = "#22d3ee"`) to make them highly legible.
 - **Status**: Completed.
+
+### [2026-08-04] Premium HTML Email Layout Refactoring (v0.12.17)
+- **Authentic Card Design**: Replaced basic plain text HTML email blocks in [route.ts](file:///Users/benny2168/Antigravity/docsign/src/app/api/sign/%5Bid%5D/route.ts) with a premium card-based layout featuring a navy blue header gradient, centered dynamic logo branding, and styled tables to present metadata in a clean and highly authentic corporate notice layout.
+- **Status**: Completed.
