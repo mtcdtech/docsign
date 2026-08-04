@@ -158,3 +158,7 @@
 ### [2026-08-04] Docker Env Passthrough Setup for Custom Credentials (v0.12.12)
 - **Compose Passthrough syntax**: Converted key parameters (`AZURE_AD_CLIENT_ID`, `AZURE_AD_TENANT_ID`, `AZURE_AD_CLIENT_SECRET`, `SMTP_USER`, `SMTP_PASS`, `SMTP_HOST`, `SMTP_PORT`, `ADMIN_PASSWORD`) into standard passthrough notation (omitting trailing `=` sign) inside [docker-compose.portainer.yml](file:///Users/benny2168/Antigravity/docsign/docker-compose.portainer.yml) and [docker-compose.yml](file:///Users/benny2168/Antigravity/docsign/docker-compose.yml). This ensures redeploying stack updates via API does not overwrite/reset custom environment variables configured inside the Portainer Stack UI.
 - **Status**: Completed.
+
+### [2026-08-04] Hierarchical Email Recipient De-duplication (v0.12.13)
+- **Hierarchy-Based De-duplication**: Rebuilt the email trigger dispatches block inside [route.ts](file:///Users/benny2168/Antigravity/docsign/src/app/api/sign/%5Bid%5D/route.ts) to parse all recipients into category lists first, then run a priority-based set filter. This guarantees that each unique email address receives at most one copy of the notification, solving the issue where parent copies and custom fields duplicates were delivered to the same email.
+- **Status**: Completed.
