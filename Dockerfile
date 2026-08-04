@@ -4,14 +4,14 @@ FROM --platform=$BUILDPLATFORM node:18-bullseye-slim AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install --legacy-peer-deps
+RUN --mount=type=cache,target=/root/.npm npm install --legacy-peer-deps
 
 COPY . .
 
 # Generate client and build app
 ENV DATABASE_URL="file:/app/data/dev.db"
 RUN npx prisma generate
-RUN npm run build
+RUN --mount=type=cache,target=/app/.next/cache npm run build
 
 # Stage 2: Final runner container compiled for target platform (AMD64)
 FROM node:18-bullseye-slim
@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -y libreoffice --no-install-recommends && 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install --omit=dev --legacy-peer-deps
+RUN --mount=type=cache,target=/root/.npm npm install --omit=dev --legacy-peer-deps
 
 # Copy generated Prisma engines and Next.js compiled static build
 COPY --from=builder /app/.next ./.next
