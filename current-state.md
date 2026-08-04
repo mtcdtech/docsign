@@ -55,16 +55,18 @@
   - Admin Interface: Designed active/archived list page, copyable session URL link generation, and reorderable sequence form with up/down arrows.
   - Public Flow: Developed step progress breadcrumb indicator, automated name/email carrying between templates, and download confirmation dashboard upon complete wizard signature.
 
-- Completed Registrations Rename, PCO Integration & Light/Dark Brand Logos (v0.14.0):
+- Completed Registrations Rename, PCO Integration & Light/Dark Brand Logos (v0.14.0 - v0.14.1):
   - Database Schema: Renamed model `SigningSession` to `SigningRegistration`. Added `pcoSignupId` column. Added `logoLight` and `logoDark` fields to `Organization` model.
   - Renaming Migration: Replaced all UI routes and API endpoints from `/session/*` to `/registration/*` and `/admin/sessions/*` to `/admin/registrations/*`.
   - PCO Sync Dashboard: Programmed detailed registrations overview dashboard at `/admin/registrations/[id]` displaying PCO registrants, individual form check-off checklists, and triggers for manual status sync. Added background API integration mapping attendee responses from PCO.
+  - Fuzzy Name Match (v0.14.1): Replaced strict name matching with fuzzy token-based name matching logic checking first name prefixes and last names to align existing signed documents accurately.
+  - Inline grids (v0.14.1): Redesigned Registrations List page using glass card layouts with collapsible inline tables to display PCO registrant statuses and sync actions directly in the list view.
   - Brand Customization: Added settings tab to upload both App Logo (Light and Dark modes) and Organization Logo (Light and Dark modes). Modified client-facing wizard and forms header to dynamically swap app/org logos based on user system color preference.
   - Email Branding: Refactored automated confirmation email dispatches to query and display both App Logo and Organization Logo in headers side-by-side using high-compatibility HTML table cells.
   - Audit logs: Removed gray span label backgrounds in the System Audit Log dashboard card table rows, setting text colors to high-contrast bold color coding.
 
 ## What is In Progress
-- Final verification of v0.14.0 in production environment.
+- Final verification of v0.14.1 in production environment.
 
 ## Known Risks & Assumptions
 - **OAuth Callback Domain**: NextAuth and Authentik are configured to work against `https://docsign.server.mtcd.org`. Any local test verification of SSO logins will fail or require mocking.
