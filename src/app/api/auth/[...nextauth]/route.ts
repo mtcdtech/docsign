@@ -16,7 +16,7 @@ export const authOptions: NextAuthOptions = {
       profile(profile) {
         return {
           id: profile.sub,
-          name: profile.name ?? profile.preferred_username,
+          name: (profile as any).mtcd_display_name || profile.name || profile.preferred_username,
           // preferred_username holds the official work email
           email: profile.preferred_username || profile.email,
           image: profile.picture,
@@ -24,6 +24,8 @@ export const authOptions: NextAuthOptions = {
           groups: profile.groups || [],
           mtcdPersonId: (profile as any).mtcd_person_id ?? null,
           mtcdPersonIdHistory: (profile as any).mtcd_person_id_history ?? [],
+          pcoName: (profile as any).pco_name ?? null,
+          msName: (profile as any).ms_name ?? null,
         }
       }
     }),
@@ -153,7 +155,10 @@ export const authOptions: NextAuthOptions = {
               name: isAuthorizedSharedForThisApp
                 ? ((profile as any)?.name || (profile as any)?.preferred_username || "Shared Account")
                 : user.name,
-              department: extractedDept
+              department: extractedDept,
+              pcoName: (user as any).pcoName,
+              msName: (user as any).msName,
+              mtcdPersonId: claimedPid,
             }
           });
         } else {
@@ -187,7 +192,14 @@ export const authOptions: NextAuthOptions = {
           
           dbUser = await prisma.user.update({
             where: { id: dbUser.id },
-            data: { name: dbUser.msName || dbUser.name || user.name, department: extractedDept, role: updatedRole }
+            data: {
+              name: user.name || dbUser.name,
+              department: extractedDept,
+              role: updatedRole,
+              pcoName: (user as any).pcoName || dbUser.pcoName,
+              msName: (user as any).msName || dbUser.msName,
+              mtcdPersonId: claimedPid || dbUser.mtcdPersonId,
+            }
           });
         }
         
