@@ -162,3 +162,7 @@
 ### [2026-08-04] Hierarchical Email Recipient De-duplication (v0.12.13)
 - **Hierarchy-Based De-duplication**: Rebuilt the email trigger dispatches block inside [route.ts](file:///Users/benny2168/Antigravity/docsign/src/app/api/sign/%5Bid%5D/route.ts) to parse all recipients into category lists first, then run a priority-based set filter. This guarantees that each unique email address receives at most one copy of the notification, solving the issue where parent copies and custom fields duplicates were delivered to the same email.
 - **Status**: Completed.
+
+### [2026-08-04] Portainer Deploy-Time Local Env Syncing (v0.12.14)
+- **Local Env Syncing**: Updated [deploy_portainer.py](file:///Users/benny2168/Antigravity/docsign/deploy_portainer.py) to parse local [.env](file:///Users/benny2168/Antigravity/docsign/.env) variables at deployment execution time. These keys are automatically merged into the stack update API payload sent to Synology Portainer, syncing credentials securely from the user's workspace without manually modifying the Portainer UI.
+- **Status**: Completed.

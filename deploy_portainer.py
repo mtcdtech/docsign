@@ -43,15 +43,61 @@ def get_existing_stack_id():
         print("Failed to check existing stacks:", e)
     return None
 
+def get_existing_stack_env(stack_id):
+    url = f"{base}/api/stacks/{stack_id}"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "x-api-key": token,
+            "Accept": "application/json"
+        },
+        method="GET"
+    )
+    try:
+        with urllib.request.urlopen(req, context=ssl_context) as r:
+            stack = json.loads(r.read().decode())
+            return stack.get("Env", [])
+    except Exception as e:
+        print("Failed to fetch existing stack env:", e)
+    return []
+
+def load_local_env():
+    env_vars = {}
+    try:
+        with open(".env", "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                parts = line.split("=", 1)
+                key = parts[0].strip()
+                val = parts[1].strip()
+                if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
+                    val = val[1:-1]
+                env_vars[key] = val
+    except Exception as e:
+        print("Warning: Could not read local .env file:", e)
+    return env_vars
+
 def deploy_stack():
     compose_content = get_compose_content()
+    local_env = load_local_env()
     
     stack_id = get_existing_stack_id()
     if stack_id:
         print(f"Stack 'docsign' already exists (ID: {stack_id}). Updating stack...")
+        existing_env = get_existing_stack_env(stack_id)
+        
+        merged_env_dict = {item["name"]: item["value"] for item in existing_env}
+        for k, v in local_env.items():
+            if v:
+                merged_env_dict[k] = v
+                
+        final_env = [{"name": k, "value": v} for k, v in merged_env_dict.items()]
+        
         payload = {
             "StackFileContent": compose_content,
-            "Env": [],
+            "Env": final_env,
             "Prune": True,
             "PullImage": True
         }
@@ -59,10 +105,11 @@ def deploy_stack():
         method = "PUT"
     else:
         print("Stack 'docsign' does not exist. Creating stack...")
+        final_env = [{"name": k, "value": v} for k, v in local_env.items() if v]
         payload = {
             "Name": "docsign",
             "StackFileContent": compose_content,
-            "Env": []
+            "Env": final_env
         }
         url = f"{base}/api/stacks/create/standalone/string?endpointId={endpoint_id}"
         method = "POST"
