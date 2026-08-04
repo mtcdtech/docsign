@@ -179,3 +179,7 @@
 ### [2026-08-04] Premium HTML Email Layout Refactoring (v0.12.17)
 - **Authentic Card Design**: Replaced basic plain text HTML email blocks in [route.ts](file:///Users/benny2168/Antigravity/docsign/src/app/api/sign/%5Bid%5D/route.ts) with a premium card-based layout featuring a navy blue header gradient, centered dynamic logo branding, and styled tables to present metadata in a clean and highly authentic corporate notice layout.
 - **Status**: Completed.
+
+### [2026-08-04] Email Branding Refinement (v0.12.18)
+- **Subject Branding & Terminology update**: Replaced header tagline `"Official Document Dispatch"` with `"Waiver Signature"` inside the `getEmailHtml` builder function in [route.ts](file:///Users/benny2168/Antigravity/docsign/src/app/api/sign/%5Bid%5D/route.ts). Replaced the word `"dispatched"` with `"emailed"` in the parent/guardian copy body content to simplify user-facing terminology.
+- **Status**: Completed.

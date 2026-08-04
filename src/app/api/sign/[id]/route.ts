@@ -49,7 +49,7 @@ function getEmailHtml({
           <!-- Header -->
           <div style="background: linear-gradient(135deg, #1e3a8a, #0f172a); padding: 32px; text-align: center;">
             ${logoHtml}
-            <div style="color: rgba(255, 255, 255, 0.8); font-size: 14px; margin-top: 4px; font-weight: 500; text-align: center;">Official Document Dispatch</div>
+            <div style="color: rgba(255, 255, 255, 0.8); font-size: 14px; margin-top: 4px; font-weight: 500; text-align: center;">Waiver Signature</div>
           </div>
           
           <!-- Content -->
@@ -338,7 +338,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         const htmlContent = getEmailHtml({
           title: `Parent/Guardian Copy: ${template.title}`,
           subtitle: "Parent/Guardian Signature Copy",
-          bodyText: `Hello,<br/><br/>A copy of the signed document has been attached to this email. This copy was dispatched to you because your email was provided as the parent/guardian contact.`,
+          bodyText: `Hello,<br/><br/>A copy of the signed document has been attached to this email. This copy was emailed to you because your email was provided as the parent/guardian contact.`,
           details: [
             { label: "Document Name", value: template.title },
             { label: "Participant Name", value: signerName },
