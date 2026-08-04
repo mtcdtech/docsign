@@ -75,6 +75,9 @@ export default async function EditTemplatePage({ params }: EditTemplatePageProps
             saveSharepoint: template.saveSharepoint,
             sharepointFolderId: template.sharepointFolderId,
             sharepointFolderName: template.sharepointFolderName,
+            pcoIntegrationEnabled: template.pcoIntegrationEnabled,
+            pcoSignupId: template.pcoSignupId || "",
+            pcoQuestionTitle: template.pcoQuestionTitle || "",
             organizationId: template.organizationId,
           }}
         />

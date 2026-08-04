@@ -183,3 +183,9 @@
 ### [2026-08-04] Email Branding Refinement (v0.12.18)
 - **Subject Branding & Terminology update**: Replaced header tagline `"Official Document Dispatch"` with `"Waiver Signature"` inside the `getEmailHtml` builder function in [route.ts](file:///Users/benny2168/Antigravity/docsign/src/app/api/sign/%5Bid%5D/route.ts). Replaced the word `"dispatched"` with `"emailed"` in the parent/guardian copy body content to simplify user-facing terminology.
 - **Status**: Completed.
+
+### [2026-08-04] Planning Center Online Registrations Integration (v0.12.19)
+- **Database Schema Sync**: Run `npx prisma db push` to synchronize new PCO columns (`pcoIntegrationEnabled`, `pcoSignupId`, `pcoQuestionTitle` on `Template`, and `pcoAttendeeId` on `SignedDocument`).
+- **PCO Integration UI**: Integrated settings checkboxes, text input fields, and dynamic copyable URLs with merge field parameters (`?pco_attendee_id={{ attendee.id }}`) inside [TemplateForm.tsx](file:///Users/benny2168/Antigravity/docsign/src/app/admin/templates/new/TemplateForm.tsx).
+- **PCO Background Sync Client**: Programmed [pco.ts](file:///Users/benny2168/Antigravity/docsign/src/lib/pco.ts) to lookup attendees by email/name, resolve their custom checkboxes, and send authenticated `PATCH` requests to automatically check off waiver requirements on PCO. Integrated the sync trigger in [route.ts](file:///Users/benny2168/Antigravity/docsign/src/app/api/sign/%5Bid%5D/route.ts).
+- **Status**: Completed.

@@ -29,6 +29,9 @@ interface TemplateFormProps {
     saveSharepoint: boolean;
     sharepointFolderId: string | null;
     sharepointFolderName: string | null;
+    pcoIntegrationEnabled?: boolean;
+    pcoSignupId?: string | null;
+    pcoQuestionTitle?: string | null;
     organizationId: string;
   };
 }
@@ -52,6 +55,18 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
   const [manualEmails, setManualEmails] = useState<string[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // Planning Center Online Integration States
+  const [pcoIntegrationEnabled, setPcoIntegrationEnabled] = useState(template?.pcoIntegrationEnabled ?? false);
+  const [pcoSignupId, setPcoSignupId] = useState(template?.pcoSignupId ?? "");
+  const [pcoQuestionTitle, setPcoQuestionTitle] = useState(template?.pcoQuestionTitle ?? "");
+  const [origin, setOrigin] = useState("https://docsign.server.mtcd.org");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setOrigin(window.location.origin);
+    }
+  }, []);
 
   const handleDeleteWaiver = async () => {
     setDeleting(true);
@@ -309,6 +324,9 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
             saveSharepoint,
             sharepointFolderId: selectedFolderId || null,
             sharepointFolderName: selectedFolderName || null,
+            pcoIntegrationEnabled,
+            pcoSignupId: pcoIntegrationEnabled ? pcoSignupId : null,
+            pcoQuestionTitle: pcoIntegrationEnabled ? pcoQuestionTitle : null,
           }),
         });
 
@@ -338,6 +356,9 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
         formData.append("saveSharepoint", String(saveSharepoint));
         formData.append("sharepointFolderId", selectedFolderId);
         formData.append("sharepointFolderName", selectedFolderName);
+        formData.append("pcoIntegrationEnabled", String(pcoIntegrationEnabled));
+        formData.append("pcoSignupId", pcoSignupId);
+        formData.append("pcoQuestionTitle", pcoQuestionTitle);
         formData.append("file", file);
 
         const res = await fetch("/api/admin/templates", {
@@ -551,6 +572,94 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
             >
               ⚙️ Configure Folder
             </button>
+          </div>
+        )}
+
+        {/* Planning Center Online Integration Panel */}
+        <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", color: "var(--text-main)", fontSize: "14px", marginTop: "16px" }}>
+          <input
+            type="checkbox"
+            checked={pcoIntegrationEnabled}
+            onChange={(e) => setPcoIntegrationEnabled(e.target.checked)}
+            style={{ width: "18px", height: "18px", accentColor: "var(--primary-color)" }}
+          />
+          Enable Planning Center Online (PCO) Registrations Sync
+        </label>
+
+        {pcoIntegrationEnabled && (
+          <div style={{ 
+            display: "flex", 
+            flexDirection: "column", 
+            gap: "12px", 
+            background: "rgba(255, 255, 255, 0.02)", 
+            padding: "16px", 
+            borderRadius: "8px", 
+            border: "1px solid var(--border-color)", 
+            marginTop: "8px",
+            width: "100%"
+          }}>
+            <div style={{ display: "flex", gap: "16px" }}>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: "600" }}>PCO Signup ID</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={pcoSignupId}
+                  onChange={(e) => setPcoSignupId(e.target.value)}
+                  placeholder="e.g. 1234567"
+                  required={pcoIntegrationEnabled}
+                  style={{ padding: "8px 12px", fontSize: "13px" }}
+                />
+              </div>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: "600" }}>PCO Custom Question Title</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={pcoQuestionTitle}
+                  onChange={(e) => setPcoQuestionTitle(e.target.value)}
+                  placeholder="e.g. Waiver Signed?"
+                  required={pcoIntegrationEnabled}
+                  style={{ padding: "8px 12px", fontSize: "13px" }}
+                />
+              </div>
+            </div>
+
+            {slug && (
+              <div style={{ 
+                display: "flex", 
+                flexDirection: "column", 
+                gap: "6px", 
+                borderTop: "1px solid rgba(255,255,255,0.05)", 
+                paddingTop: "12px",
+                marginTop: "4px"
+              }}>
+                <span style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: "600" }}>Copyable PCO Shared URL (Includes Merge Placeholders):</span>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <input
+                    type="text"
+                    readOnly
+                    className="form-input"
+                    value={`${origin}/sign/${slug}?pco_attendee_id={{ attendee.id }}`}
+                    style={{ flex: 1, padding: "8px 12px", fontSize: "12px", background: "rgba(0,0,0,0.2)", cursor: "text", fontFamily: "monospace" }}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${origin}/sign/${slug}?pco_attendee_id={{ attendee.id }}`);
+                      alert("PCO-compatible link copied to clipboard!");
+                    }}
+                    style={{ width: "auto", padding: "8px 16px", fontSize: "12px" }}
+                  >
+                    📋 Copy Link
+                  </button>
+                </div>
+                <p style={{ margin: 0, fontSize: "11px", color: "var(--text-muted)", lineHeight: "1.4" }}>
+                  Paste this link directly into your Planning Center confirmation emails. PCO will automatically inject the attendee's ID when they click it.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -51,6 +51,9 @@ model Template {
   organizationId      String
   organization        Organization     @relation(fields: [organizationId], references: [id])
   signedDocuments     SignedDocument[]
+  pcoIntegrationEnabled Boolean          @default(false)
+  pcoSignupId           String?
+  pcoQuestionTitle      String?
   isArchived          Boolean          @default(false)
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
@@ -69,6 +72,7 @@ model SignedDocument {
   emailedLeader  Boolean  @default(false)
   emailedParent  Boolean  @default(false)
   isDraft        Boolean  @default(false)
+  pcoAttendeeId  String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }

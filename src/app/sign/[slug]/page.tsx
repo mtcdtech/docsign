@@ -8,9 +8,12 @@ interface SignPageProps {
   params: {
     slug: string;
   };
+  searchParams: {
+    pco_attendee_id?: string;
+  };
 }
 
-export default async function SignPage({ params }: SignPageProps) {
+export default async function SignPage({ params, searchParams }: SignPageProps) {
   const { slug } = params;
 
   const template = await prisma.template.findUnique({
@@ -58,7 +61,13 @@ export default async function SignPage({ params }: SignPageProps) {
   return (
     <main style={{ padding: "20px", display: "flex", flexDirection: "column", width: "100%" }}>
       <div style={{ flex: 1 }}>
-        <SignForm template={template} portalTitle={portalTitle} portalLogo={portalLogo} pdfUrl={pdfUrl} />
+        <SignForm 
+          template={template} 
+          portalTitle={portalTitle} 
+          portalLogo={portalLogo} 
+          pdfUrl={pdfUrl} 
+          pcoAttendeeId={searchParams.pco_attendee_id || null} 
+        />
       </div>
     </main>
   );

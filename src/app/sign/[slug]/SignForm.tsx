@@ -46,9 +46,10 @@ interface SignFormProps {
   portalTitle: string;
   portalLogo: string;
   pdfUrl: string;
+  pcoAttendeeId: string | null;
 }
 
-export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: SignFormProps) {
+export default function SignForm({ template, portalTitle, portalLogo, pdfUrl, pcoAttendeeId }: SignFormProps) {
   const fields = JSON.parse(template.fieldsJson) as FormField[];
 
   // Global reading order of all fields for sequential Tab navigation
@@ -606,6 +607,7 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl }: 
           signerEmail,
           formData: finalFormData,
           draftId,
+          pcoAttendeeId,
         }),
       });
 

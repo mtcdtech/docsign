@@ -25,6 +25,9 @@ export async function POST(req: Request) {
     const saveSharepoint = data.get("saveSharepoint") === "true";
     const sharepointFolderId = data.get("sharepointFolderId") as string | null;
     const sharepointFolderName = data.get("sharepointFolderName") as string | null;
+    const pcoIntegrationEnabled = data.get("pcoIntegrationEnabled") === "true";
+    const pcoSignupId = data.get("pcoSignupId") as string | null;
+    const pcoQuestionTitle = data.get("pcoQuestionTitle") as string | null;
     const file = data.get("file") as File | null;
 
     if (!title || !slug || !organizationId) {
@@ -117,6 +120,9 @@ export async function POST(req: Request) {
         saveSharepoint,
         sharepointFolderId,
         sharepointFolderName,
+        pcoIntegrationEnabled,
+        pcoSignupId,
+        pcoQuestionTitle,
         organizationId,
       },
     });

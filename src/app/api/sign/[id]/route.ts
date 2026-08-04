@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { overlayPdf } from "@/lib/pdf";
 import { sendEmail } from "@/lib/mail";
 import { getMsGraphToken, uploadFileToSharepoint } from "@/lib/sharepoint";
+import { syncWaiverToPco } from "@/lib/pco";
 import path from "path";
 import fs from "fs";
 
@@ -88,7 +89,7 @@ function getEmailHtml({
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
     const templateId = params.id;
-    const { signerName, signerEmail, formData, draftId } = await req.json();
+    const { signerName, signerEmail, formData, draftId, pcoAttendeeId } = await req.json();
 
     if (!signerName || !signerEmail || !formData) {
       return NextResponse.json({ error: "Missing required submission fields." }, { status: 400 });
@@ -168,6 +169,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             signedPdfPath: outputPath,
             sharepointUrl: sharepointUrl,
             isDraft: false,
+            pcoAttendeeId: pcoAttendeeId || null,
           }
         });
       } catch (err) {
@@ -185,6 +187,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
           signedPdfPath: outputPath,
           sharepointUrl: sharepointUrl,
           isDraft: false,
+          pcoAttendeeId: pcoAttendeeId || null,
         }
       });
     }
@@ -195,6 +198,18 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     let emailedParent = false;
     const clientIp = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
     const userAgent = req.headers.get("user-agent") || "unknown";
+
+    // 4. Trigger PCO Registrations Sync in background if integration is enabled
+    if (template.pcoIntegrationEnabled) {
+      syncWaiverToPco({
+        template,
+        signedDoc,
+        clientIp,
+        userAgent
+      }).catch((err) => {
+        console.error("PCO Sync failed to execute in background:", err);
+      });
+    }
 
     // Build recipient groups
     const cleanSignerEmail = signerEmail ? signerEmail.trim().toLowerCase() : "";
