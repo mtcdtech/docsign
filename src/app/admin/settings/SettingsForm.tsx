@@ -38,6 +38,8 @@ interface SettingsFormProps {
   initialAzureTenantId: string;
   initialAzureClientId: string;
   initialAzureClientSecret: string;
+  initialPcoApplicationId: string;
+  initialPcoSecret: string;
   initialOrganizations: Organization[];
   initialUsers: User[];
   initialAuditLogs: AuditLog[];
@@ -56,6 +58,8 @@ export default function SettingsForm({
   initialAzureTenantId,
   initialAzureClientId,
   initialAzureClientSecret,
+  initialPcoApplicationId,
+  initialPcoSecret,
   initialOrganizations,
   initialUsers,
   initialAuditLogs,
@@ -79,6 +83,8 @@ export default function SettingsForm({
   const [azureTenantId, setAzureTenantId] = useState(initialAzureTenantId || "");
   const [azureClientId, setAzureClientId] = useState(initialAzureClientId || "");
   const [azureClientSecret, setAzureClientSecret] = useState(initialAzureClientSecret || "");
+  const [pcoApplicationId, setPcoApplicationId] = useState(initialPcoApplicationId || "");
+  const [pcoSecret, setPcoSecret] = useState(initialPcoSecret || "");
 
   // Directory synchronizing states
   const [isSyncing, setIsSyncing] = useState(false);
@@ -250,6 +256,8 @@ export default function SettingsForm({
         azure_tenant_id: fieldsToUpdate.azure_tenant_id ?? azureTenantId,
         azure_client_id: fieldsToUpdate.azure_client_id ?? azureClientId,
         azure_client_secret: fieldsToUpdate.azure_client_secret ?? azureClientSecret,
+        pco_application_id: fieldsToUpdate.pco_application_id ?? pcoApplicationId,
+        pco_secret: fieldsToUpdate.pco_secret ?? pcoSecret,
       };
 
       const res = await fetch("/api/admin/settings", {
@@ -461,6 +469,7 @@ export default function SettingsForm({
   const tabs = [
     { id: "general", label: "General Configuration" },
     { id: "azure", label: "Azure AD / SharePoint" },
+    { id: "pco", label: "Planning Center (PCO)" },
     { id: "branding", label: "Theming & Logo" },
     { id: "organizations", label: "Organization Branding" },
     { id: "central_iam", label: "Central IAM Portal" },
@@ -642,6 +651,66 @@ export default function SettingsForm({
 
             <button type="submit" className="btn btn-primary" disabled={isSaving} style={{ width: "auto", alignSelf: "flex-end" }}>
               {isSaving ? "Saving Credentials..." : "Save Azure Credentials"}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {activeTab === "pco" && (
+        <div className="card-glass">
+          <h2 style={{ marginBottom: "8px" }}>Planning Center Online (PCO) Integration</h2>
+          <p style={{ color: "var(--text-muted)", fontSize: "13px", marginBottom: "24px" }}>
+            Configure your Planning Center Application ID and Secret (PAT) to enable live registration syncing and status updates.
+          </p>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              saveSettings({
+                pco_application_id: pcoApplicationId,
+                pco_secret: pcoSecret
+              });
+            }}
+            style={{ display: "flex", flexDirection: "column", gap: "20px" }}
+          >
+            <div className="form-group">
+              <label className="form-label">PCO Application ID *</label>
+              <input
+                type="text"
+                className="form-input"
+                required
+                value={pcoApplicationId}
+                onChange={(e) => setPcoApplicationId(e.target.value)}
+                placeholder="e.g. ca01c8be17ad11d4f90e879841eae..."
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">PCO Secret (Personal Access Token) *</label>
+              <input
+                type="password"
+                className="form-input"
+                required
+                value={pcoSecret}
+                onChange={(e) => setPcoSecret(e.target.value)}
+                placeholder="••••••••••••••••••••••••••••••••"
+              />
+            </div>
+
+            {saveSuccess && (
+              <div style={{ color: "#22c55e", fontSize: "14px", fontWeight: "bold", background: "rgba(34, 197, 94, 0.1)", padding: "12px", borderRadius: "8px", border: "1px solid rgba(34, 197, 94, 0.2)" }}>
+                ✓ Planning Center settings saved successfully!
+              </div>
+            )}
+
+            {saveError && (
+              <div style={{ color: "#ef4444", fontSize: "14px", fontWeight: "bold", background: "rgba(239, 68, 68, 0.1)", padding: "12px", borderRadius: "8px", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
+                ⚠️ {saveError}
+              </div>
+            )}
+
+            <button type="submit" className="btn btn-primary" disabled={isSaving} style={{ width: "auto", alignSelf: "flex-end" }}>
+              {isSaving ? "Saving Settings..." : "Save PCO Settings"}
             </button>
           </form>
         </div>

@@ -38,6 +38,9 @@ export default async function SettingsPage() {
     const azureClientId = settingsMap["azure_client_id"] || "";
     const azureClientSecret = settingsMap["azure_client_secret"] || "";
 
+    const pcoApplicationId = settingsMap["pco_application_id"] || "";
+    const pcoSecret = settingsMap["pco_secret"] || "";
+
     // Fetch local API key for central IAM registration
     const apiKey = getApiKey();
     const rolesApiUrl = `${process.env.NEXTAUTH_URL || "http://docsign.server.mtcd.org"}/api/iam/roles`;
@@ -77,6 +80,8 @@ export default async function SettingsPage() {
             initialAzureTenantId={azureTenantId}
             initialAzureClientId={azureClientId}
             initialAzureClientSecret={azureClientSecret}
+            initialPcoApplicationId={pcoApplicationId}
+            initialPcoSecret={pcoSecret}
             initialOrganizations={organizations}
             initialUsers={users}
             initialAuditLogs={auditLogs}

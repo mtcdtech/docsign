@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { primary_color, primary_hover, portal_title, portal_logo_light, portal_logo_dark, theme_mode, central_iam_url, azure_tenant_id, azure_client_id, azure_client_secret } = body;
+    const { primary_color, primary_hover, portal_title, portal_logo_light, portal_logo_dark, theme_mode, central_iam_url, azure_tenant_id, azure_client_id, azure_client_secret, pco_application_id, pco_secret } = body;
 
     // Validate inputs
     if (!primary_color || !primary_hover || !portal_title) {
@@ -30,6 +30,8 @@ export async function POST(req: Request) {
       azure_tenant_id: azure_tenant_id || "",
       azure_client_id: azure_client_id || "",
       azure_client_secret: azure_client_secret || "",
+      pco_application_id: pco_application_id || "",
+      pco_secret: pco_secret || "",
     };
 
     for (const [key, value] of Object.entries(settings)) {
