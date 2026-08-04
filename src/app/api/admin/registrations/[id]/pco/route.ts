@@ -41,10 +41,8 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     }
 
     let pcoAttendees;
-    let pcoQuestions;
     try {
       pcoAttendees = await getPcoRegistrationAttendees(registration.pcoSignupId);
-      pcoQuestions = await getPcoQuestions(registration.pcoSignupId);
     } catch (apiErr: any) {
       console.error("Failed to fetch PCO integration records:", apiErr);
       return NextResponse.json({ ok: false, error: `PCO API Error: ${apiErr.message || "Connection refused"}` }, { status: 502 });
@@ -99,23 +97,12 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
           return firstA === firstD || firstA.startsWith(firstD) || firstD.startsWith(firstA);
         });
 
-        // Look up custom question checkbox checked state in PCO answers
-        let pcoAnswered = false;
-        if (tpl.pcoQuestionTitle) {
-          const targetTitle = tpl.pcoQuestionTitle.toLowerCase().trim();
-          const targetQuestion = pcoQuestions.find((q) => q.title.toLowerCase().trim() === targetTitle);
-          if (targetQuestion) {
-            const answer = att.answers.find((ans) => ans.questionId === targetQuestion.id);
-            pcoAnswered = answer?.value === "Yes";
-          }
-        }
-
         return {
           templateId: tpl.id,
           title: tpl.title,
           pcoQuestionTitle: tpl.pcoQuestionTitle || null,
           signed: hasSignedLocal,
-          pcoAnswered
+          pcoAnswered: false
         };
       });
 
