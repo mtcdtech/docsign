@@ -81,10 +81,22 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
           if (cleanDocEmail !== cleanAttEmail) return false;
 
           // Fuzzy clean match on names if emails match
-          const cleanDocName = doc.signerName.toLowerCase().replace(/[^a-z0-9]/g, "");
-          return cleanDocName === cleanAttName || 
-                 cleanDocName.includes(cleanAttName) || 
-                 cleanAttName.includes(cleanDocName);
+          const dName = doc.signerName.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+          const aName = att.name.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+          if (dName === aName) return true;
+
+          const dWords = dName.split(/\s+/).filter(Boolean);
+          const aWords = aName.split(/\s+/).filter(Boolean);
+          if (aWords.length === 0 || dWords.length === 0) return false;
+
+          // Check if last names match, and first name matches or starts with same prefix
+          const lastA = aWords[aWords.length - 1];
+          const lastD = dWords[dWords.length - 1];
+          if (lastA !== lastD) return false;
+
+          const firstA = aWords[0];
+          const firstD = dWords[0];
+          return firstA === firstD || firstA.startsWith(firstD) || firstD.startsWith(firstA);
         });
 
         // Look up custom question checkbox checked state in PCO answers
