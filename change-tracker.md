@@ -146,3 +146,7 @@
 - **Announcements Defaults Purged**: Removed all hardcoded `announcements@mtcd.org` and corresponding passwords from fallbacks inside [mail.ts](file:///Users/benny2168/Antigravity/docsign/src/lib/mail.ts).
 - **Default Azure Host Configuration**: Set default fallback host to `smtp.azurecomm.net` inside [mail.ts](file:///Users/benny2168/Antigravity/docsign/src/lib/mail.ts) and updated the default environment parameters inside both [docker-compose.portainer.yml](file:///Users/benny2168/Antigravity/docsign/docker-compose.portainer.yml) and [docker-compose.yml](file:///Users/benny2168/Antigravity/docsign/docker-compose.yml) to point to `smtp.azurecomm.net` with empty user and password settings.
 - **Status**: Completed.
+
+### [2026-08-04] SMTP Diagnostic Logging Enhancement (v0.12.10)
+- **SMTP Detailed Logging**: Expanded nodemailer success and catch block `console` logs inside [mail.ts](file:///Users/benny2168/Antigravity/docsign/src/lib/mail.ts) to explicitly output the target `to` address and email `subject`. This enables auditing exactly which messages are successfully dispatched to users vs leaders in production telemetry.
+- **Status**: Completed.

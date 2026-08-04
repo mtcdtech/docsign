@@ -69,10 +69,10 @@ export async function sendEmail({
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log("Email sent successfully:", info.messageId);
+    console.log(`Email sent successfully to ${to} (Subject: "${subject}"): ${info.messageId}`);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error("Failed to send email via SMTP:", error);
+    console.error(`Failed to send email via SMTP to ${to} (Subject: "${subject}"):`, error);
     throw error;
   }
 }
