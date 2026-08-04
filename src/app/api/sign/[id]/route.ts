@@ -13,18 +13,41 @@ function getEmailHtml({
   bodyText,
   details,
   portalTitle = "MTCD DocSign",
-  portalLogo = ""
+  portalLogoDark = "",
+  orgLogoDark = ""
 }: {
   title: string;
   subtitle: string;
   bodyText: string;
   details: { label: string; value: string }[];
   portalTitle?: string;
-  portalLogo?: string;
+  portalLogoDark?: string;
+  orgLogoDark?: string;
 }) {
-  const logoHtml = portalLogo 
-    ? `<img src="${portalLogo}" alt="${portalTitle}" style="max-height: 48px; max-width: 200px; display: block; margin: 0 auto 12px auto;" />`
-    : `<div style="font-size: 24px; font-weight: bold; color: #ffffff; letter-spacing: -0.5px; text-align: center;">✍️ ${portalTitle}</div>`;
+  const appLogo = portalLogoDark;
+  const orgLogo = orgLogoDark;
+
+  let logoHtml = "";
+  if (appLogo && orgLogo) {
+    logoHtml = `
+      <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto 12px auto;">
+        <tr>
+          <td valign="middle" style="padding-right: 16px; border-right: 1px solid rgba(255, 255, 255, 0.25);">
+            <img src="${appLogo}" alt="${portalTitle}" style="max-height: 40px; max-width: 160px; display: block;" />
+          </td>
+          <td valign="middle" style="padding-left: 16px;">
+            <img src="${orgLogo}" alt="Organization Logo" style="max-height: 40px; max-width: 160px; display: block;" />
+          </td>
+        </tr>
+      </table>
+    `;
+  } else if (appLogo) {
+    logoHtml = `<img src="${appLogo}" alt="${portalTitle}" style="max-height: 48px; max-width: 200px; display: block; margin: 0 auto 12px auto;" />`;
+  } else if (orgLogo) {
+    logoHtml = `<img src="${orgLogo}" alt="Organization Logo" style="max-height: 48px; max-width: 200px; display: block; margin: 0 auto 12px auto;" />`;
+  } else {
+    logoHtml = `<div style="font-size: 24px; font-weight: bold; color: #ffffff; letter-spacing: -0.5px; text-align: center;">✍️ ${portalTitle}</div>`;
+  }
 
   const detailsRows = details
     .map(
@@ -295,7 +318,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
     // Fetch portal settings for branding
     let portalTitle = "MTCD DocSign";
-    let portalLogo = "";
+    let portalLogoLight = "";
+    let portalLogoDark = "";
     try {
       const settings = await prisma.setting.findMany();
       const settingsMap = settings.reduce((acc, curr) => {
@@ -303,10 +327,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         return acc;
       }, {} as Record<string, string>);
       if (settingsMap["portal_title"]) portalTitle = settingsMap["portal_title"];
-      if (settingsMap["portal_logo"]) portalLogo = settingsMap["portal_logo"];
+      if (settingsMap["portal_logo_light"]) portalLogoLight = settingsMap["portal_logo_light"];
+      if (settingsMap["portal_logo_dark"]) portalLogoDark = settingsMap["portal_logo_dark"];
     } catch (e) {
       console.error("Failed to query settings for email:", e);
     }
+
+    const orgLogoLight = template.organization?.logoLight || "";
+    const orgLogoDark = template.organization?.logoDark || "";
 
     // Execute sending to Signer
     if (targetSignerEmail) {
@@ -322,7 +350,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             { label: "Completed On", value: new Date().toLocaleString() }
           ],
           portalTitle,
-          portalLogo
+          portalLogoDark: portalLogoDark || portalLogoLight,
+          orgLogoDark: orgLogoDark || orgLogoLight
         });
         
         await sendEmail({
@@ -360,7 +389,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             { label: "Completed On", value: new Date().toLocaleString() }
           ],
           portalTitle,
-          portalLogo
+          portalLogoDark: portalLogoDark || portalLogoLight,
+          orgLogoDark: orgLogoDark || orgLogoLight
         });
         for (const email of targetParentEmails) {
           try {
@@ -404,7 +434,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             { label: "Completed On", value: new Date().toLocaleString() }
           ],
           portalTitle,
-          portalLogo
+          portalLogoDark: portalLogoDark || portalLogoLight,
+          orgLogoDark: orgLogoDark || orgLogoLight
         });
         for (const email of targetCustomEmails) {
           try {
@@ -449,7 +480,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             { label: "Submitted On", value: new Date().toLocaleString() }
           ],
           portalTitle,
-          portalLogo
+          portalLogoDark: portalLogoDark || portalLogoLight,
+          orgLogoDark: orgLogoDark || orgLogoLight
         });
         for (const email of targetLeaderEmails) {
           try {

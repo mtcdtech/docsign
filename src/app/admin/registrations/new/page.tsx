@@ -2,11 +2,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import SessionForm from "../SessionForm";
+import RegistrationForm from "../RegistrationForm";
 
 export const dynamic = "force-dynamic";
 
-export default async function NewSessionPage() {
+export default async function NewRegistrationPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     redirect("/");
@@ -47,12 +47,12 @@ export default async function NewSessionPage() {
   return (
     <div>
       <div style={{ marginBottom: "32px" }}>
-        <h1>Create Signing Session</h1>
-        <p>Establish a unified signing session containing sequential form templates.</p>
+        <h1>Create Signing Registration Packet</h1>
+        <p>Establish a unified signing packet containing sequential form templates.</p>
       </div>
 
       <div style={{ maxWidth: "700px" }}>
-        <SessionForm
+        <RegistrationForm
           organizations={organizations}
           templates={templates}
         />

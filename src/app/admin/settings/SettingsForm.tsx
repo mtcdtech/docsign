@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 interface Organization {
   id: string;
   name: string;
+  logoLight?: string | null;
+  logoDark?: string | null;
 }
 
 interface User {
@@ -29,7 +31,8 @@ interface SettingsFormProps {
   initialPrimaryColor: string;
   initialPrimaryHover: string;
   initialPortalTitle: string;
-  initialLogoBase64: string;
+  initialLogoLightBase64: string;
+  initialLogoDarkBase64: string;
   initialThemeMode: string;
   initialCentralIamUrl: string;
   initialAzureTenantId: string;
@@ -46,7 +49,8 @@ export default function SettingsForm({
   initialPrimaryColor,
   initialPrimaryHover,
   initialPortalTitle,
-  initialLogoBase64,
+  initialLogoLightBase64,
+  initialLogoDarkBase64,
   initialThemeMode,
   initialCentralIamUrl,
   initialAzureTenantId,
@@ -67,7 +71,9 @@ export default function SettingsForm({
   const [primaryColor, setPrimaryColor] = useState(initialPrimaryColor);
   const [primaryHover, setPrimaryHover] = useState(initialPrimaryHover);
   const [portalTitle, setPortalTitle] = useState(initialPortalTitle);
-  const [logoBase64, setLogoBase64] = useState(initialLogoBase64);
+  const [logoLight, setLogoLight] = useState(initialLogoLightBase64);
+  const [logoDark, setLogoDark] = useState(initialLogoDarkBase64);
+  const [orgs, setOrgs] = useState<Organization[]>(initialOrganizations);
   const [themeMode, setThemeMode] = useState(initialThemeMode);
   const [centralIamUrl, setCentralIamUrl] = useState(initialCentralIamUrl);
   const [azureTenantId, setAzureTenantId] = useState(initialAzureTenantId || "");
@@ -237,7 +243,8 @@ export default function SettingsForm({
         primary_color: fieldsToUpdate.primary_color ?? primaryColor,
         primary_hover: fieldsToUpdate.primary_hover ?? primaryHover,
         portal_title: fieldsToUpdate.portal_title ?? portalTitle,
-        portal_logo: fieldsToUpdate.portal_logo !== undefined ? fieldsToUpdate.portal_logo : logoBase64,
+        portal_logo_light: fieldsToUpdate.portal_logo_light !== undefined ? fieldsToUpdate.portal_logo_light : logoLight,
+        portal_logo_dark: fieldsToUpdate.portal_logo_dark !== undefined ? fieldsToUpdate.portal_logo_dark : logoDark,
         theme_mode: fieldsToUpdate.theme_mode ?? themeMode,
         central_iam_url: fieldsToUpdate.central_iam_url ?? centralIamUrl,
         azure_tenant_id: fieldsToUpdate.azure_tenant_id ?? azureTenantId,
@@ -341,17 +348,7 @@ export default function SettingsForm({
     }
   };
 
-  const triggerFileInput = () => {
-    document.getElementById("logo-file-input")?.click();
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      processFile(e.target.files[0]);
-    }
-  };
-
-  const processFile = (file: File) => {
+  const handleLogoUpload = (type: "light" | "dark", file: File) => {
     if (!file.type.startsWith("image/")) {
       setSaveError("Please upload an image file.");
       return;
@@ -365,23 +362,107 @@ export default function SettingsForm({
     reader.onload = (uploadEvent) => {
       if (uploadEvent.target?.result) {
         const base64Str = uploadEvent.target.result as string;
-        setLogoBase64(base64Str);
-        saveSettings({ portal_logo: base64Str });
+        if (type === "light") {
+          setLogoLight(base64Str);
+          saveSettings({ portal_logo_light: base64Str });
+        } else {
+          setLogoDark(base64Str);
+          saveSettings({ portal_logo_dark: base64Str });
+        }
       }
     };
     reader.readAsDataURL(file);
   };
 
-  const clearLogo = (e: React.MouseEvent) => {
+  const clearLogo = (type: "light" | "dark", e: React.MouseEvent) => {
     e.stopPropagation();
-    setLogoBase64("");
-    saveSettings({ portal_logo: "" });
+    if (type === "light") {
+      setLogoLight("");
+      saveSettings({ portal_logo_light: "" });
+    } else {
+      setLogoDark("");
+      saveSettings({ portal_logo_dark: "" });
+    }
+  };
+
+  const handleOrgLogoUpload = async (orgId: string, type: "light" | "dark", file: File) => {
+    if (!file.type.startsWith("image/")) {
+      alert("Please upload an image file.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      alert("File is too large (max 2MB).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      if (e.target?.result) {
+        const base64Str = e.target.result as string;
+        try {
+          const res = await fetch(`/api/admin/organizations/${orgId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(
+              type === "light" ? { logoLight: base64Str } : { logoDark: base64Str }
+            )
+          });
+          const data = await res.json();
+          if (!res.ok || data.ok === false) {
+            throw new Error(data.error || "Failed to upload logo.");
+          }
+          setOrgs((prev) =>
+            prev.map((o) =>
+              o.id === orgId
+                ? {
+                    ...o,
+                    logoLight: type === "light" ? base64Str : o.logoLight,
+                    logoDark: type === "dark" ? base64Str : o.logoDark
+                  }
+                : o
+            )
+          );
+        } catch (err: any) {
+          alert(err.message || "Failed to upload logo.");
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleOrgLogoClear = async (orgId: string, type: "light" | "dark") => {
+    try {
+      const res = await fetch(`/api/admin/organizations/${orgId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          type === "light" ? { logoLight: null } : { logoDark: null }
+        )
+      });
+      const data = await res.json();
+      if (!res.ok || data.ok === false) {
+        throw new Error(data.error || "Failed to remove logo.");
+      }
+      setOrgs((prev) =>
+        prev.map((o) =>
+          o.id === orgId
+            ? {
+                ...o,
+                logoLight: type === "light" ? null : o.logoLight,
+                logoDark: type === "dark" ? null : o.logoDark
+              }
+            : o
+        )
+      );
+    } catch (err: any) {
+      alert(err.message || "Failed to remove logo.");
+    }
   };
 
   const tabs = [
     { id: "general", label: "General Configuration" },
     { id: "azure", label: "Azure AD / SharePoint" },
     { id: "branding", label: "Theming & Logo" },
+    { id: "organizations", label: "Organization Branding" },
     { id: "central_iam", label: "Central IAM Portal" },
     { id: "users", label: "User Directory" },
   ];
@@ -576,60 +657,59 @@ export default function SettingsForm({
             }}
             style={{ display: "flex", flexDirection: "column", gap: "20px" }}
           >
-            <div className="form-group">
-              <label className="form-label">Portal Brand Logo</label>
-              <div
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={triggerFileInput}
-                style={{
-                  border: `2px dashed ${dragOver ? "var(--primary-color)" : "var(--border-color)"}`,
-                  borderRadius: "var(--radius-md)",
-                  padding: "28px",
-                  textAlign: "center",
-                  cursor: "pointer",
-                  background: dragOver ? "rgba(79, 70, 229, 0.05)" : "rgba(0, 0, 0, 0.1)",
-                  transition: "all var(--transition-fast)",
-                }}
-              >
-                <input
-                  type="file"
-                  id="logo-file-input"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  style={{ display: "none" }}
-                />
-                {logoBase64 ? (
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
-                    <img
-                      src={logoBase64}
-                      alt="Custom Logo Preview"
-                      style={{ maxHeight: "64px", maxWidth: "100%", objectFit: "contain", borderRadius: "4px" }}
-                    />
-                    <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                      Custom logo uploaded. Drag & drop or click to replace.
-                    </span>
-                    <button
-                      type="button"
-                      className="btn btn-danger"
-                      onClick={clearLogo}
-                      style={{ padding: "6px 12px", fontSize: "12px", borderRadius: "6px", width: "auto" }}
-                    >
-                      Remove Logo
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                      <circle cx="8.5" cy="8.5" r="1.5" />
-                      <polyline points="21 15 16 10 5 21" />
-                    </svg>
-                    <span style={{ fontSize: "14px", fontWeight: "bold" }}>Drag and drop logo here, or click to browse</span>
-                    <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Supports PNG, JPG, or SVG</span>
-                  </div>
-                )}
+            <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+              {/* App Logo Light Mode */}
+              <div className="form-group" style={{ flex: 1, minWidth: "260px" }}>
+                <label className="form-label">App Logo (Light Mode)</label>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "20px", border: "1px solid var(--border-color)", borderRadius: "8px", background: "rgba(255,255,255,0.01)" }}>
+                  {logoLight ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <img src={logoLight} alt="Light logo preview" style={{ maxHeight: "40px", maxWidth: "160px", objectFit: "contain", background: "#f0f0f0", padding: "4px", borderRadius: "4px" }} />
+                      <button type="button" className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "12px", width: "auto", color: "#ef4444" }} onClick={(e) => clearLogo("light", e)}>Remove</button>
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: "12px", color: "var(--text-muted)", fontStyle: "italic" }}>No logo uploaded</span>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    id="logo-light-file-input"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) handleLogoUpload("light", e.target.files[0]);
+                    }}
+                    style={{ display: "none" }}
+                  />
+                  <button type="button" className="btn btn-secondary" style={{ padding: "8px 16px", fontSize: "13px", width: "auto" }} onClick={() => document.getElementById("logo-light-file-input")?.click()}>
+                    Upload Logo
+                  </button>
+                </div>
+              </div>
+
+              {/* App Logo Dark Mode */}
+              <div className="form-group" style={{ flex: 1, minWidth: "260px" }}>
+                <label className="form-label">App Logo (Dark Mode)</label>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "20px", border: "1px solid var(--border-color)", borderRadius: "8px", background: "rgba(255,255,255,0.01)" }}>
+                  {logoDark ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <img src={logoDark} alt="Dark logo preview" style={{ maxHeight: "40px", maxWidth: "160px", objectFit: "contain", background: "#18181b", padding: "4px", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "4px" }} />
+                      <button type="button" className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "12px", width: "auto", color: "#ef4444" }} onClick={(e) => clearLogo("dark", e)}>Remove</button>
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: "12px", color: "var(--text-muted)", fontStyle: "italic" }}>No logo uploaded</span>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    id="logo-dark-file-input"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) handleLogoUpload("dark", e.target.files[0]);
+                    }}
+                    style={{ display: "none" }}
+                  />
+                  <button type="button" className="btn btn-secondary" style={{ padding: "8px 16px", fontSize: "13px", width: "auto" }} onClick={() => document.getElementById("logo-dark-file-input")?.click()}>
+                    Upload Logo
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -693,6 +773,77 @@ export default function SettingsForm({
               {isSaving ? "Saving Branding..." : "Save Theme Preferences"}
             </button>
           </form>
+        </div>
+      )}
+
+      {activeTab === "organizations" && (
+        <div className="card-glass" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          <h2 style={{ marginBottom: "12px" }}>Organization Branding Customization</h2>
+          <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: "0 0 10px 0" }}>
+            Upload Light and Dark mode logo images for individual organizations. Synced templates belonging to these organizations will automatically display these logos.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            {orgs.map((org) => (
+              <div key={org.id} style={{ display: "flex", flexWrap: "wrap", gap: "20px", padding: "20px", borderRadius: "8px", border: "1px solid var(--border-color)", background: "rgba(255,255,255,0.01)" }}>
+                <div style={{ flex: "1 1 200px" }}>
+                  <h3 style={{ fontSize: "16px", margin: 0 }}>{org.name}</h3>
+                  <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>ID: {org.id}</span>
+                </div>
+                {/* Light Logo Uploader */}
+                <div style={{ flex: "1 1 200px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <label style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: "600" }}>Light Mode Logo</label>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    {org.logoLight ? (
+                      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: "8px" }}>
+                        <img src={org.logoLight} alt="Light logo preview" style={{ maxHeight: "36px", maxWidth: "120px", objectFit: "contain", background: "#f0f0f0", padding: "4px", borderRadius: "4px" }} />
+                        <button type="button" className="btn btn-secondary" style={{ padding: "4px 8px", fontSize: "11px", width: "auto", color: "#ef4444" }} onClick={() => handleOrgLogoClear(org.id, "light")}>Remove</button>
+                      </div>
+                    ) : (
+                      <span style={{ fontSize: "11px", color: "var(--text-muted)", fontStyle: "italic" }}>No logo uploaded</span>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id={`org-logo-light-${org.id}`}
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) handleOrgLogoUpload(org.id, "light", e.target.files[0]);
+                      }}
+                      style={{ display: "none" }}
+                    />
+                    <button type="button" className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "12px", width: "auto" }} onClick={() => document.getElementById(`org-logo-light-${org.id}`)?.click()}>
+                      Upload
+                    </button>
+                  </div>
+                </div>
+                {/* Dark Logo Uploader */}
+                <div style={{ flex: "1 1 200px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <label style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: "600" }}>Dark Mode Logo</label>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    {org.logoDark ? (
+                      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: "8px" }}>
+                        <img src={org.logoDark} alt="Dark logo preview" style={{ maxHeight: "36px", maxWidth: "120px", objectFit: "contain", background: "#18181b", padding: "4px", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "4px" }} />
+                        <button type="button" className="btn btn-secondary" style={{ padding: "4px 8px", fontSize: "11px", width: "auto", color: "#ef4444" }} onClick={() => handleOrgLogoClear(org.id, "dark")}>Remove</button>
+                      </div>
+                    ) : (
+                      <span style={{ fontSize: "11px", color: "var(--text-muted)", fontStyle: "italic" }}>No logo uploaded</span>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id={`org-logo-dark-${org.id}`}
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) handleOrgLogoUpload(org.id, "dark", e.target.files[0]);
+                      }}
+                      style={{ display: "none" }}
+                    />
+                    <button type="button" className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "12px", width: "auto" }} onClick={() => document.getElementById(`org-logo-dark-${org.id}`)?.click()}>
+                      Upload
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

@@ -11,10 +11,10 @@ export async function GET(req: Request) {
     }
 
     const user = session.user as any;
-    let sessions;
+    let registrations;
 
     if (user.role === "Admin") {
-      sessions = await prisma.signingSession.findMany({
+      registrations = await prisma.signingRegistration.findMany({
         include: {
           organization: {
             select: { name: true }
@@ -23,8 +23,8 @@ export async function GET(req: Request) {
         orderBy: { createdAt: "desc" }
       });
     } else {
-      // OrgLeader can only view sessions in their organizations
-      sessions = await prisma.signingSession.findMany({
+      // OrgLeader can only view registrations in their organizations
+      registrations = await prisma.signingRegistration.findMany({
         where: {
           organization: {
             users: { some: { id: user.id } }
@@ -39,10 +39,10 @@ export async function GET(req: Request) {
       });
     }
 
-    return NextResponse.json({ ok: true, sessions });
+    return NextResponse.json({ ok: true, registrations });
   } catch (err: any) {
-    console.error("Failed to load sessions:", err);
-    return NextResponse.json({ ok: false, error: err.message || "Failed to load sessions" }, { status: 500 });
+    console.error("Failed to load registrations:", err);
+    return NextResponse.json({ ok: false, error: err.message || "Failed to load registrations" }, { status: 500 });
   }
 }
 
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { title, slug, organizationId, templateIds } = body;
+    const { title, slug, organizationId, templateIds, pcoSignupId } = body;
 
     if (!title || !slug || !organizationId || !templateIds || !Array.isArray(templateIds)) {
       return NextResponse.json({ ok: false, error: "Missing required fields." }, { status: 400 });
@@ -75,19 +75,20 @@ export async function POST(req: Request) {
 
     const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, "");
 
-    // Verify slug uniqueness across templates AND sessions!
+    // Verify slug uniqueness across templates AND registrations!
     const existingTemplate = await prisma.template.findUnique({ where: { slug: cleanSlug } });
-    const existingSession = await prisma.signingSession.findUnique({ where: { slug: cleanSlug } });
-    if (existingTemplate || existingSession) {
-      return NextResponse.json({ ok: false, error: "This slug is already in use by another template or session." }, { status: 400 });
+    const existingRegistration = await prisma.signingRegistration.findUnique({ where: { slug: cleanSlug } });
+    if (existingTemplate || existingRegistration) {
+      return NextResponse.json({ ok: false, error: "This slug is already in use by another template or registration." }, { status: 400 });
     }
 
-    const signingSession = await prisma.signingSession.create({
+    const registration = await prisma.signingRegistration.create({
       data: {
         title,
         slug: cleanSlug,
         organizationId,
-        templateIdsJson: JSON.stringify(templateIds)
+        templateIdsJson: JSON.stringify(templateIds),
+        pcoSignupId: pcoSignupId || null
       }
     });
 
@@ -95,15 +96,15 @@ export async function POST(req: Request) {
     await prisma.auditLog.create({
       data: {
         email: user.email,
-        action: `Created Signing Session: ${title} (slug: ${cleanSlug})`,
+        action: `Created Signing Registration: ${title} (slug: ${cleanSlug})`,
         ip: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown",
         userAgent: req.headers.get("user-agent") || "unknown"
       }
     });
 
-    return NextResponse.json({ ok: true, session: signingSession });
+    return NextResponse.json({ ok: true, registration });
   } catch (err: any) {
-    console.error("Failed to create session:", err);
-    return NextResponse.json({ ok: false, error: err.message || "Failed to create session" }, { status: 500 });
+    console.error("Failed to create registration:", err);
+    return NextResponse.json({ ok: false, error: err.message || "Failed to create registration" }, { status: 500 });
   }
 }

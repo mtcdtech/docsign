@@ -30,7 +30,8 @@ export default async function SettingsPage() {
     const primaryColor = settingsMap["primary_color"] || "#4f46e5";
     const primaryHover = settingsMap["primary_hover"] || "#4338ca";
     const portalTitle = settingsMap["portal_title"] || "DocSign Portal";
-    const portalLogo = settingsMap["portal_logo"] || "";
+    const portalLogoLight = settingsMap["portal_logo_light"] || "";
+    const portalLogoDark = settingsMap["portal_logo_dark"] || "";
     const themeMode = settingsMap["theme_mode"] || "dark";
     const centralIamUrl = settingsMap["central_iam_url"] || "https://admin.server.mtcd.org";
     const azureTenantId = settingsMap["azure_tenant_id"] || "";
@@ -69,7 +70,8 @@ export default async function SettingsPage() {
             initialPrimaryColor={primaryColor}
             initialPrimaryHover={primaryHover}
             initialPortalTitle={portalTitle}
-            initialLogoBase64={portalLogo}
+            initialLogoLightBase64={portalLogoLight}
+            initialLogoDarkBase64={portalLogoDark}
             initialThemeMode={themeMode}
             initialCentralIamUrl={centralIamUrl}
             initialAzureTenantId={azureTenantId}

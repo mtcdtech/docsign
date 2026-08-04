@@ -45,7 +45,8 @@ export default async function SignPage({ params, searchParams }: SignPageProps) 
   }
 
   let portalTitle = "DocSign Portal";
-  let portalLogo = "";
+  let portalLogoLight = "";
+  let portalLogoDark = "";
   try {
     const settings = await prisma.setting.findMany();
     const settingsMap = settings.reduce((acc, curr) => {
@@ -53,7 +54,8 @@ export default async function SignPage({ params, searchParams }: SignPageProps) 
       return acc;
     }, {} as Record<string, string>);
     if (settingsMap["portal_title"]) portalTitle = settingsMap["portal_title"];
-    if (settingsMap["portal_logo"]) portalLogo = settingsMap["portal_logo"];
+    if (settingsMap["portal_logo_light"]) portalLogoLight = settingsMap["portal_logo_light"];
+    if (settingsMap["portal_logo_dark"]) portalLogoDark = settingsMap["portal_logo_dark"];
   } catch (e) {}
 
   const pdfUrl = `/api/download/templates/${template.pdfPath.split("/").pop()}`;
@@ -64,7 +66,10 @@ export default async function SignPage({ params, searchParams }: SignPageProps) 
         <SignForm 
           template={template} 
           portalTitle={portalTitle} 
-          portalLogo={portalLogo} 
+          portalLogoLight={portalLogoLight} 
+          portalLogoDark={portalLogoDark} 
+          orgLogoLight={template.organization.logoLight || null}
+          orgLogoDark={template.organization.logoDark || null}
           pdfUrl={pdfUrl} 
           pcoAttendeeId={searchParams.pco_attendee_id || null} 
         />

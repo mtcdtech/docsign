@@ -150,18 +150,14 @@ export default function AuditLogsDashboardClient({ initialAuditLogs }: AuditLogs
                     const isDelete = log.action.toLowerCase().includes("delete");
                     const isEmail = log.action.toLowerCase().includes("email") || log.action.toLowerCase().includes("mail");
 
-                    let bg = "rgba(245, 158, 11, 0.18)";
-                    let fg = "#fbbf24";
+                    let fg = "#f59e0b"; // Default yellow/amber high-contrast
                     
                     if (isLogin) {
-                      bg = log.action === "SSO Login" ? "rgba(34, 197, 94, 0.18)" : "rgba(79, 70, 229, 0.18)";
-                      fg = log.action === "SSO Login" ? "#4ade80" : "#a5b4fc";
+                      fg = log.action === "SSO Login" ? "#22c55e" : "#818cf8";
                     } else if (isDelete) {
-                      bg = "rgba(239, 68, 68, 0.18)";
-                      fg = "#f87171";
+                      fg = "#ef4444";
                     } else if (isEmail) {
-                      bg = "rgba(6, 182, 212, 0.18)";
-                      fg = "#22d3ee";
+                      fg = "#06b6d4";
                     }
 
                     return (
@@ -180,11 +176,8 @@ export default function AuditLogsDashboardClient({ initialAuditLogs }: AuditLogs
                         <td style={{ padding: "12px 16px" }}>
                           <span
                             style={{
-                              fontSize: "12px",
-                              padding: "4px 10px",
-                              borderRadius: "4px",
-                              fontWeight: "500",
-                              background: bg,
+                              fontSize: "13px",
+                              fontWeight: "600",
                               color: fg,
                             }}
                           >

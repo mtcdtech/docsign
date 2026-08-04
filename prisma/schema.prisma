@@ -26,13 +26,15 @@ model User {
 }
 
 model Organization {
-  id          String     @id @default(cuid())
-  name        String     @unique
-  users       User[]
-  templates   Template[]
-  sessions    SigningSession[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id            String                @id @default(cuid())
+  name          String                @unique
+  users         User[]
+  templates     Template[]
+  registrations SigningRegistration[]
+  logoLight     String?
+  logoDark      String?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
 }
 
 model Template {
@@ -93,13 +95,14 @@ model AuditLog {
   createdAt DateTime @default(now())
 }
 
-model SigningSession {
+model SigningRegistration {
   id              String       @id @default(cuid())
   title           String
   slug            String       @unique
   organizationId  String
   organization    Organization @relation(fields: [organizationId], references: [id])
   templateIdsJson String       // JSON string of an array of template IDs in order: e.g. '["id1", "id2"]'
+  pcoSignupId     String?      // Associated PCO registration signup ID
   isArchived      Boolean      @default(false)
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt

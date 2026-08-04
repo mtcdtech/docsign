@@ -44,7 +44,10 @@ interface SignFormProps {
     };
   };
   portalTitle: string;
-  portalLogo: string;
+  portalLogoLight: string;
+  portalLogoDark: string;
+  orgLogoLight: string | null;
+  orgLogoDark: string | null;
   pdfUrl: string;
   pcoAttendeeId: string | null;
   defaultSignerName?: string;
@@ -52,7 +55,7 @@ interface SignFormProps {
   onComplete?: (pdfUrl: string, completedDocId: string, name: string, email: string) => void;
 }
 
-export default function SignForm({ template, portalTitle, portalLogo, pdfUrl, pcoAttendeeId, defaultSignerName, defaultSignerEmail, onComplete }: SignFormProps) {
+export default function SignForm({ template, portalTitle, portalLogoLight, portalLogoDark, orgLogoLight, orgLogoDark, pdfUrl, pcoAttendeeId, defaultSignerName, defaultSignerEmail, onComplete }: SignFormProps) {
   const fields = JSON.parse(template.fieldsJson) as FormField[];
 
   // Global reading order of all fields for sequential Tab navigation
@@ -712,14 +715,36 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl, pc
         {/* Compressed Header and Brand next to logo with Exit triggers */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", paddingBottom: "16px", borderBottom: "1px solid var(--border-color)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "16px", minWidth: 0, flex: 1 }}>
-            {portalLogo && (
-              <img
-                src={portalLogo}
-                alt="Logo"
-                style={{ maxHeight: "40px", maxWidth: "150px", objectFit: "contain", flexShrink: 0 }}
-              />
-            )}
-            <div style={{ borderLeft: portalLogo ? "1px solid var(--border-color)" : "none", paddingLeft: portalLogo ? "16px" : 0, minWidth: 0 }}>
+            {/* Light Mode Logos */}
+            <div className="logo-light-mode">
+              {orgLogoLight ? (
+                <img src={orgLogoLight} alt="Logo" style={{ maxHeight: "40px", maxWidth: "150px", objectFit: "contain", flexShrink: 0 }} />
+              ) : portalLogoLight ? (
+                <img src={portalLogoLight} alt="Logo" style={{ maxHeight: "40px", maxWidth: "150px", objectFit: "contain", flexShrink: 0 }} />
+              ) : null}
+            </div>
+
+            {/* Dark Mode Logos */}
+            <div className="logo-dark-mode">
+              {orgLogoDark ? (
+                <img src={orgLogoDark} alt="Logo" style={{ maxHeight: "40px", maxWidth: "150px", objectFit: "contain", flexShrink: 0 }} />
+              ) : portalLogoDark ? (
+                <img src={portalLogoDark} alt="Logo" style={{ maxHeight: "40px", maxWidth: "150px", objectFit: "contain", flexShrink: 0 }} />
+              ) : null}
+            </div>
+
+            <style jsx>{`
+              @media (prefers-color-scheme: dark) {
+                .logo-light-mode { display: none !important; }
+                .logo-dark-mode { display: block !important; }
+              }
+              @media (prefers-color-scheme: light) {
+                .logo-light-mode { display: block !important; }
+                .logo-dark-mode { display: none !important; }
+              }
+            `}</style>
+            
+            <div style={{ borderLeft: (orgLogoLight || orgLogoDark || portalLogoLight || portalLogoDark) ? "1px solid var(--border-color)" : "none", paddingLeft: (orgLogoLight || orgLogoDark || portalLogoLight || portalLogoDark) ? "16px" : 0, minWidth: 0 }}>
               <span style={{ fontSize: "11px", color: "var(--primary-color)", fontWeight: "bold", textTransform: "uppercase", display: "block", lineHeight: "1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {template.organization.name}
               </span>

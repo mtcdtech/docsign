@@ -10,9 +10,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const sessionId = params.id;
-    const signingSession = await prisma.signingSession.findUnique({
-      where: { id: sessionId },
+    const registrationId = params.id;
+    const registration = await prisma.signingRegistration.findUnique({
+      where: { id: registrationId },
       include: {
         organization: {
           select: { name: true }
@@ -20,15 +20,15 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       }
     });
 
-    if (!signingSession) {
-      return NextResponse.json({ ok: false, error: "Session not found." }, { status: 404 });
+    if (!registration) {
+      return NextResponse.json({ ok: false, error: "Registration not found." }, { status: 404 });
     }
 
     const user = session.user as any;
     if (user.role !== "Admin") {
       const isLeader = await prisma.organization.findFirst({
         where: {
-          id: signingSession.organizationId,
+          id: registration.organizationId,
           users: { some: { id: user.id } }
         }
       });
@@ -37,10 +37,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       }
     }
 
-    return NextResponse.json({ ok: true, session: signingSession });
+    return NextResponse.json({ ok: true, registration });
   } catch (err: any) {
-    console.error("Failed to load session:", err);
-    return NextResponse.json({ ok: false, error: err.message || "Failed to load session" }, { status: 500 });
+    console.error("Failed to load registration:", err);
+    return NextResponse.json({ ok: false, error: err.message || "Failed to load registration" }, { status: 500 });
   }
 }
 
@@ -51,17 +51,17 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const sessionId = params.id;
-    const signingSession = await prisma.signingSession.findUnique({ where: { id: sessionId } });
-    if (!signingSession) {
-      return NextResponse.json({ ok: false, error: "Session not found." }, { status: 404 });
+    const registrationId = params.id;
+    const registration = await prisma.signingRegistration.findUnique({ where: { id: registrationId } });
+    if (!registration) {
+      return NextResponse.json({ ok: false, error: "Registration not found." }, { status: 404 });
     }
 
     const user = session.user as any;
     if (user.role !== "Admin") {
       const isLeader = await prisma.organization.findFirst({
         where: {
-          id: signingSession.organizationId,
+          id: registration.organizationId,
           users: { some: { id: user.id } }
         }
       });
@@ -71,17 +71,17 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     }
 
     const body = await req.json();
-    const { title, slug, organizationId, templateIds, isArchived } = body;
+    const { title, slug, organizationId, templateIds, pcoSignupId, isArchived } = body;
 
     const updateData: any = {};
     if (title !== undefined) updateData.title = title;
     if (isArchived !== undefined) updateData.isArchived = isArchived;
+    if (pcoSignupId !== undefined) updateData.pcoSignupId = pcoSignupId || null;
     if (templateIds !== undefined && Array.isArray(templateIds)) {
       updateData.templateIdsJson = JSON.stringify(templateIds);
     }
 
     if (organizationId !== undefined) {
-      // If changing organization, check user belongs to target org
       if (user.role !== "Admin") {
         const isLeaderTarget = await prisma.organization.findFirst({
           where: {
@@ -100,21 +100,21 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, "");
       // Check slug uniqueness
       const existingTemplate = await prisma.template.findUnique({ where: { slug: cleanSlug } });
-      const existingSession = await prisma.signingSession.findFirst({
+      const existingRegistration = await prisma.signingRegistration.findFirst({
         where: {
           slug: cleanSlug,
-          id: { not: sessionId }
+          id: { not: registrationId }
         }
       });
 
-      if (existingTemplate || existingSession) {
+      if (existingTemplate || existingRegistration) {
         return NextResponse.json({ ok: false, error: "This slug is already taken." }, { status: 400 });
       }
       updateData.slug = cleanSlug;
     }
 
-    const updated = await prisma.signingSession.update({
-      where: { id: sessionId },
+    const updated = await prisma.signingRegistration.update({
+      where: { id: registrationId },
       data: updateData
     });
 
@@ -122,16 +122,16 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     await prisma.auditLog.create({
       data: {
         email: user.email,
-        action: `Updated Signing Session: ${updated.title} (id: ${sessionId})`,
+        action: `Updated Signing Registration: ${updated.title} (id: ${registrationId})`,
         ip: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown",
         userAgent: req.headers.get("user-agent") || "unknown"
       }
     });
 
-    return NextResponse.json({ ok: true, session: updated });
+    return NextResponse.json({ ok: true, registration: updated });
   } catch (err: any) {
-    console.error("Failed to update session:", err);
-    return NextResponse.json({ ok: false, error: err.message || "Failed to update session" }, { status: 500 });
+    console.error("Failed to update registration:", err);
+    return NextResponse.json({ ok: false, error: err.message || "Failed to update registration" }, { status: 500 });
   }
 }
 
@@ -142,17 +142,17 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const sessionId = params.id;
-    const signingSession = await prisma.signingSession.findUnique({ where: { id: sessionId } });
-    if (!signingSession) {
-      return NextResponse.json({ ok: false, error: "Session not found." }, { status: 404 });
+    const registrationId = params.id;
+    const registration = await prisma.signingRegistration.findUnique({ where: { id: registrationId } });
+    if (!registration) {
+      return NextResponse.json({ ok: false, error: "Registration not found." }, { status: 404 });
     }
 
     const user = session.user as any;
     if (user.role !== "Admin") {
       const isLeader = await prisma.organization.findFirst({
         where: {
-          id: signingSession.organizationId,
+          id: registration.organizationId,
           users: { some: { id: user.id } }
         }
       });
@@ -161,13 +161,13 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       }
     }
 
-    await prisma.signingSession.delete({ where: { id: sessionId } });
+    await prisma.signingRegistration.delete({ where: { id: registrationId } });
 
     // Audit log
     await prisma.auditLog.create({
       data: {
         email: user.email,
-        action: `Deleted Signing Session: ${signingSession.title} (slug: ${signingSession.slug})`,
+        action: `Deleted Signing Registration: ${registration.title} (slug: ${registration.slug})`,
         ip: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown",
         userAgent: req.headers.get("user-agent") || "unknown"
       }
@@ -175,7 +175,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 
     return NextResponse.json({ ok: true });
   } catch (err: any) {
-    console.error("Failed to delete session:", err);
-    return NextResponse.json({ ok: false, error: err.message || "Failed to delete session" }, { status: 500 });
+    console.error("Failed to delete registration:", err);
+    return NextResponse.json({ ok: false, error: err.message || "Failed to delete registration" }, { status: 500 });
   }
 }

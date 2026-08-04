@@ -187,3 +187,89 @@ export async function syncWaiverToPco({
     }
   }
 }
+
+export interface PcoAttendee {
+  id: string;
+  name: string;
+  email: string;
+  answers: { questionId: string; value: string | null }[];
+}
+
+export async function getPcoRegistrationAttendees(signupId: string): Promise<PcoAttendee[]> {
+  const appId = process.env.PCO_APPLICATION_ID;
+  const secret = process.env.PCO_SECRET;
+
+  if (!appId || !secret) {
+    throw new Error("PCO_APPLICATION_ID or PCO_SECRET env variables not configured.");
+  }
+
+  const authHeader = `Basic ${Buffer.from(`${appId}:${secret}`).toString("base64")}`;
+  const pcoHeaders = {
+    "Authorization": authHeader,
+    "Accept": "application/vnd.api+json"
+  };
+
+  // Fetch up to 100 attendees registered for that signup, including answers
+  const url = `https://api.planningcenteronline.com/registrations/v2/signups/${signupId}/attendees?per_page=100&include=answers`;
+  const res = await fetch(url, { headers: pcoHeaders });
+  
+  if (!res.ok) {
+    throw new Error(`PCO API request returned HTTP status ${res.status}`);
+  }
+
+  const json = await res.json();
+  const data = json.data || [];
+  const included = json.included || [];
+
+  return data.map((att: any) => {
+    const first = att.attributes?.first_name || "";
+    const last = att.attributes?.last_name || "";
+    const email = att.attributes?.email || "";
+    
+    // Resolve answers relationships
+    const answerRefs = att.relationships?.answers?.data || [];
+    const answers = answerRefs.map((ref: any) => {
+      const match = included.find((item: any) => item.type === "Answer" && item.id === ref.id);
+      const questionId = match?.relationships?.question?.data?.id || "";
+      const value = match?.attributes?.value || null;
+      return { questionId, value };
+    });
+
+    return {
+      id: att.id,
+      name: `${first} ${last}`.trim(),
+      email: email.trim().toLowerCase(),
+      answers
+    };
+  });
+}
+
+export async function getPcoQuestions(signupId: string): Promise<{ id: string; title: string }[]> {
+  const appId = process.env.PCO_APPLICATION_ID;
+  const secret = process.env.PCO_SECRET;
+
+  if (!appId || !secret) {
+    throw new Error("PCO_APPLICATION_ID or PCO_SECRET env variables not configured.");
+  }
+
+  const authHeader = `Basic ${Buffer.from(`${appId}:${secret}`).toString("base64")}`;
+  const pcoHeaders = {
+    "Authorization": authHeader,
+    "Accept": "application/vnd.api+json"
+  };
+
+  const url = `https://api.planningcenteronline.com/registrations/v2/signups/${signupId}/questions`;
+  const res = await fetch(url, { headers: pcoHeaders });
+  
+  if (!res.ok) {
+    throw new Error(`PCO Questions API returned HTTP ${res.status}`);
+  }
+
+  const json = await res.json();
+  const data = json.data || [];
+  return data.map((q: any) => ({
+    id: q.id,
+    title: q.attributes?.title || ""
+  }));
+}
+

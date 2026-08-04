@@ -16,18 +16,24 @@ interface TemplateWithOrg {
   sharepointFolderName?: string | null;
   organization: {
     name: string;
+    logoLight?: string | null;
+    logoDark?: string | null;
   };
 }
 
-interface SessionSignFormProps {
-  session: {
+interface RegistrationSignFormProps {
+  registration: {
     id: string;
     title: string;
     slug: string;
+    organizationName?: string;
   };
   templates: TemplateWithOrg[];
   portalTitle: string;
-  portalLogo: string;
+  portalLogoLight: string;
+  portalLogoDark: string;
+  orgLogoLight: string | null;
+  orgLogoDark: string | null;
   pcoAttendeeId: string | null;
 }
 
@@ -36,7 +42,16 @@ interface CompletedDocument {
   pdfUrl: string;
 }
 
-export default function SessionSignForm({ session, templates, portalTitle, portalLogo, pcoAttendeeId }: SessionSignFormProps) {
+export default function RegistrationSignForm({
+  registration,
+  templates,
+  portalTitle,
+  portalLogoLight,
+  portalLogoDark,
+  orgLogoLight,
+  orgLogoDark,
+  pcoAttendeeId
+}: RegistrationSignFormProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [completedDocs, setCompletedDocs] = useState<CompletedDocument[]>([]);
   const [savedName, setSavedName] = useState("");
@@ -75,7 +90,7 @@ export default function SessionSignForm({ session, templates, portalTitle, porta
           </div>
 
           <div>
-            <h2 style={{ margin: 0, fontSize: "24px", fontWeight: "bold" }}>Session Completed!</h2>
+            <h2 style={{ margin: 0, fontSize: "24px", fontWeight: "bold" }}>Registration Completed!</h2>
             <p style={{ margin: "8px 0 0 0", fontSize: "14px", color: "var(--text-muted)", lineHeight: "1.6" }}>
               All documents in this packet have been successfully signed and submitted.
             </p>
@@ -138,9 +153,35 @@ export default function SessionSignForm({ session, templates, portalTitle, porta
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: "1200px", margin: "0 auto", width: "100%" }}>
-      {/* Session Title Header */}
+      
+      {/* Logos Switcher (Light / Dark mode, Org priority, Portal fallback) */}
+      <div className="logo-header-container" style={{ display: "flex", justifyContent: "center", marginBottom: "4px" }}>
+        {/* Light Mode Logos */}
+        <div className="logo-light-mode">
+          {orgLogoLight ? (
+            <img src={orgLogoLight} alt={registration.organizationName || "Logo"} style={{ maxHeight: "60px", maxWidth: "240px", objectFit: "contain" }} />
+          ) : portalLogoLight ? (
+            <img src={portalLogoLight} alt={portalTitle} style={{ maxHeight: "60px", maxWidth: "240px", objectFit: "contain" }} />
+          ) : (
+            <div style={{ fontSize: "20px", fontWeight: "bold", color: "#18181b" }}>✍️ {portalTitle}</div>
+          )}
+        </div>
+
+        {/* Dark Mode Logos */}
+        <div className="logo-dark-mode">
+          {orgLogoDark ? (
+            <img src={orgLogoDark} alt={registration.organizationName || "Logo"} style={{ maxHeight: "60px", maxWidth: "240px", objectFit: "contain" }} />
+          ) : portalLogoDark ? (
+            <img src={portalLogoDark} alt={portalTitle} style={{ maxHeight: "60px", maxWidth: "240px", objectFit: "contain" }} />
+          ) : (
+            <div style={{ fontSize: "20px", fontWeight: "bold", color: "#ffffff" }}>✍️ {portalTitle}</div>
+          )}
+        </div>
+      </div>
+
+      {/* Registration Title Header */}
       <div style={{ textAlign: "center", marginBottom: "10px" }}>
-        <h1 style={{ fontSize: "24px", margin: "0 0 6px 0", fontWeight: "800" }}>{session.title}</h1>
+        <h1 style={{ fontSize: "24px", margin: "0 0 6px 0", fontWeight: "800" }}>{registration.title}</h1>
         <p style={{ margin: 0, fontSize: "13px", color: "var(--text-muted)" }}>
           Step {currentIndex + 1} of {templates.length} — Completing: <strong>{activeTemplate.title}</strong>
         </p>
@@ -180,13 +221,27 @@ export default function SessionSignForm({ session, templates, portalTitle, porta
         key={activeTemplate.id}
         template={activeTemplate}
         portalTitle={portalTitle}
-        portalLogo={portalLogo}
+        portalLogoLight={portalLogoLight}
+        portalLogoDark={portalLogoDark}
+        orgLogoLight={orgLogoLight}
+        orgLogoDark={orgLogoDark}
         pdfUrl={pdfUrl}
         pcoAttendeeId={pcoAttendeeId}
         defaultSignerName={savedName}
         defaultSignerEmail={savedEmail}
         onComplete={handleDocComplete}
       />
+
+      <style jsx global>{`
+        @media (prefers-color-scheme: dark) {
+          .logo-light-mode { display: none !important; }
+          .logo-dark-mode { display: block !important; }
+        }
+        @media (prefers-color-scheme: light) {
+          .logo-light-mode { display: block !important; }
+          .logo-dark-mode { display: none !important; }
+        }
+      `}</style>
     </div>
   );
 }

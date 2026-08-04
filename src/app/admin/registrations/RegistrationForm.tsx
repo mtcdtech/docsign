@@ -14,32 +14,34 @@ interface TemplateShort {
   organizationId: string;
 }
 
-interface SessionData {
+interface RegistrationData {
   id: string;
   title: string;
   slug: string;
   organizationId: string;
   templateIds: string[];
+  pcoSignupId: string | null;
 }
 
-interface SessionFormProps {
+interface RegistrationFormProps {
   organizations: Org[];
   templates: TemplateShort[];
-  session?: SessionData;
+  registration?: RegistrationData;
 }
 
-export default function SessionForm({ organizations, templates, session }: SessionFormProps) {
+export default function RegistrationForm({ organizations, templates, registration }: RegistrationFormProps) {
   const router = useRouter();
-  const isEdit = !!session;
+  const isEdit = !!registration;
 
-  const [title, setTitle] = useState(session?.title || "");
-  const [slug, setSlug] = useState(session?.slug || "");
+  const [title, setTitle] = useState(registration?.title || "");
+  const [slug, setSlug] = useState(registration?.slug || "");
   const [organizationId, setOrganizationId] = useState(
-    session?.organizationId || organizations[0]?.id || ""
+    registration?.organizationId || organizations[0]?.id || ""
   );
+  const [pcoSignupId, setPcoSignupId] = useState(registration?.pcoSignupId || "");
   
   // Array of selected template IDs in ordered sequence
-  const [selectedIds, setSelectedIds] = useState<string[]>(session?.templateIds || []);
+  const [selectedIds, setSelectedIds] = useState<string[]>(registration?.templateIds || []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,10 +70,8 @@ export default function SessionForm({ organizations, templates, session }: Sessi
   // Handle checking/unchecking template checkboxes
   const handleToggleTemplate = (templateId: string, checked: boolean) => {
     if (checked) {
-      // Append to the end of the order
       setSelectedIds((prev) => [...prev, templateId]);
     } else {
-      // Filter out
       setSelectedIds((prev) => prev.filter((id) => id !== templateId));
     }
   };
@@ -110,14 +110,14 @@ export default function SessionForm({ organizations, templates, session }: Sessi
     }
 
     if (selectedIds.length === 0) {
-      setError("Please select at least one template to include in this session.");
+      setError("Please select at least one template to include in this registration.");
       return;
     }
 
     setLoading(true);
 
     try {
-      const url = isEdit ? `/api/admin/sessions/${session.id}` : "/api/admin/sessions";
+      const url = isEdit ? `/api/admin/registrations/${registration.id}` : "/api/admin/registrations";
       const method = isEdit ? "PATCH" : "POST";
 
       const res = await fetch(url, {
@@ -127,16 +127,17 @@ export default function SessionForm({ organizations, templates, session }: Sessi
           title,
           slug,
           organizationId,
-          templateIds: selectedIds
+          templateIds: selectedIds,
+          pcoSignupId: pcoSignupId || null
         })
       });
 
       const data = await res.json();
       if (!res.ok || data.ok === false) {
-        throw new Error(data.error || "Failed to save session configuration.");
+        throw new Error(data.error || "Failed to save registration configuration.");
       }
 
-      router.push("/admin/sessions");
+      router.push("/admin/registrations");
       router.refresh();
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred.");
@@ -155,7 +156,7 @@ export default function SessionForm({ organizations, templates, session }: Sessi
 
       {/* Title */}
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-        <label style={{ fontSize: "13px", color: "var(--text-muted)", fontWeight: "600" }}>Session Title *</label>
+        <label style={{ fontSize: "13px", color: "var(--text-muted)", fontWeight: "600" }}>Registration Title *</label>
         <input
           type="text"
           className="form-input"
@@ -202,6 +203,22 @@ export default function SessionForm({ organizations, templates, session }: Sessi
         </div>
       </div>
 
+      {/* PCO Connection */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+        <label style={{ fontSize: "13px", color: "var(--text-muted)", fontWeight: "600" }}>Planning Center Signup ID (Optional)</label>
+        <input
+          type="text"
+          className="form-input"
+          value={pcoSignupId}
+          onChange={(e) => setPcoSignupId(e.target.value.replace(/[^0-9]/g, ""))}
+          placeholder="e.g. 123456"
+          style={{ padding: "10px 14px", fontSize: "14px" }}
+        />
+        <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+          Connecting a PCO registration enables a dynamic dashboard showing registrant statuses and completion check-marks.
+        </span>
+      </div>
+
       <hr style={{ border: "none", borderTop: "1px solid var(--border-color)", margin: "10px 0" }} />
 
       {/* Template Chooser Panel */}
@@ -210,7 +227,7 @@ export default function SessionForm({ organizations, templates, session }: Sessi
         <div style={{ flex: 1, minWidth: "280px", display: "flex", flexDirection: "column", gap: "8px" }}>
           <h3 style={{ fontSize: "14px", margin: 0, color: "var(--text-main)" }}>Select Templates to Include</h3>
           <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "0 0 10px 0" }}>
-            Check the waiver forms that belong to this signing session.
+            Check the waiver forms that belong to this signing packet.
           </p>
 
           {orgTemplates.length === 0 ? (
@@ -218,34 +235,18 @@ export default function SessionForm({ organizations, templates, session }: Sessi
               No templates available for this organization. Create templates first.
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxHeight: "280px", overflowY: "auto", paddingRight: "4px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxHeight: "240px", overflowY: "auto", padding: "10px", border: "1px solid var(--border-color)", borderRadius: "6px", background: "rgba(0,0,0,0.1)" }}>
               {orgTemplates.map((t) => {
-                const isSelected = selectedIds.includes(t.id);
+                const isChecked = selectedIds.includes(t.id);
                 return (
-                  <label
-                    key={t.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                      padding: "10px 14px",
-                      borderRadius: "6px",
-                      background: isSelected ? "rgba(79, 70, 229, 0.04)" : "rgba(255,255,255,0.01)",
-                      border: "1px solid " + (isSelected ? "var(--primary-color)" : "var(--border-color)"),
-                      cursor: "pointer",
-                      fontSize: "13px",
-                      transition: "all var(--transition-fast)"
-                    }}
-                  >
+                  <label key={t.id} style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", padding: "6px 8px", borderRadius: "4px", background: isChecked ? "rgba(255,255,255,0.02)" : "transparent" }}>
                     <input
                       type="checkbox"
-                      checked={isSelected}
+                      checked={isChecked}
                       onChange={(e) => handleToggleTemplate(t.id, e.target.checked)}
-                      style={{ width: "16px", height: "16px", accentColor: "var(--primary-color)", cursor: "pointer" }}
+                      style={{ width: "16px", height: "16px", cursor: "pointer" }}
                     />
-                    <span style={{ fontWeight: isSelected ? "600" : "400", color: isSelected ? "var(--text-main)" : "var(--text-muted)" }}>
-                      {t.title}
-                    </span>
+                    <span style={{ fontSize: "13.5px" }}>{t.title}</span>
                   </label>
                 );
               })}
@@ -253,62 +254,46 @@ export default function SessionForm({ organizations, templates, session }: Sessi
           )}
         </div>
 
-        {/* Sequence Order Panel */}
+        {/* Ordered sequence list */}
         <div style={{ flex: 1, minWidth: "280px", display: "flex", flexDirection: "column", gap: "8px" }}>
-          <h3 style={{ fontSize: "14px", margin: 0, color: "var(--text-main)" }}>Set Sequence Order</h3>
+          <h3 style={{ fontSize: "14px", margin: 0, color: "var(--text-main)" }}>Signing Sequence Order</h3>
           <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "0 0 10px 0" }}>
-            Reorder the sequence of execution using Up and Down arrows.
+            Reorder the steps to define the precise flow users will follow.
           </p>
 
           {selectedIds.length === 0 ? (
-            <div style={{ color: "var(--text-muted)", fontSize: "13px", textAlign: "center", padding: "30px 10px", border: "1px dashed var(--border-color)", borderRadius: "6px" }}>
-              No templates selected. Check forms on the left to start ordering.
+            <div style={{ color: "var(--text-muted)", fontSize: "13px", fontStyle: "italic", padding: "12px", background: "rgba(255,255,255,0.01)", borderRadius: "6px", border: "1px dashed var(--border-color)", display: "flex", alignItems: "center", justifyContent: "center", height: "80px" }}>
+              Select templates on the left to arrange order
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {selectedIds.map((id, index) => {
-                const tpl = templates.find((t) => t.id === id);
+                const t = templates.find((item) => item.id === id);
+                if (!t) return null;
                 return (
-                  <div
-                    key={id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "8px 12px",
-                      background: "rgba(255, 255, 255, 0.02)",
-                      border: "1px solid var(--border-color)",
-                      borderRadius: "6px"
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ fontSize: "11px", background: "var(--primary-color)", color: "#ffffff", width: "20px", height: "20px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold" }}>
-                        {index + 1}
-                      </span>
-                      <span style={{ fontSize: "13px", color: "var(--text-main)", fontWeight: "500" }}>
-                        {tpl ? tpl.title : "Unknown Template"}
-                      </span>
-                    </div>
-
-                    {/* Order Controls */}
-                    <div style={{ display: "flex", gap: "4px" }}>
+                  <div key={id} style={{ display: "flex", alignItems: "center", justifySpace: "space-between", padding: "10px 14px", border: "1px solid var(--border-color)", borderRadius: "8px", background: "rgba(255,255,255,0.03)", gap: "10px" }}>
+                    <span style={{ fontSize: "12px", fontWeight: "bold", color: "var(--primary-color)", background: "rgba(79, 70, 229, 0.1)", padding: "2px 6px", borderRadius: "4px" }}>
+                      Step {index + 1}
+                    </span>
+                    <span style={{ flex: 1, fontSize: "13.5px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {t.title}
+                    </span>
+                    <div style={{ display: "inline-flex", gap: "4px" }}>
                       <button
                         type="button"
-                        className="btn btn-secondary"
                         onClick={() => moveUp(index)}
                         disabled={index === 0}
-                        style={{ padding: "4px 8px", width: "28px", height: "28px", fontSize: "12px", opacity: index === 0 ? 0.3 : 1 }}
-                        title="Move Up"
+                        className="btn btn-secondary"
+                        style={{ padding: "4px 8px", fontSize: "11px", cursor: index === 0 ? "not-allowed" : "pointer", opacity: index === 0 ? 0.3 : 1 }}
                       >
                         ▲
                       </button>
                       <button
                         type="button"
-                        className="btn btn-secondary"
                         onClick={() => moveDown(index)}
                         disabled={index === selectedIds.length - 1}
-                        style={{ padding: "4px 8px", width: "28px", height: "28px", fontSize: "12px", opacity: index === selectedIds.length - 1 ? 0.3 : 1 }}
-                        title="Move Down"
+                        className="btn btn-secondary"
+                        style={{ padding: "4px 8px", fontSize: "11px", cursor: index === selectedIds.length - 1 ? "not-allowed" : "pointer", opacity: index === selectedIds.length - 1 ? 0.3 : 1 }}
                       >
                         ▼
                       </button>
@@ -321,33 +306,22 @@ export default function SessionForm({ organizations, templates, session }: Sessi
         </div>
       </div>
 
-      <hr style={{ border: "none", borderTop: "1px solid var(--border-color)", margin: "10px 0" }} />
-
-      {/* Actions */}
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+      <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end", marginTop: "12px" }}>
         <button
           type="button"
+          onClick={() => router.push("/admin/registrations")}
           className="btn btn-secondary"
-          onClick={() => router.push("/admin/sessions")}
-          disabled={loading}
-          style={{ width: "auto", padding: "10px 20px" }}
+          style={{ width: "auto" }}
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="btn"
+          className="btn btn-primary"
           disabled={loading}
-          style={{
-            background: "var(--primary-color)",
-            color: "#ffffff",
-            width: "auto",
-            padding: "10px 24px",
-            fontWeight: "600",
-            opacity: loading ? 0.7 : 1
-          }}
+          style={{ width: "auto" }}
         >
-          {loading ? "Saving..." : isEdit ? "Save Changes" : "Create Session"}
+          {loading ? "Saving Config..." : isEdit ? "Update Registration" : "Create Registration"}
         </button>
       </div>
     </form>

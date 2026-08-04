@@ -2,17 +2,17 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
-import SessionForm from "../../SessionForm";
+import RegistrationForm from "../../RegistrationForm";
 
 export const dynamic = "force-dynamic";
 
-interface EditSessionPageProps {
+interface EditRegistrationPageProps {
   params: {
     id: string;
   };
 }
 
-export default async function EditSessionPage({ params }: EditSessionPageProps) {
+export default async function EditRegistrationPage({ params }: EditRegistrationPageProps) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     redirect("/");
@@ -20,11 +20,11 @@ export default async function EditSessionPage({ params }: EditSessionPageProps) 
   const user = session.user as any;
   const isGlobalAdmin = user.role === "Admin";
 
-  const signingSession = await prisma.signingSession.findUnique({
+  const signingRegistration = await prisma.signingRegistration.findUnique({
     where: { id: params.id }
   });
 
-  if (!signingSession) {
+  if (!signingRegistration) {
     notFound();
   }
 
@@ -32,12 +32,12 @@ export default async function EditSessionPage({ params }: EditSessionPageProps) 
   if (!isGlobalAdmin) {
     const isLeader = await prisma.organization.findFirst({
       where: {
-        id: signingSession.organizationId,
+        id: signingRegistration.organizationId,
         users: { some: { id: user.id } }
       }
     });
     if (!isLeader) {
-      redirect("/admin/sessions");
+      redirect("/admin/registrations");
     }
   }
 
@@ -73,28 +73,29 @@ export default async function EditSessionPage({ params }: EditSessionPageProps) 
 
   let selectedTemplateIds: string[] = [];
   try {
-    selectedTemplateIds = JSON.parse(signingSession.templateIdsJson) as string[];
+    selectedTemplateIds = JSON.parse(signingRegistration.templateIdsJson) as string[];
   } catch (e) {
-    console.warn(`Failed to parse templateIdsJson for session ${signingSession.id}:`, e);
+    console.warn(`Failed to parse templateIdsJson for registration ${signingRegistration.id}:`, e);
   }
 
   return (
     <div>
       <div style={{ marginBottom: "32px" }}>
-        <h1>Edit Signing Session</h1>
-        <p>Modify session details and organize/sort the templates checklist.</p>
+        <h1>Edit Signing Registration Packet</h1>
+        <p>Modify registration details and organize/sort the templates checklist.</p>
       </div>
 
       <div style={{ maxWidth: "700px" }}>
-        <SessionForm
+        <RegistrationForm
           organizations={organizations}
           templates={templates}
-          session={{
-            id: signingSession.id,
-            title: signingSession.title,
-            slug: signingSession.slug,
-            organizationId: signingSession.organizationId,
-            templateIds: selectedTemplateIds
+          registration={{
+            id: signingRegistration.id,
+            title: signingRegistration.title,
+            slug: signingRegistration.slug,
+            organizationId: signingRegistration.organizationId,
+            templateIds: selectedTemplateIds,
+            pcoSignupId: signingRegistration.pcoSignupId
           }}
         />
       </div>
