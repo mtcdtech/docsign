@@ -79,6 +79,14 @@ def load_local_env():
         print("Warning: Could not read local .env file:", e)
     return env_vars
 
+EXCLUDE_SYNC_KEYS = {
+    "DATABASE_URL",
+    "NEXTAUTH_URL",
+    "AUTHENTIK_CLIENT_ID",
+    "AUTHENTIK_CLIENT_SECRET",
+    "AUTHENTIK_ISSUER"
+}
+
 def deploy_stack():
     compose_content = get_compose_content()
     local_env = load_local_env()
@@ -90,8 +98,15 @@ def deploy_stack():
         
         merged_env_dict = {item["name"]: item["value"] for item in existing_env}
         for k, v in local_env.items():
-            if v:
+            if v and k not in EXCLUDE_SYNC_KEYS:
                 merged_env_dict[k] = v
+                
+        # Enforce strict production overrides for critical database and auth config
+        merged_env_dict["DATABASE_URL"] = "file:/app/data/dev.db"
+        merged_env_dict["NEXTAUTH_URL"] = "https://docsign.server.mtcd.org"
+        merged_env_dict["AUTHENTIK_CLIENT_ID"] = "docsign_client_id_mtcd"
+        merged_env_dict["AUTHENTIK_CLIENT_SECRET"] = "GMym0HOG89dShkeZVvGwheeEkvUmcLwiIYjemwZZonCyCYiF"
+        merged_env_dict["AUTHENTIK_ISSUER"] = "https://auth.server.mtcd.org/application/o/docsign"
                 
         final_env = [{"name": k, "value": v} for k, v in merged_env_dict.items()]
         
@@ -105,7 +120,13 @@ def deploy_stack():
         method = "PUT"
     else:
         print("Stack 'docsign' does not exist. Creating stack...")
-        final_env = [{"name": k, "value": v} for k, v in local_env.items() if v]
+        temp_env = {k: v for k, v in local_env.items() if v and k not in EXCLUDE_SYNC_KEYS}
+        temp_env["DATABASE_URL"] = "file:/app/data/dev.db"
+        temp_env["NEXTAUTH_URL"] = "https://docsign.server.mtcd.org"
+        temp_env["AUTHENTIK_CLIENT_ID"] = "docsign_client_id_mtcd"
+        temp_env["AUTHENTIK_CLIENT_SECRET"] = "GMym0HOG89dShkeZVvGwheeEkvUmcLwiIYjemwZZonCyCYiF"
+        temp_env["AUTHENTIK_ISSUER"] = "https://auth.server.mtcd.org/application/o/docsign"
+        final_env = [{"name": k, "value": v} for k, v in temp_env.items()]
         payload = {
             "Name": "docsign",
             "StackFileContent": compose_content,
