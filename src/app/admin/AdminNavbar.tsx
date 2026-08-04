@@ -97,6 +97,18 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
             >
               Templates
             </Link>
+            <Link
+              href="/admin/sessions"
+              className="btn"
+              style={{
+                background: isActive("/admin/sessions") ? "rgba(255,255,255,0.06)" : "transparent",
+                color: isActive("/admin/sessions") ? "var(--text-main)" : "var(--text-muted)",
+                padding: "8px 16px",
+                fontSize: "13px",
+              }}
+            >
+              Sessions
+            </Link>
             {isGlobalAdmin && (
               <Link
                 href="/admin/settings"

@@ -50,8 +50,13 @@
   - Admin: Extracted recent submissions to a client component. Moved system audit logs from Admin Settings to a dashboard card component `AuditLogsDashboardClient` (default collapsed) with type filter buttons (All, Logins, Creations & Edits, Deletions, Emails) and search bar. Refined event category tag readability and backgrounds.
   - Preview Portal: Extracted the preview modal to a shared portal-based `FormPreviewModal` component that breaks out of parent container styles and renders at body root with `maxHeight: "85vh"` boundaries and `overflow: "hidden"` to enable scrolling of multiple pages correctly.
 
+- Completed Combined Signing Sessions Feature (v0.13.0):
+  - Database Model: Created `SigningSession` model storing title, slug, organization, and template sequence list JSON.
+  - Admin Interface: Designed active/archived list page, copyable session URL link generation, and reorderable sequence form with up/down arrows.
+  - Public Flow: Developed step progress breadcrumb indicator, automated name/email carrying between templates, and download confirmation dashboard upon complete wizard signature.
+
 ## What is In Progress
-- Final verification of v0.12.19 in production environment.
+- Final verification of v0.13.0 in production environment.
 
 ## Known Risks & Assumptions
 - **OAuth Callback Domain**: NextAuth and Authentik are configured to work against `https://docsign.server.mtcd.org`. Any local test verification of SSO logins will fail or require mocking.

@@ -47,9 +47,12 @@ interface SignFormProps {
   portalLogo: string;
   pdfUrl: string;
   pcoAttendeeId: string | null;
+  defaultSignerName?: string;
+  defaultSignerEmail?: string;
+  onComplete?: (pdfUrl: string, completedDocId: string, name: string, email: string) => void;
 }
 
-export default function SignForm({ template, portalTitle, portalLogo, pdfUrl, pcoAttendeeId }: SignFormProps) {
+export default function SignForm({ template, portalTitle, portalLogo, pdfUrl, pcoAttendeeId, defaultSignerName, defaultSignerEmail, onComplete }: SignFormProps) {
   const fields = JSON.parse(template.fieldsJson) as FormField[];
 
   // Global reading order of all fields for sequential Tab navigation
@@ -64,8 +67,16 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl, pc
   });
 
   const [formData, setFormData] = useState<Record<string, any>>({});
-  const [signerName, setSignerName] = useState("");
-  const [signerEmail, setSignerEmail] = useState("");
+  const [signerName, setSignerName] = useState(defaultSignerName || "");
+  const [signerEmail, setSignerEmail] = useState(defaultSignerEmail || "");
+
+  useEffect(() => {
+    if (defaultSignerName) setSignerName(defaultSignerName);
+  }, [defaultSignerName]);
+
+  useEffect(() => {
+    if (defaultSignerEmail) setSignerEmail(defaultSignerEmail);
+  }, [defaultSignerEmail]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [signedPdfUrl, setSignedPdfUrl] = useState<string | null>(null);
@@ -620,6 +631,14 @@ export default function SignForm({ template, portalTitle, portalLogo, pdfUrl, pc
       localStorage.removeItem(`docsign_progress_${template.id}`);
       localStorage.removeItem(`docsign_draft_id_${template.id}`);
       setSignedPdfUrl(data.pdfUrl || `/uploads/signed/${data.signedDocumentId}.pdf`);
+      if (onComplete) {
+        onComplete(
+          data.pdfUrl || `/uploads/signed/${data.signedDocumentId}.pdf`,
+          data.signedDocumentId || data.id,
+          signerName,
+          signerEmail
+        );
+      }
     } catch (err: any) {
       setSubmitError(err.message || "An unexpected error occurred.");
     } finally {

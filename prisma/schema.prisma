@@ -30,6 +30,7 @@ model Organization {
   name        String     @unique
   users       User[]
   templates   Template[]
+  sessions    SigningSession[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 }
@@ -90,5 +91,17 @@ model AuditLog {
   ip        String?
   userAgent String?
   createdAt DateTime @default(now())
+}
+
+model SigningSession {
+  id              String       @id @default(cuid())
+  title           String
+  slug            String       @unique
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  templateIdsJson String       // JSON string of an array of template IDs in order: e.g. '["id1", "id2"]'
+  isArchived      Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 }
 

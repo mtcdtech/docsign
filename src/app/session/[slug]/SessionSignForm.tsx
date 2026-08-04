@@ -1,0 +1,192 @@
+"use client";
+
+import React, { useState } from "react";
+import SignForm from "@/app/sign/[slug]/SignForm";
+
+interface TemplateWithOrg {
+  id: string;
+  title: string;
+  slug: string;
+  pdfPath: string;
+  fieldsJson: string;
+  emailUser: boolean;
+  emailLeader: boolean;
+  notificationEmails?: string | null;
+  saveSharepoint?: boolean;
+  sharepointFolderName?: string | null;
+  organization: {
+    name: string;
+  };
+}
+
+interface SessionSignFormProps {
+  session: {
+    id: string;
+    title: string;
+    slug: string;
+  };
+  templates: TemplateWithOrg[];
+  portalTitle: string;
+  portalLogo: string;
+  pcoAttendeeId: string | null;
+}
+
+interface CompletedDocument {
+  title: string;
+  pdfUrl: string;
+}
+
+export default function SessionSignForm({ session, templates, portalTitle, portalLogo, pcoAttendeeId }: SessionSignFormProps) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [completedDocs, setCompletedDocs] = useState<CompletedDocument[]>([]);
+  const [savedName, setSavedName] = useState("");
+  const [savedEmail, setSavedEmail] = useState("");
+
+  const activeTemplate = templates[currentIndex];
+  const isFinished = currentIndex >= templates.length;
+
+  const handleDocComplete = (pdfUrl: string, completedDocId: string, name: string, email: string) => {
+    setCompletedDocs((prev) => [...prev, { title: activeTemplate.title, pdfUrl }]);
+    setSavedName(name);
+    setSavedEmail(email);
+    setCurrentIndex((prev) => prev + 1);
+  };
+
+  if (isFinished) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "80vh", padding: "20px" }}>
+        <div className="card-glass" style={{ maxWidth: "560px", width: "100%", padding: "40px", textAlign: "center", display: "flex", flexDirection: "column", gap: "24px" }}>
+          {/* Success Checkmark */}
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <div style={{
+              width: "72px",
+              height: "72px",
+              borderRadius: "50%",
+              background: "rgba(16, 185, 129, 0.15)",
+              border: "2px solid #10b981",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "36px",
+              color: "#34d399",
+            }}>
+              ✓
+            </div>
+          </div>
+
+          <div>
+            <h2 style={{ margin: 0, fontSize: "24px", fontWeight: "bold" }}>Session Completed!</h2>
+            <p style={{ margin: "8px 0 0 0", fontSize: "14px", color: "var(--text-muted)", lineHeight: "1.6" }}>
+              All documents in this packet have been successfully signed and submitted.
+            </p>
+          </div>
+
+          <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: "16px", display: "flex", flexDirection: "column", gap: "12px", textAlign: "left" }}>
+            <h3 style={{ fontSize: "13px", color: "var(--text-muted)", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" }}>Signed Documents</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {completedDocs.map((doc, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "12px 16px",
+                    background: "rgba(255, 255, 255, 0.02)",
+                    borderRadius: "6px",
+                    border: "1px solid var(--border-color)"
+                  }}
+                >
+                  <span style={{ fontSize: "13px", fontWeight: "500", color: "var(--text-main)" }}>
+                    📄 {doc.title}
+                  </span>
+                  <a
+                    href={doc.pdfUrl}
+                    download
+                    className="btn btn-secondary"
+                    style={{
+                      width: "auto",
+                      padding: "6px 14px",
+                      fontSize: "12px",
+                      background: "rgba(255,255,255,0.03)",
+                      borderColor: "var(--border-color)",
+                      color: "var(--text-main)",
+                      textDecoration: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px"
+                    }}
+                  >
+                    📥 Download
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <a href="/" className="btn" style={{ background: "var(--primary-color)", color: "#ffffff", padding: "12px", fontWeight: "600" }}>
+            Finish & Return Home
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  // Active document PDF template path download helper
+  const pdfFilename = activeTemplate.pdfPath.split("/").pop();
+  const pdfUrl = `/api/download/templates/${pdfFilename}`;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: "1200px", margin: "0 auto", width: "100%" }}>
+      {/* Session Title Header */}
+      <div style={{ textAlign: "center", marginBottom: "10px" }}>
+        <h1 style={{ fontSize: "24px", margin: "0 0 6px 0", fontWeight: "800" }}>{session.title}</h1>
+        <p style={{ margin: 0, fontSize: "13px", color: "var(--text-muted)" }}>
+          Step {currentIndex + 1} of {templates.length} — Completing: <strong>{activeTemplate.title}</strong>
+        </p>
+      </div>
+
+      {/* Progress Wizard Breadcrumb Steps */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", justifyContent: "center", alignItems: "center", marginBottom: "10px" }}>
+        {templates.map((tpl, index) => {
+          const isActive = index === currentIndex;
+          const isCompleted = index < currentIndex;
+          return (
+            <div key={tpl.id} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{
+                fontSize: "12px",
+                padding: "6px 14px",
+                borderRadius: "20px",
+                background: isActive ? "var(--primary-color)" : isCompleted ? "rgba(16, 185, 129, 0.15)" : "rgba(255, 255, 255, 0.03)",
+                color: isActive ? "#ffffff" : isCompleted ? "#34d399" : "var(--text-muted)",
+                fontWeight: isActive || isCompleted ? "bold" : "normal",
+                border: "1px solid " + (isActive ? "var(--primary-color)" : isCompleted ? "#10b981" : "var(--border-color)"),
+                transition: "all var(--transition-fast)",
+                display: "flex",
+                alignItems: "center",
+                gap: "4px"
+              }}>
+                {isCompleted && <span>✓</span>}
+                <span>{index + 1}. {tpl.title}</span>
+              </div>
+              {index < templates.length - 1 && <span style={{ color: "var(--text-muted)", opacity: 0.3 }}>➔</span>}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Mount individual SignForm */}
+      <SignForm
+        key={activeTemplate.id}
+        template={activeTemplate}
+        portalTitle={portalTitle}
+        portalLogo={portalLogo}
+        pdfUrl={pdfUrl}
+        pcoAttendeeId={pcoAttendeeId}
+        defaultSignerName={savedName}
+        defaultSignerEmail={savedEmail}
+        onComplete={handleDocComplete}
+      />
+    </div>
+  );
+}
