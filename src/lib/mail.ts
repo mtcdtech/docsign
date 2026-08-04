@@ -15,10 +15,10 @@ export async function sendEmail({
   attachmentPath?: string;
   attachmentName?: string;
 }) {
-  let host = process.env.SMTP_HOST || "smtp.office365.com";
+  let host = process.env.SMTP_HOST || "smtp.azurecomm.net";
   let port = parseInt(process.env.SMTP_PORT || "587");
-  let user = process.env.SMTP_USER || "announcements@mtcd.org";
-  let pass = process.env.SMTP_PASS || "T#613178294935us";
+  let user = process.env.SMTP_USER || "";
+  let pass = process.env.SMTP_PASS || "";
 
   // Auto-configure Azure Communication Services SMTP if Azure credentials are present
   const azureClientId = process.env.AZURE_AD_CLIENT_ID;

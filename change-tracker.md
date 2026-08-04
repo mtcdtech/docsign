@@ -141,3 +141,8 @@
 - **ACS SMTP Auto-Config**: Programmed [mail.ts](file:///Users/benny2168/Antigravity/docsign/src/lib/mail.ts) to detect `AZURE_AD_CLIENT_ID`, `AZURE_AD_TENANT_ID`, and `AZURE_AD_CLIENT_SECRET` environment variables. If present, it automatically redirects SMTP traffic to `smtp.azurecomm.net` on port 587, authenticating via `<client_id>@<tenant_id>` username and client secret password.
 - **ACS Envelope Validation**: Omitted setting the SMTP `sender` header when routing through `smtp.azurecomm.net` to avoid malformed header validations (since the ACS login username is not a valid email address), ensuring emails are delivered as pure `docsign@mtcd.org` sender envelopes.
 - **Status**: Completed.
+
+### [2026-08-04] Default SMTP Parameters Reversion & Fallbacks Purged (v0.12.9)
+- **Announcements Defaults Purged**: Removed all hardcoded `announcements@mtcd.org` and corresponding passwords from fallbacks inside [mail.ts](file:///Users/benny2168/Antigravity/docsign/src/lib/mail.ts).
+- **Default Azure Host Configuration**: Set default fallback host to `smtp.azurecomm.net` inside [mail.ts](file:///Users/benny2168/Antigravity/docsign/src/lib/mail.ts) and updated the default environment parameters inside both [docker-compose.portainer.yml](file:///Users/benny2168/Antigravity/docsign/docker-compose.portainer.yml) and [docker-compose.yml](file:///Users/benny2168/Antigravity/docsign/docker-compose.yml) to point to `smtp.azurecomm.net` with empty user and password settings.
+- **Status**: Completed.

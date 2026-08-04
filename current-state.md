@@ -41,16 +41,16 @@
 - Completed Pre-Flip Checklist for docsign: verified version (v0.11.1), confirmed all 31 privileged users (5 Admin, 26 OrgLeader) are fully linked to Microsoft identities, and confirmed no unlinked shared mailbox grants exist.
 - Successfully executed database backfill in production container, populating `mtcdPersonId` for 62 existing users (with 5 expected conflicts handled).
 
-- Completed Form Designer & Public Form Filler Enhancements (v0.12.0 - v0.12.8):
+- Completed Form Designer & Public Form Filler Enhancements (v0.12.0 - v0.12.9):
   - Database Schema: Added `emailParent`, `isDraft`, `emailedParent` columns and applied schema push.
-  - SMTP: Fixed transporter TLS configuration, removing SSLv3. Added auto-configuration for Azure Communication Services SMTP, routing emails via `smtp.azurecomm.net` using the Entra ID Application ID and Tenant ID credentials if `AZURE_AD_CLIENT_ID` variables are set, preserving `docsign@mtcd.org` as the exact sender.
+  - SMTP: Fixed transporter TLS configuration, removing SSLv3. Added auto-configuration for Azure Communication Services SMTP, routing emails via `smtp.azurecomm.net` using the Entra ID Application ID and Tenant ID credentials if `AZURE_AD_CLIENT_ID` variables are set, preserving `docsign@mtcd.org` as the exact sender. Purged all hardcoded `announcements@mtcd.org` defaults from the application configurations and code to prevent cross-app sending conflicts.
   - Designer: Implemented debounced auto-saving, persistent headers status indicator, custom unsaved warning prompt, click-and-drag multi-field selection box with proper pixel unit mappings, canvas background click-to-deselect with a drag completion delay check to avoid race conditions, and onboarding tour.
   - Signer Form: Added db-backed drafts auto-saving, "Reset Form" button with custom confirmation modal. Added server-side GET draft restoring, and synchronous exit saves when clicking "Exit".
   - Admin: Extracted recent submissions to a client component. Moved system audit logs from Admin Settings to a dashboard card component `AuditLogsDashboardClient` (default collapsed) with type filter buttons (All, Logins, Creations & Edits, Deletions) and search bar.
   - Preview Portal: Extracted the preview modal to a shared portal-based `FormPreviewModal` component that breaks out of parent container styles and renders at body root with `maxHeight: "85vh"` boundaries and `overflow: "hidden"` to enable scrolling of multiple pages correctly.
 
 ## What is In Progress
-- Final verification of v0.12.8 in production environment.
+- Final verification of v0.12.9 in production environment.
 
 ## Known Risks & Assumptions
 - **OAuth Callback Domain**: NextAuth and Authentik are configured to work against `https://docsign.server.mtcd.org`. Any local test verification of SSO logins will fail or require mocking.

@@ -17,10 +17,10 @@ services:
       - AZURE_AD_CLIENT_ID=
       - AZURE_AD_CLIENT_SECRET=
       - AZURE_AD_TENANT_ID=
-      - SMTP_HOST=smtp.office365.com
+      - SMTP_HOST=smtp.azurecomm.net
       - SMTP_PORT=587
-      - SMTP_USER=announcements@mtcd.org
-      - SMTP_PASS=T#613178294935us
+      - SMTP_USER=
+      - SMTP_PASS=
       - ADMIN_PASSWORD=admin
     restart: always
     volumes:
