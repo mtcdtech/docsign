@@ -166,3 +166,7 @@
 ### [2026-08-04] Portainer Deploy-Time Local Env Syncing (v0.12.14)
 - **Local Env Syncing**: Updated [deploy_portainer.py](file:///Users/benny2168/Antigravity/docsign/deploy_portainer.py) to parse local [.env](file:///Users/benny2168/Antigravity/docsign/.env) variables at deployment execution time. These keys are automatically merged into the stack update API payload sent to Synology Portainer, syncing credentials securely from the user's workspace without manually modifying the Portainer UI.
 - **Status**: Completed.
+
+### [2026-08-04] Custom Email Subject Line Phishing/Spam Bypassing (v0.12.15)
+- **Spam/Phishing Filter Bypassing**: Re-labeled all email subject headers inside [route.ts](file:///Users/benny2168/Antigravity/docsign/src/app/api/sign/%5Bid%5D/route.ts) with the custom prefix `MTCD DocSign - Completed:`, `MTCD DocSign - Parent/Guardian Copy:`, `MTCD DocSign - Copy:`, and `MTCD DocSign - New Signature:`. This prevents Exchange Online Protection (EOP) spam filters from flagging and dropping external dispatches that match the generic `"Signed Document: "` phishing pattern signatures.
+- **Status**: Completed.

@@ -215,7 +215,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         
         await sendEmail({
           to: targetSignerEmail,
-          subject: `Signed Document: ${template.title}`,
+          subject: `MTCD DocSign - Completed: ${template.title}`,
           html: htmlContent,
           attachmentPath: outputPath,
           attachmentName: `${template.title}_Signed.pdf`
@@ -252,7 +252,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
           try {
             await sendEmail({
               to: email,
-              subject: `Parent/Guardian Copy: ${template.title}`,
+              subject: `MTCD DocSign - Parent/Guardian Copy: ${template.title}`,
               html: htmlContent,
               attachmentPath: outputPath,
               attachmentName: `${template.title}_Signed.pdf`
@@ -293,7 +293,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
           try {
             await sendEmail({
               to: email,
-              subject: `Signed Document Copy: ${template.title}`,
+              subject: `MTCD DocSign - Copy: ${template.title}`,
               html: htmlContent,
               attachmentPath: outputPath,
               attachmentName: `${template.title}_Signed.pdf`
@@ -335,7 +335,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
           try {
             await sendEmail({
               to: email,
-              subject: `New Signature: ${template.title} - ${signerName}`,
+              subject: `MTCD DocSign - New Signature: ${template.title} - ${signerName}`,
               html: htmlContent,
               attachmentPath: outputPath,
               attachmentName: `${template.title}_${cleanSignerName}.pdf`
