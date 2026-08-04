@@ -29,6 +29,8 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: mtcdtech/docsign:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Deploy to Portainer Stack
         env:
