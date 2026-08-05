@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Script from "next/script";
 import SignaturePad from "@/components/SignaturePad";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 interface FieldMapping {
   page: number;
@@ -92,121 +93,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
   // Dynamic keyboard height offset for mobile viewport fixed elements
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-  // PDF local zoom states
-  const [zoomMultiplier, setZoomMultiplier] = useState(1.0);
-  const pdfContainerRef = useRef<HTMLDivElement>(null);
-  const initialPinchDistRef = useRef<number | null>(null);
-  const initialZoomRef = useRef<number>(1.0);
 
-  useEffect(() => {
-    const el = viewerScrollContainerRef.current;
-    if (!el) return;
-
-    let iosStartZoom = 1.0;
-    let currentZoom = zoomMultiplier;
-
-    // Standard touch pinch events (Fallback for non-iOS)
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 2) {
-        const dist = Math.hypot(
-          e.touches[0].clientX - e.touches[1].clientX,
-          e.touches[0].clientY - e.touches[1].clientY
-        );
-        initialPinchDistRef.current = dist;
-        initialZoomRef.current = zoomMultiplier;
-        currentZoom = zoomMultiplier;
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 2 && initialPinchDistRef.current !== null) {
-        e.preventDefault(); // Prevent browser native zoom
-        const dist = Math.hypot(
-          e.touches[0].clientX - e.touches[1].clientX,
-          e.touches[0].clientY - e.touches[1].clientY
-        );
-        const factor = dist / initialPinchDistRef.current;
-        const newZoom = Math.max(0.6, Math.min(3.0, initialZoomRef.current * factor));
-        currentZoom = newZoom;
-
-        // Apply scale directly to DOM element for 60fps performance without React re-render lags
-        const zoomContainer = document.getElementById("pdf-pages-zoom-container");
-        if (zoomContainer) {
-          zoomContainer.style.transform = `scale(${newZoom})`;
-          zoomContainer.style.transformOrigin = "top center";
-          zoomContainer.style.transition = "none";
-        }
-      }
-    };
-
-    const handleTouchEnd = () => {
-      if (initialPinchDistRef.current !== null) {
-        initialPinchDistRef.current = null;
-        
-        // Reset direct DOM transform before state-driven re-render takes over
-        const zoomContainer = document.getElementById("pdf-pages-zoom-container");
-        if (zoomContainer) {
-          zoomContainer.style.transform = "";
-          zoomContainer.style.transformOrigin = "";
-          zoomContainer.style.transition = "";
-        }
-        setZoomMultiplier(currentZoom);
-      }
-    };
-
-    // iOS Gesture Events (For Safari / Webkit)
-    const handleGestureStart = (e: any) => {
-      e.preventDefault();
-      iosStartZoom = zoomMultiplier;
-      currentZoom = zoomMultiplier;
-      const zoomContainer = document.getElementById("pdf-pages-zoom-container");
-      if (zoomContainer) {
-        zoomContainer.style.transition = "none";
-      }
-    };
-
-    const handleGestureChange = (e: any) => {
-      e.preventDefault();
-      const newZoom = Math.max(0.6, Math.min(3.0, iosStartZoom * e.scale));
-      currentZoom = newZoom;
-
-      const zoomContainer = document.getElementById("pdf-pages-zoom-container");
-      if (zoomContainer) {
-        zoomContainer.style.transform = `scale(${newZoom})`;
-        zoomContainer.style.transformOrigin = "top center";
-      }
-    };
-
-    const handleGestureEnd = (e: any) => {
-      e.preventDefault();
-      const zoomContainer = document.getElementById("pdf-pages-zoom-container");
-      if (zoomContainer) {
-        zoomContainer.style.transform = "";
-        zoomContainer.style.transformOrigin = "";
-        zoomContainer.style.transition = "";
-      }
-      setZoomMultiplier(currentZoom);
-    };
-
-    // Register touch events
-    el.addEventListener("touchstart", handleTouchStart, { passive: true });
-    el.addEventListener("touchmove", handleTouchMove, { passive: false });
-    el.addEventListener("touchend", handleTouchEnd, { passive: true });
-
-    // Register iOS gesture events
-    el.addEventListener("gesturestart", handleGestureStart, { passive: false });
-    el.addEventListener("gesturechange", handleGestureChange, { passive: false });
-    el.addEventListener("gestureend", handleGestureEnd, { passive: false });
-
-    return () => {
-      el.removeEventListener("touchstart", handleTouchStart);
-      el.removeEventListener("touchmove", handleTouchMove);
-      el.removeEventListener("touchend", handleTouchEnd);
-      el.removeEventListener("gesturestart", handleGestureStart);
-      el.removeEventListener("gesturechange", handleGestureChange);
-      el.removeEventListener("gestureend", handleGestureEnd);
-    };
-  }, [zoomMultiplier]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.visualViewport) return;
@@ -983,16 +870,27 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                 Rendering document pages...
               </div>
             ) : (
-              <div ref={pdfContainerRef} style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", alignItems: "center", overflowX: "auto" }}>
-                {Array.from({ length: numPages }).map((_, pageIdx) => {
+              <TransformWrapper
+                initialScale={1}
+                minScale={0.8}
+                maxScale={4}
+                centerOnInit={true}
+                panning={{ disabled: false }}
+                wheel={{ disabled: true }}
+              >
+                <TransformComponent
+                  wrapperStyle={{ width: "100%" }}
+                  contentStyle={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", alignItems: "center" }}
+                >
+                  {Array.from({ length: numPages }).map((_, pageIdx) => {
                   const dims = pageDimensions[pageIdx];
                   const originalWidth = dims?.width || 800;
                   const originalHeight = dims?.height || 1100;
                   const paddingAdjustment = 34; // scrollbar and card padding
                   const availableWidth = containerWidth - paddingAdjustment;
-                  let scale = ((availableWidth > 0 && availableWidth < originalWidth)
+                  let scale = (availableWidth > 0 && availableWidth < originalWidth)
                     ? (availableWidth / originalWidth)
-                    : 1) * zoomMultiplier;
+                    : 1;
 
                   // Check if there is an active focused field on this page
                   const focusedField = fields.find((f) => (f.instanceId || f.id) === selectedFieldId);
@@ -1005,7 +903,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                   if (isMobile && isFocusedPage && focusedField) {
                     const fieldWidth = focusedField.pdfMapping.width || 120;
                     // Zoom so the field fits the viewport with 24px space on either side (48px total padding)
-                    const targetZoomScale = (availableWidth / (fieldWidth + 48)) * zoomMultiplier;
+                    const targetZoomScale = availableWidth / (fieldWidth + 48);
                     if (targetZoomScale > scale) {
                       scale = targetZoomScale;
                       // Center the field horizontally in the available width
@@ -1520,7 +1418,8 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                     </div>
                   </div>
                 )})}
-              </div>
+                </TransformComponent>
+              </TransformWrapper>
             )}
           </div>
 
