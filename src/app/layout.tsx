@@ -120,7 +120,7 @@ export default async function RootLayout({
             userEmail={session.user.email || ""}
           />
         )}
-        <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
+        <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", width: "100%" }}>
           <div style={{ flex: "1 0 auto" }}>{children}</div>
           <footer
             style={{
