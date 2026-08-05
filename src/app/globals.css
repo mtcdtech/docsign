@@ -66,6 +66,7 @@ body {
   color: var(--text-main);
   font-family: var(--font-sans);
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   line-height: 1.5;
@@ -571,6 +572,7 @@ input::-webkit-search-results-decoration {
   .public-sign-container {
     padding: 0 !important;
     height: 100vh !important;
+    height: 100dvh !important;
     overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
@@ -584,6 +586,7 @@ input::-webkit-search-results-decoration {
   body:has(.public-sign-container) {
     overflow: hidden !important;
     height: 100vh !important;
+    height: 100dvh !important;
     position: fixed !important;
     width: 100vw !important;
     touch-action: pan-x pan-y !important;
