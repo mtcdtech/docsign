@@ -53,6 +53,7 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
       }}
     >
       <div
+        className="nav-container-desktop"
         style={{
           display: "flex",
           alignItems: "center",
