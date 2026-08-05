@@ -298,19 +298,27 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
   };
 
   const handleExit = async () => {
-    if (signerName || signerEmail || Object.keys(formData).length > 0) {
+    if (hasUserEdited || draftId) {
       try {
+        let resolvedSignerName = signerName;
+        if (!resolvedSignerName || resolvedSignerName === "Anonymous Draft") {
+          const nameField = fields.find((f) => f.type === "signer_name" || f.type === "parent_name");
+          if (nameField && formData[nameField.id]) {
+            resolvedSignerName = formData[nameField.id];
+          }
+        }
+
         if (draftId) {
           await fetch(`/api/sign/${template.id}/draft`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ draftId, signerName, signerEmail, formData })
+            body: JSON.stringify({ draftId, signerName: resolvedSignerName, signerEmail, formData })
           });
         } else {
           const res = await fetch(`/api/sign/${template.id}/draft`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ signerName, signerEmail, formData })
+            body: JSON.stringify({ signerName: resolvedSignerName, signerEmail, formData })
           });
           const data = await res.json();
           if (res.ok && data.draftId) {
@@ -363,13 +371,13 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
 
   // Persist progress to localStorage on change
   useEffect(() => {
-    if (signerName || signerEmail || Object.keys(formData).length > 0) {
+    if (hasUserEdited || draftId) {
       localStorage.setItem(
         `docsign_progress_${template.id}`,
         JSON.stringify({ signerName, signerEmail, formData })
       );
     }
-  }, [signerName, signerEmail, formData, template.id]);
+  }, [signerName, signerEmail, formData, template.id, hasUserEdited, draftId]);
 
   // Database draft auto-save sync loop (debounced)
   useEffect(() => {
@@ -1574,7 +1582,12 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                                 disabled={!isVisible}
                                 readOnly={!isVisible}
                                 tabIndex={isVisible ? tabIdx : -1}
-                                onChange={(e) => isVisible && setSignerName(e.target.value)}
+                                onChange={(e) => {
+                                  if (isVisible) {
+                                    setHasUserEdited(true);
+                                    setSignerName(e.target.value);
+                                  }
+                                }}
                                 onFocus={() => handleChecklistItemClick(f.instanceId || f.id)}
                                 onClick={() => handleChecklistItemClick(f.instanceId || f.id)}
                                 placeholder="Signer Name"
@@ -1916,7 +1929,10 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                         className="form-input"
                         required
                         value={signerName}
-                        onChange={(e) => setSignerName(e.target.value)}
+                        onChange={(e) => {
+                          setHasUserEdited(true);
+                          setSignerName(e.target.value);
+                        }}
                         placeholder="John Doe"
                         tabIndex={1}
                       />
@@ -1929,7 +1945,10 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                         className="form-input"
                         required
                         value={signerEmail}
-                        onChange={(e) => setSignerEmail(e.target.value)}
+                        onChange={(e) => {
+                          setHasUserEdited(true);
+                          setSignerEmail(e.target.value);
+                        }}
                         placeholder="john.doe@example.com"
                         tabIndex={2}
                       />
