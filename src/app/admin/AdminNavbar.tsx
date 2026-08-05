@@ -52,8 +52,9 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
         padding: "16px 24px",
       }}
     >
+      {/* Desktop Navbar Container (Hidden on mobile) */}
       <div
-        className="nav-container-desktop"
+        className="nav-container-desktop mobile-hider"
         style={{
           display: "flex",
           alignItems: "center",
@@ -80,8 +81,8 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
             <span>{portalTitle}</span>
           </Link>
 
-          {/* Links (Hidden on mobile) */}
-          <div className="nav-links-desktop" style={{ display: "flex", gap: "8px" }}>
+          {/* Links */}
+          <div style={{ display: "flex", gap: "8px" }}>
             <Link
               href="/admin"
               className="btn"
@@ -135,8 +136,8 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
           </div>
         </div>
 
-        {/* Profile info & logout (Desktop-only) */}
-        <div className="nav-profile-desktop" style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        {/* Profile info & logout */}
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           <button
             onClick={toggleTheme}
             className="btn btn-secondary"
@@ -199,11 +200,34 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
             Sign Out
           </button>
         </div>
+      </div>
 
-        {/* Mobile Hamburger Toggle */}
+      {/* Mobile Navbar Container (Hidden on desktop) */}
+      <div
+        className="mobile-flex-only"
+        style={{
+          display: "none",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+        }}
+      >
+        <Link href="/admin" style={{ textDecoration: "none", color: "var(--text-main)", fontWeight: 800, fontSize: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
+          {(() => {
+            const activeLogo = theme === "light" ? (portalLogoLight || portalLogoDark) : (portalLogoDark || portalLogoLight);
+            return activeLogo ? (
+              <img
+                src={activeLogo}
+                alt="Logo"
+                style={{ height: "24px", maxWidth: "100px", objectFit: "contain" }}
+              />
+            ) : null;
+          })()}
+          <span>{portalTitle}</span>
+        </Link>
+
         <button
           type="button"
-          className="nav-hamburger-mobile"
           onClick={() => setIsOpen(!isOpen)}
           style={{
             background: "transparent",
@@ -211,7 +235,9 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
             color: "var(--text-main)",
             cursor: "pointer",
             padding: "8px",
-            zIndex: 10
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
