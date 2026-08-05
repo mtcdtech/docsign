@@ -957,9 +957,9 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                   const focusedField = fields.find((f) => (f.instanceId || f.id) === selectedFieldId);
                   const isFocusedPage = focusedField && focusedField.pdfMapping.page === pageIdx;
 
-                  let leftStyle = "0px";
-                  let transformStyle = `scale(${scale})`;
-                  let transformOriginStyle = "top left";
+                  let leftStyle = "50%";
+                  let transformStyle = `translate(-50%, 0) scale(${scale})`;
+                  let transformOriginStyle = "top center";
 
                   if (isMobile && isFocusedPage && focusedField) {
                     const fieldWidth = focusedField.pdfMapping.width || 120;
@@ -994,7 +994,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                         style={{
                           position: "absolute",
                           top: 0,
-                          left: leftStyle === "0px" ? "0" : leftStyle,
+                          left: leftStyle,
                           width: `${originalWidth}px`,
                           height: `${originalHeight}px`,
                           transform: transformStyle,
