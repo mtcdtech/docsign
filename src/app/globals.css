@@ -556,6 +556,10 @@ input::-webkit-search-results-decoration {
     gap: 6px !important;
     max-width: 100% !important;
     width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 !important;
   }
   .progress-wizard-container {
     margin-bottom: 4px !important;
