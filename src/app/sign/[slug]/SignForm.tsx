@@ -1016,7 +1016,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
         )}
 
         {/* Split screen signing workspace */}
-        <div style={{ display: "flex", gap: "32px", alignItems: "stretch", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "32px", alignItems: "stretch", flexWrap: "wrap", paddingTop: isMobile ? "50px" : "0px" }}>
           
           {/* Left Side: PDF Document Viewer with Overlay Interactive Inputs */}
           <div ref={viewerScrollContainerRef} style={{ flex: "1.2", minWidth: "320px", display: "flex", flexDirection: "column", gap: "16px", maxHeight: isMobile ? "none" : "calc(100vh - 160px)", overflowY: isMobile ? "visible" : "auto", border: "1px solid var(--border-color)", borderRadius: "8px", padding: "16px", background: "rgba(0,0,0,0.2)" }}>
@@ -1856,24 +1856,25 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
       {isMobile && (
         <div style={{
           position: "fixed",
-          bottom: keyboardHeight,
+          top: `${Math.max(34, 48 - shrink * 14)}px`,
+          bottom: "auto",
           left: 0,
           right: 0,
           background: "var(--bg-glass)",
           backdropFilter: "blur(16px)",
           WebkitBackdropFilter: "blur(16px)",
-          borderTop: "1px solid var(--border-color)",
-          padding: "12px 16px",
+          borderBottom: "1px solid var(--border-color)",
+          padding: "8px 16px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           zIndex: 1000,
-          boxShadow: "0 -4px 20px rgba(0,0,0,0.3)"
+          boxShadow: "0 4px 15px rgba(0,0,0,0.15)"
         }}>
           {submitError && (
             <div style={{
               position: "absolute",
-              bottom: "75px",
+              top: "50px",
               left: "16px",
               right: "16px",
               color: "#ffffff",
