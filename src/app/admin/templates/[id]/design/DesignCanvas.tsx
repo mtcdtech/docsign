@@ -43,6 +43,10 @@ export default function DesignCanvas({
 }: DesignCanvasProps) {
   const router = useRouter();
 
+  const [currentPdfUrl, setCurrentPdfUrl] = useState(pdfUrl);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+  const lastPdfUrlRef = useRef("");
+
   const [fields, setFields] = useState<FormField[]>([]);
   const [selectedFieldIds, setSelectedFieldIds] = useState<string[]>([]);
   const selectedFieldId = selectedFieldIds[0] || null;
@@ -478,6 +482,13 @@ export default function DesignCanvas({
     const renderPDF = async () => {
       try {
         setLoadingPdf(true);
+        
+        // Clear rendered pages cache on new PDF url change to force re-drawing
+        if (lastPdfUrlRef.current !== currentPdfUrl) {
+          renderedPagesRef.current.clear();
+          lastPdfUrlRef.current = currentPdfUrl;
+        }
+
         // @ts-ignore
         const pdfjsLib = window["pdfjs-dist/build/pdf"] || window.pdfjsLib;
         if (!pdfjsLib) {
@@ -485,7 +496,7 @@ export default function DesignCanvas({
         }
         pdfjsLib.GlobalWorkerOptions.workerSrc = "/js/pdf.worker.min.js";
 
-        const loadingTask = pdfjsLib.getDocument(pdfUrl);
+        const loadingTask = pdfjsLib.getDocument(currentPdfUrl);
         const pdf = await loadingTask.promise;
         setNumPages(pdf.numPages);
         setLoadingPdf(false);
@@ -522,7 +533,7 @@ export default function DesignCanvas({
     };
 
     renderPDF();
-  }, [pdfjsLoaded, pdfUrl]);
+  }, [pdfjsLoaded, currentPdfUrl, numPages]);
 
   // Mouse movements for drag repositioning & resizing
   useEffect(() => {
@@ -1216,6 +1227,57 @@ export default function DesignCanvas({
     );
   };
 
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowed = [".pdf", ".docx", ".doc"];
+    const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+    if (!allowed.includes(ext)) {
+      setAlertState({
+        title: "Invalid File Type",
+        message: "Please upload a PDF (.pdf) or Word document (.docx, .doc)."
+      });
+      return;
+    }
+
+    setUploadingPdf(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch(`/api/admin/templates/${templateId}/pdf`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || "Failed to upload new template document.");
+      }
+
+      const data = await res.json();
+      if (data.ok && data.pdfUrl) {
+        setCurrentPdfUrl(data.pdfUrl);
+        setAlertState({
+          title: "PDF Updated Successfully",
+          message: "The template background PDF has been updated. All layout fields are preserved."
+        });
+      } else {
+        throw new Error("Invalid response payload from server.");
+      }
+    } catch (err: any) {
+      console.error("PDF upload error:", err);
+      setAlertState({
+        title: "Upload Failed",
+        message: err.message || "An error occurred during file upload."
+      });
+    } finally {
+      setUploadingPdf(false);
+      e.target.value = "";
+    }
+  };
+
   // Save layout to database
   const handleSaveSchema = async () => {
     const hasSignerName = fields.some((f) => f.type === "signer_name");
@@ -1289,6 +1351,22 @@ export default function DesignCanvas({
               style={{ width: "100%", padding: "14px" }}
             >
               {saving ? "Saving Changes..." : "Save Fields"}
+            </button>
+            <input
+              type="file"
+              id="update-pdf-file-input"
+              accept=".pdf,.docx,.doc"
+              style={{ display: "none" }}
+              onChange={handlePdfUpload}
+            />
+            <button
+              type="button"
+              disabled={uploadingPdf}
+              onClick={() => document.getElementById("update-pdf-file-input")?.click()}
+              className="btn btn-secondary"
+              style={{ width: "100%", padding: "10px", marginTop: "8px", fontSize: "13px" }}
+            >
+              {uploadingPdf ? "Replacing PDF..." : "🔄 Replace PDF File"}
             </button>
           </div>
 
