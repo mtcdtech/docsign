@@ -99,7 +99,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
   const initialZoomRef = useRef<number>(1.0);
 
   useEffect(() => {
-    const el = pdfContainerRef.current;
+    const el = viewerScrollContainerRef.current;
     if (!el) return;
 
     const handleTouchStart = (e: TouchEvent) => {
