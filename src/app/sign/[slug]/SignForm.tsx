@@ -115,6 +115,31 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
     };
   }, []);
 
+  // Prevent browser native viewport pinch-zooming globally (especially when inputs are focused/active)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const preventNativeZoom = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+
+    const preventGestureZoom = (e: any) => {
+      e.preventDefault();
+    };
+
+    document.addEventListener("touchmove", preventNativeZoom, { passive: false });
+    document.addEventListener("gesturestart", preventGestureZoom, { passive: false });
+    document.addEventListener("gesturechange", preventGestureZoom, { passive: false });
+
+    return () => {
+      document.removeEventListener("touchmove", preventNativeZoom);
+      document.removeEventListener("gesturestart", preventGestureZoom);
+      document.removeEventListener("gesturechange", preventGestureZoom);
+    };
+  }, []);
+
   // PDF.js rendering states
   const [pdfjsLoaded, setPdfjsLoaded] = useState(false);
   const [numPages, setNumPages] = useState(0);
