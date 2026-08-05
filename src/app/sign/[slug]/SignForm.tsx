@@ -837,162 +837,251 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
 
       <div style={{ position: "relative", maxWidth: "1400px", margin: "0 auto", padding: "10px 0 80px" }}>
         
-        {/* Compressed Header and Brand next to logo with Exit triggers */}
-        <div style={{ 
-          display: "flex", 
-          justifyContent: "space-between", 
-          alignItems: "center", 
-          gap: "12px", 
-          marginBottom: isMobile ? `${Math.max(4, 12 - shrink * 8)}px` : "8px", 
-          paddingBottom: isMobile ? `${Math.max(4, 10 - shrink * 6)}px` : "6px", 
-          borderBottom: "1px solid var(--border-color)",
+        {/* Sticky Parent Wrapper on Mobile */}
+        <div style={{
           position: isMobile ? "sticky" : "relative",
           top: 0,
           zIndex: 1000,
-          background: isMobile ? "var(--bg-main)" : "transparent",
-          minHeight: isMobile ? `${Math.max(34, 48 - shrink * 14)}px` : "auto"
+          background: isMobile ? "var(--bg-card)" : "transparent",
+          borderBottom: isMobile ? "1px solid var(--border-color)" : "none",
+          boxShadow: isMobile ? "0 4px 15px rgba(0,0,0,0.15)" : "none"
         }}>
-          {/* Left Side: App Logo + Master Org Logo */}
+          {/* Compressed Header and Brand next to logo with Exit triggers */}
           <div style={{ 
             display: "flex", 
+            justifyContent: "space-between", 
             alignItems: "center", 
-            gap: isMobile ? "4px" : "10px", 
-            minWidth: 0, 
-            flexShrink: 0,
-            position: isMobile ? "absolute" : "static",
-            left: isMobile ? "0px" : "auto",
-            zIndex: 10,
-            transform: isMobile ? `scale(${Math.max(0.8, 1 - shrink * 0.2)})` : "none",
-            transformOrigin: isMobile ? "left center" : "initial"
+            gap: "12px", 
+            marginBottom: isMobile ? "0" : "8px", 
+            paddingBottom: isMobile ? `${Math.max(4, 10 - shrink * 6)}px` : "6px", 
+            padding: isMobile ? "8px 16px" : "0",
+            minHeight: isMobile ? `${Math.max(34, 48 - shrink * 14)}px` : "auto",
+            position: "relative"
           }}>
-            {/* App Logo */}
-            {(() => {
-              const activeAppLogo = theme === "dark" ? (portalLogoDark || portalLogoLight) : (portalLogoLight || portalLogoDark);
-              return activeAppLogo ? (
-                <img src={activeAppLogo} alt="App Logo" style={{ maxHeight: isMobile ? "16px" : "28px", maxWidth: isMobile ? "40px" : "80px", objectFit: "contain", flexShrink: 0 }} />
-              ) : null;
-            })()}
-
-            {/* Separator Line */}
-            {(() => {
-              const activeAppLogo = theme === "dark" ? (portalLogoDark || portalLogoLight) : (portalLogoLight || portalLogoDark);
-              const activeMasterLogo = theme === "dark" ? (masterLogoDark || masterLogoLight) : (masterLogoLight || masterLogoDark);
-              return (activeAppLogo && activeMasterLogo) ? (
-                <div style={{ width: "1px", height: isMobile ? "10px" : "18px", background: "var(--border-color)" }} />
-              ) : null;
-            })()}
-
-            {/* Master Organization Logo */}
-            {(() => {
-              const activeMasterLogo = theme === "dark" ? (masterLogoDark || masterLogoLight) : (masterLogoLight || masterLogoDark);
-              return activeMasterLogo ? (
-                <img src={activeMasterLogo} alt="Master Org Logo" style={{ maxHeight: isMobile ? "16px" : "56px", maxWidth: isMobile ? "50px" : "100px", objectFit: "contain", flexShrink: 0 }} />
-              ) : null;
-            })()}
-          </div>
-
-          {/* Center Block: Sub-org Logo and Title next to each other, with Org Name underneath */}
-          <div 
-            style={{ 
-              flex: 1, 
+            {/* Left Side: App Logo + Master Org Logo */}
+            <div style={{ 
               display: "flex", 
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              minWidth: 0,
-              order: 2,
-              ...(isMobile ? {
-                position: "absolute",
-                left: "50%",
-                transform: `translateX(-50%) scale(${Math.max(0.85, 1 - shrink * 0.15)})`,
-                width: "48%",
-                textAlign: "center"
-              } : {})
-            }}
-          >
-            {/* Top Row: Org Logo + Title */}
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center", minWidth: 0, width: "100%" }}>
+              alignItems: "center", 
+              gap: isMobile ? "4px" : "10px", 
+              minWidth: 0, 
+              flexShrink: 0,
+              position: isMobile ? "absolute" : "static",
+              left: isMobile ? "16px" : "auto",
+              zIndex: 10,
+              transform: isMobile ? `scale(${Math.max(0.8, 1 - shrink * 0.2)})` : "none",
+              transformOrigin: isMobile ? "left center" : "initial"
+            }}>
+              {/* App Logo */}
               {(() => {
-                return (activeOrgLogo && !isMobile) ? (
-                  <img src={activeOrgLogo} alt="Org Logo" style={{ maxHeight: "36px", maxWidth: "80px", objectFit: "contain", flexShrink: 0 }} />
+                const activeAppLogo = theme === "dark" ? (portalLogoDark || portalLogoLight) : (portalLogoLight || portalLogoDark);
+                return activeAppLogo ? (
+                  <img src={activeAppLogo} alt="App Logo" style={{ maxHeight: isMobile ? "16px" : "28px", maxWidth: isMobile ? "40px" : "80px", objectFit: "contain", flexShrink: 0 }} />
                 ) : null;
               })()}
-              <h2 style={{ 
-                margin: 0, 
-                fontSize: isMobile ? `${Math.max(9, 12 - shrink * 3)}px` : "16px", 
-                lineHeight: "1.2", 
-                fontWeight: "bold", 
-                textAlign: "center",
-                whiteSpace: "normal",
-                wordBreak: "break-word",
-                display: "-webkit-box",
-                WebkitLineClamp: 3,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden"
-              }} title={template.title}>
-                {template.title}
-              </h2>
+
+              {/* Separator Line */}
+              {(() => {
+                const activeAppLogo = theme === "dark" ? (portalLogoDark || portalLogoLight) : (portalLogoLight || portalLogoDark);
+                const activeMasterLogo = theme === "dark" ? (masterLogoDark || masterLogoLight) : (masterLogoLight || masterLogoDark);
+                return (activeAppLogo && activeMasterLogo) ? (
+                  <div style={{ width: "1px", height: isMobile ? "10px" : "18px", background: "var(--border-color)" }} />
+                ) : null;
+              })()}
+
+              {/* Master Organization Logo */}
+              {(() => {
+                const activeMasterLogo = theme === "dark" ? (masterLogoDark || masterLogoLight) : (masterLogoLight || masterLogoDark);
+                return activeMasterLogo ? (
+                  <img src={activeMasterLogo} alt="Master Org Logo" style={{ maxHeight: isMobile ? "16px" : "56px", maxWidth: isMobile ? "50px" : "100px", objectFit: "contain", flexShrink: 0 }} />
+                ) : null;
+              })()}
             </div>
 
-            {/* Bottom Row: Org Name underneath */}
-            <span style={{ 
-              marginTop: isMobile ? `${Math.max(0, 4 - shrink * 4)}px` : "4px", 
-              fontSize: isMobile ? `${Math.max(7, 9 - shrink * 2)}px` : "11px", 
-              color: "var(--primary-color)", 
-              fontWeight: "bold", 
-              textTransform: "uppercase", 
-              display: "block", 
-              lineHeight: "1.1", 
-              whiteSpace: "nowrap", 
-              overflow: "hidden", 
-              textOverflow: "ellipsis" 
+            {/* Middle: Active Template Organization Title (Desktop/Tablet only) */}
+            <div style={{ 
+              position: "absolute", 
+              left: "50%", 
+              transform: "translateX(-50%)", 
+              textAlign: "center", 
+              minWidth: 0, 
+              display: isMobile ? "none" : "block"
             }}>
-              {template.organization.name}
-            </span>
+              <span style={{ fontSize: "16px", fontWeight: "bold", color: "var(--text-main)", whiteSpace: "nowrap" }}>
+                {template.organization.name}
+              </span>
+            </div>
+
+            {/* Right Side: Exit Workspace & Theme buttons */}
+            <div style={{ 
+              display: "flex", 
+              alignItems: "center", 
+              gap: isMobile ? "6px" : "12px", 
+              marginLeft: "auto",
+              zIndex: 10,
+              transform: isMobile ? `scale(${Math.max(0.9, 1 - shrink * 0.1)})` : "none",
+              transformOrigin: isMobile ? "right center" : "initial"
+            }}>
+              {/* Theme Toggle Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  const nextTheme = theme === "dark" ? "light" : "dark";
+                  setTheme(nextTheme);
+                  document.documentElement.setAttribute("data-theme", nextTheme);
+                }}
+                className="btn btn-secondary"
+                style={{ width: "36px", height: "36px", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--border-color)", padding: 0 }}
+                title="Toggle visual theme"
+              >
+                {theme === "dark" ? (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="5" />
+                    <line x1="12" y1="1" x2="12" y2="3" />
+                    <line x1="12" y1="21" x2="12" y2="23" />
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                    <line x1="1" y1="12" x2="3" y2="12" />
+                    <line x1="21" y1="12" x2="23" y2="12" />
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                  </svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                  </svg>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleExit}
+                className="btn btn-secondary"
+                style={{ width: isMobile ? "36px" : "auto", minWidth: "36px", flexShrink: 0, height: "36px", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "13px", padding: isMobile ? "0" : "0 16px" }}
+                title="Exit signing workspace"
+              >
+                {isMobile ? "✕" : "✕ Exit"}
+              </button>
+            </div>
           </div>
 
-          {/* Right Side Actions */}
-          <div style={{ 
-            display: "flex", 
-            gap: isMobile ? "4px" : "10px", 
-            alignItems: "center", 
-            flexShrink: 0, 
-            order: 3,
-            position: isMobile ? "absolute" : "static",
-            right: isMobile ? "0px" : "auto",
-            zIndex: 10,
-            transform: isMobile ? `scale(${Math.max(0.75, 1 - shrink * 0.25)})` : "none",
-            transformOrigin: isMobile ? "right center" : "initial"
-          }}>
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="btn btn-secondary"
-              style={{ width: "36px", height: "36px", borderRadius: "4px", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, minWidth: "36px" }}
-              title="Toggle Theme"
-            >
-              {theme === "dark" ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                </svg>
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                </svg>
+          {/* Mobile-Only Document Completion Navigation Bar */}
+          {isMobile && (
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "8px 16px",
+              borderTop: "1px solid var(--border-color)",
+              background: "transparent",
+              position: "relative"
+            }}>
+              {submitError && (
+                <div style={{
+                  position: "absolute",
+                  top: "42px",
+                  left: "16px",
+                  right: "16px",
+                  color: "#ffffff",
+                  fontSize: "12px",
+                  fontWeight: "bold",
+                  background: "rgba(239, 68, 68, 0.95)",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  textAlign: "center",
+                  boxShadow: "0 4px 15px rgba(0,0,0,0.4)",
+                  zIndex: 1010
+                }}>
+                  ⚠️ {submitError}
+                </div>
               )}
-            </button>
 
+              {remainingCount > 0 ? (
+                <>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => handleNavigateChecklist("prev")}
+                    style={{ padding: "8px 12px", width: "auto", fontSize: "12px" }}
+                  >
+                    ← Prev
+                  </button>
 
-            <button
-              type="button"
-              onClick={handleExit}
-              className="btn btn-secondary"
-              style={{ width: isMobile ? "36px" : "auto", minWidth: "36px", flexShrink: 0, height: "36px", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "13px", padding: isMobile ? "0" : "0 16px" }}
-              title="Exit signing workspace"
-            >
-              {isMobile ? "✕" : "✕ Exit"}
-            </button>
-          </div>
+                  <div
+                    onClick={() => {
+                      const activeField = sortedRequiredFields[mobileActiveIdx];
+                      if (activeField) {
+                        handleChecklistItemClick(activeField.instanceId || activeField.id);
+                        if (activeField.type === "signature") {
+                          setActiveSignatureFieldId(activeField.id);
+                        }
+                      }
+                    }}
+                    style={{ textAlign: "center", flex: 1, padding: "0 8px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}
+                  >
+                    <div style={{ fontSize: "10px", textTransform: "uppercase", color: "var(--primary-color)", fontWeight: "bold" }}>
+                      Field {mobileActiveIdx + 1} of {remainingCount}
+                    </div>
+                    <div style={{ fontSize: "13px", fontWeight: "bold", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "200px", margin: "0 auto" }}>
+                      {sortedRequiredFields[mobileActiveIdx]?.label || "Tap to view"} {sortedRequiredFields[mobileActiveIdx]?.required && "*"}
+                    </div>
+                    {(() => {
+                      const activeField = sortedRequiredFields[mobileActiveIdx];
+                      const isPopup = activeField && (activeField.type === "date" || activeField.type === "dob" || activeField.type === "signature");
+                      if (!isPopup) return null;
+                      return (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (activeField.type === "signature") {
+                              setActiveSignatureFieldId(activeField.id);
+                            } else {
+                              const element = document.getElementById("field-input-box-" + (activeField.instanceId || activeField.id));
+                              if (element) element.focus();
+                            }
+                          }}
+                          style={{
+                            marginTop: "4px",
+                            padding: "3px 8px",
+                            fontSize: "11px",
+                            fontWeight: "bold",
+                            borderRadius: "4px",
+                            background: "var(--primary-color)",
+                            color: "#ffffff",
+                            border: "none",
+                            cursor: "pointer",
+                            display: "inline-block"
+                          }}
+                        >
+                          Open {activeField.type === "signature" ? "Signature Pad" : "Date Picker"}
+                        </button>
+                      );
+                    })()}
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => handleNavigateChecklist("next")}
+                    style={{ padding: "8px 12px", width: "auto", fontSize: "12px" }}
+                  >
+                    Next →
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  disabled={isSubmitting}
+                  onClick={() => handleSubmit()}
+                  tabIndex={3 + fields.length}
+                  style={{ width: "100%", padding: "12px", fontSize: "14px", fontWeight: "bold", margin: 0 }}
+                >
+                  {isSubmitting ? "Signing & Processing..." : "Sign Document"}
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Preview Mode Alert Banner */}
@@ -1016,7 +1105,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
         )}
 
         {/* Split screen signing workspace */}
-        <div style={{ display: "flex", gap: "32px", alignItems: "stretch", flexWrap: "wrap", paddingTop: isMobile ? "50px" : "0px" }}>
+        <div style={{ display: "flex", gap: "32px", alignItems: "stretch", flexWrap: "wrap" }}>
           
           {/* Left Side: PDF Document Viewer with Overlay Interactive Inputs */}
           <div ref={viewerScrollContainerRef} style={{ flex: "1.2", minWidth: "320px", display: "flex", flexDirection: "column", gap: "16px", maxHeight: isMobile ? "none" : "calc(100vh - 160px)", overflowY: isMobile ? "visible" : "auto", border: "1px solid var(--border-color)", borderRadius: "8px", padding: "16px", background: "rgba(0,0,0,0.2)" }}>
@@ -1850,134 +1939,8 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
             </div>
           </div>
         </div>
-      )}
-
-      {/* Mobile-Only Document Completion Floating Navigation Bar */}
-      {isMobile && (
-        <div style={{
-          position: "fixed",
-          top: `${Math.max(34, 48 - shrink * 14)}px`,
-          bottom: "auto",
-          left: 0,
-          right: 0,
-          background: "var(--bg-glass)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          borderBottom: "1px solid var(--border-color)",
-          padding: "8px 16px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          zIndex: 1000,
-          boxShadow: "0 4px 15px rgba(0,0,0,0.15)"
-        }}>
-          {submitError && (
-            <div style={{
-              position: "absolute",
-              top: "50px",
-              left: "16px",
-              right: "16px",
-              color: "#ffffff",
-              fontSize: "12px",
-              fontWeight: "bold",
-              background: "rgba(239, 68, 68, 0.95)",
-              padding: "10px",
-              borderRadius: "6px",
-              textAlign: "center",
-              boxShadow: "0 4px 15px rgba(0,0,0,0.4)",
-              zIndex: 1010
-            }}>
-              ⚠️ {submitError}
-            </div>
-          )}
-
-          {remainingCount > 0 ? (
-            <>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => handleNavigateChecklist("prev")}
-                style={{ padding: "8px 12px", width: "auto", fontSize: "12px" }}
-              >
-                ← Prev
-              </button>
-
-              <div
-                onClick={() => {
-                  const activeField = sortedRequiredFields[mobileActiveIdx];
-                  if (activeField) {
-                    handleChecklistItemClick(activeField.instanceId || activeField.id);
-                    if (activeField.type === "signature") {
-                      setActiveSignatureFieldId(activeField.id);
-                    }
-                  }
-                }}
-                style={{ textAlign: "center", flex: 1, padding: "0 8px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}
-              >
-                <div style={{ fontSize: "10px", textTransform: "uppercase", color: "var(--primary-color)", fontWeight: "bold" }}>
-                  Field {mobileActiveIdx + 1} of {remainingCount}
-                </div>
-                <div style={{ fontSize: "13px", fontWeight: "bold", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "200px", margin: "0 auto" }}>
-                  {sortedRequiredFields[mobileActiveIdx]?.label || "Tap to view"} {sortedRequiredFields[mobileActiveIdx]?.required && "*"}
-                </div>
-                {(() => {
-                  const activeField = sortedRequiredFields[mobileActiveIdx];
-                  const isPopup = activeField && (activeField.type === "date" || activeField.type === "dob" || activeField.type === "signature");
-                  if (!isPopup) return null;
-                  return (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (activeField.type === "signature") {
-                          setActiveSignatureFieldId(activeField.id);
-                        } else {
-                          const element = document.getElementById("field-input-box-" + (activeField.instanceId || activeField.id));
-                          if (element) element.focus();
-                        }
-                      }}
-                      style={{
-                        marginTop: "4px",
-                        padding: "3px 8px",
-                        fontSize: "11px",
-                        fontWeight: "bold",
-                        borderRadius: "4px",
-                        background: "var(--primary-color)",
-                        color: "#ffffff",
-                        border: "none",
-                        cursor: "pointer",
-                        display: "inline-block"
-                      }}
-                    >
-                      Open {activeField.type === "signature" ? "Signature Pad" : "Date Picker"}
-                    </button>
-                  );
-                })()}
-              </div>
-
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => handleNavigateChecklist("next")}
-                style={{ padding: "8px 12px", width: "auto", fontSize: "12px" }}
-              >
-                Next →
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={isSubmitting}
-              onClick={() => handleSubmit()}
-              tabIndex={3 + fields.length}
-              style={{ width: "100%", padding: "14px", fontSize: "15px", fontWeight: "bold", margin: 0 }}
-            >
-              {isSubmitting ? "Signing & Processing..." : "Sign Document"}
-            </button>
-          )}
-        </div>
-      )}
+      )
+      }
 
       {/* Custom Reset Confirmation Modal */}
       {confirmResetOpen && (
