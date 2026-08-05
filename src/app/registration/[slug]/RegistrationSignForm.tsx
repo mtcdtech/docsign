@@ -32,6 +32,8 @@ interface RegistrationSignFormProps {
   portalTitle: string;
   portalLogoLight: string;
   portalLogoDark: string;
+  masterLogoLight: string;
+  masterLogoDark: string;
   orgLogoLight: string | null;
   orgLogoDark: string | null;
   pcoAttendeeId: string | null;
@@ -48,6 +50,8 @@ export default function RegistrationSignForm({
   portalTitle,
   portalLogoLight,
   portalLogoDark,
+  masterLogoLight,
+  masterLogoDark,
   orgLogoLight,
   orgLogoDark,
   pcoAttendeeId
@@ -171,6 +175,8 @@ export default function RegistrationSignForm({
         portalTitle={portalTitle}
         portalLogoLight={portalLogoLight}
         portalLogoDark={portalLogoDark}
+        masterLogoLight={masterLogoLight}
+        masterLogoDark={masterLogoDark}
         orgLogoLight={orgLogoLight}
         orgLogoDark={orgLogoDark}
         pdfUrl={pdfUrl}

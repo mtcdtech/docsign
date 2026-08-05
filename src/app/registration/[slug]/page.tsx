@@ -73,6 +73,8 @@ export default async function RegistrationPage({ params, searchParams }: Registr
   let portalTitle = "DocSign Portal";
   let portalLogoLight = "";
   let portalLogoDark = "";
+  let masterLogoLight = "";
+  let masterLogoDark = "";
   try {
     const settings = await prisma.setting.findMany();
     const settingsMap = settings.reduce((acc, curr) => {
@@ -82,6 +84,8 @@ export default async function RegistrationPage({ params, searchParams }: Registr
     if (settingsMap["portal_title"]) portalTitle = settingsMap["portal_title"];
     if (settingsMap["portal_logo_light"]) portalLogoLight = settingsMap["portal_logo_light"];
     if (settingsMap["portal_logo_dark"]) portalLogoDark = settingsMap["portal_logo_dark"];
+    if (settingsMap["master_logo_light"]) masterLogoLight = settingsMap["master_logo_light"];
+    if (settingsMap["master_logo_dark"]) masterLogoDark = settingsMap["master_logo_dark"];
   } catch (e) {}
 
   return (
@@ -93,6 +97,8 @@ export default async function RegistrationPage({ params, searchParams }: Registr
           portalTitle={portalTitle}
           portalLogoLight={portalLogoLight}
           portalLogoDark={portalLogoDark}
+          masterLogoLight={masterLogoLight}
+          masterLogoDark={masterLogoDark}
           orgLogoLight={signingRegistration.organization.logoLight || null}
           orgLogoDark={signingRegistration.organization.logoDark || null}
           pcoAttendeeId={searchParams.pco_attendee_id || null}
