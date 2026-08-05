@@ -264,9 +264,6 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
             display: "none",
             flexDirection: "column",
             gap: "12px",
-            marginTop: "16px",
-            paddingTop: "16px",
-            borderTop: "1px solid var(--border-color)",
           }}
         >
           <Link

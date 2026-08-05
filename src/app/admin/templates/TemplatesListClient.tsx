@@ -335,7 +335,7 @@ export default function TemplatesListClient({ templates: initialTemplates, porta
                   return (
                     <React.Fragment key={tpl.id}>
                       <tr style={{ background: isExpanded ? "rgba(255, 255, 255, 0.03)" : "none" }}>
-                        <td style={{ fontWeight: 600, color: "var(--text-main)", whiteSpace: "nowrap" }}>{tpl.title}</td>
+                        <td style={{ fontWeight: 600, color: "var(--text-main)", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={tpl.title}>{tpl.title}</td>
                         <td style={{ whiteSpace: "nowrap" }}>{tpl.organization.name}</td>
                         <td style={{ whiteSpace: "nowrap" }}>
                           {tpl.isArchived ? (

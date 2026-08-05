@@ -83,7 +83,7 @@ export default function SubmissionsListClient({ signedDocs, portalTimezone = "Am
                     style={{ opacity: doc.isDraft ? 0.75 : 1, cursor: "pointer" }}
                     title="Click row to preview submission details"
                   >
-                    <td>
+                    <td style={{ whiteSpace: "nowrap" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <div style={{ fontWeight: 600, color: "var(--text-main)" }}>{displaySignerName}</div>
                         {doc.isDraft && (
@@ -94,10 +94,10 @@ export default function SubmissionsListClient({ signedDocs, portalTimezone = "Am
                       </div>
                       <div style={{ fontSize: "12px" }}>{doc.signerEmail || "(Unspecified)"}</div>
                     </td>
-                    <td>{doc.template.title}</td>
-                    <td>{doc.template.organization.name}</td>
-                    <td suppressHydrationWarning>{new Date(doc.createdAt).toLocaleString("en-US", { timeZone: portalTimezone })}</td>
-                    <td onClick={(e) => e.stopPropagation()}>
+                    <td style={{ maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={doc.template.title}>{doc.template.title}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{doc.template.organization.name}</td>
+                    <td style={{ whiteSpace: "nowrap" }} suppressHydrationWarning>{new Date(doc.createdAt).toLocaleString("en-US", { timeZone: portalTimezone })}</td>
+                    <td style={{ whiteSpace: "nowrap" }} onClick={(e) => e.stopPropagation()}>
                       {doc.isDraft ? (
                         <span style={{ fontSize: "11px", color: "var(--text-muted)", fontStyle: "italic" }}>
                           Draft – No integrations run yet
@@ -134,7 +134,7 @@ export default function SubmissionsListClient({ signedDocs, portalTimezone = "Am
                         </div>
                       )}
                     </td>
-                    <td style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+                    <td style={{ textAlign: "right", whiteSpace: "nowrap" }} onClick={(e) => e.stopPropagation()}>
                       {doc.isDraft ? (
                         <span style={{ fontSize: "12px", color: "var(--text-muted)", fontStyle: "italic", paddingRight: "12px" }}>
                           In Progress
