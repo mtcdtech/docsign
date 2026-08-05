@@ -426,20 +426,24 @@ input::-webkit-search-results-decoration {
     display: flex !important;
     position: absolute !important;
     top: 100% !important;
-    right: 24px !important;
+    right: 0 !important;
     left: auto !important;
-    width: auto !important;
-    min-width: 180px !important;
-    background: var(--bg-glass) !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: var(--radius-md) !important;
-    padding: 16px !important;
-    box-shadow: var(--shadow-main) !important;
+    width: 260px !important;
+    height: calc(100vh - 100%) !important;
+    background: var(--bg-card) !important;
+    border-left: 1px solid var(--border-color) !important;
+    padding: 24px !important;
+    box-shadow: -5px 0 25px rgba(0, 0, 0, 0.25) !important;
     z-index: 999 !important;
-    margin-top: 8px !important;
+    margin-top: 0 !important;
+    border-radius: 0 !important;
+    animation: slideDrawerIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
+}
+
+@keyframes slideDrawerIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
 }
 
 @media (min-width: 901px) {
