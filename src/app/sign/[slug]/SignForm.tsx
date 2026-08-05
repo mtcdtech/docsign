@@ -840,14 +840,34 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
       <div style={{ position: "relative", maxWidth: "1400px", margin: "0 auto", padding: "10px 0 80px" }}>
         
         {/* Compressed Header and Brand next to logo with Exit triggers */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", marginBottom: "24px", paddingBottom: "16px", borderBottom: "1px solid var(--border-color)" }}>
+        {/* Compressed Header and Brand next to logo with Exit triggers */}
+        <div style={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center", 
+          gap: "12px", 
+          marginBottom: "24px", 
+          paddingBottom: "16px", 
+          borderBottom: "1px solid var(--border-color)",
+          position: "relative",
+          minHeight: isMobile ? "50px" : "auto"
+        }}>
           {/* Left Side: App Logo + Master Org Logo */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, flexShrink: 0 }}>
+          <div style={{ 
+            display: "flex", 
+            alignItems: "center", 
+            gap: isMobile ? "6px" : "10px", 
+            minWidth: 0, 
+            flexShrink: 0,
+            position: isMobile ? "absolute" : "static",
+            left: isMobile ? "0px" : "auto",
+            zIndex: 10
+          }}>
             {/* App Logo */}
             {(() => {
               const activeAppLogo = theme === "dark" ? (portalLogoDark || portalLogoLight) : (portalLogoLight || portalLogoDark);
               return activeAppLogo ? (
-                <img src={activeAppLogo} alt="App Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "80px", objectFit: "contain", flexShrink: 0 }} />
+                <img src={activeAppLogo} alt="App Logo" style={{ maxHeight: isMobile ? "18px" : "36px", maxWidth: isMobile ? "50px" : "80px", objectFit: "contain", flexShrink: 0 }} />
               ) : null;
             })()}
 
@@ -856,7 +876,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
               const activeAppLogo = theme === "dark" ? (portalLogoDark || portalLogoLight) : (portalLogoLight || portalLogoDark);
               const activeMasterLogo = theme === "dark" ? (masterLogoDark || masterLogoLight) : (masterLogoLight || masterLogoDark);
               return (activeAppLogo && activeMasterLogo) ? (
-                <div style={{ width: "1px", height: "20px", background: "var(--border-color)" }} />
+                <div style={{ width: "1px", height: isMobile ? "12px" : "20px", background: "var(--border-color)" }} />
               ) : null;
             })()}
 
@@ -864,44 +884,42 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
             {(() => {
               const activeMasterLogo = theme === "dark" ? (masterLogoDark || masterLogoLight) : (masterLogoLight || masterLogoDark);
               return activeMasterLogo ? (
-                <img src={activeMasterLogo} alt="Master Org Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "80px", objectFit: "contain", flexShrink: 0 }} />
+                <img src={activeMasterLogo} alt="Master Org Logo" style={{ maxHeight: isMobile ? "18px" : "50px", maxWidth: isMobile ? "60px" : "90px", objectFit: "contain", flexShrink: 0 }} />
               ) : null;
             })()}
           </div>
 
-          {/* Center Block: Sub-org Logo and Title next to each other */}
+          {/* Center Block: Sub-org Logo and Title next to each other, with Org Name underneath */}
           <div 
             style={{ 
               flex: 1, 
               display: "flex", 
-              justifyContent: "center",
+              flexDirection: "column",
               alignItems: "center",
+              justifyContent: "center",
               minWidth: 0,
-              gap: "10px",
+              paddingLeft: isMobile ? "105px" : "0px",
+              paddingRight: isMobile ? "90px" : "0px",
               order: 2 
             }}
           >
-            {/* Organization Logo */}
-            {(() => {
-              const activeOrgLogo = theme === "dark" ? (orgLogoDark || orgLogoLight) : (orgLogoLight || orgLogoDark);
-              return activeOrgLogo ? (
-                <img src={activeOrgLogo} alt="Org Logo" style={{ maxHeight: isMobile ? "28px" : "40px", maxWidth: "100px", objectFit: "contain", flexShrink: 0 }} />
-              ) : null;
-            })()}
-
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left", minWidth: 0 }}>
+            {/* Top Row: Org Logo + Title */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center", minWidth: 0, width: "100%" }}>
               {(() => {
                 const activeOrgLogo = theme === "dark" ? (orgLogoDark || orgLogoLight) : (orgLogoLight || orgLogoDark);
-                return !activeOrgLogo ? (
-                  <span style={{ fontSize: isMobile ? "9px" : "11px", color: "var(--primary-color)", fontWeight: "bold", textTransform: "uppercase", display: "block", lineHeight: "1.1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {template.organization.name}
-                  </span>
+                return activeOrgLogo ? (
+                  <img src={activeOrgLogo} alt="Org Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "80px", objectFit: "contain", flexShrink: 0 }} />
                 ) : null;
               })()}
-              <h2 style={{ margin: "2px 0 0 0", fontSize: isMobile ? "13px" : "18px", lineHeight: "1.2", fontWeight: "bold", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={template.title}>
+              <h2 style={{ margin: 0, fontSize: isMobile ? "13px" : "18px", lineHeight: "1.2", fontWeight: "bold", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={template.title}>
                 {template.title}
               </h2>
             </div>
+
+            {/* Bottom Row: Org Name underneath */}
+            <span style={{ marginTop: "4px", fontSize: isMobile ? "9px" : "11px", color: "var(--primary-color)", fontWeight: "bold", textTransform: "uppercase", display: "block", lineHeight: "1.1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {template.organization.name}
+            </span>
           </div>
 
           {/* Right Side Actions */}
