@@ -60,6 +60,7 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
           maxWidth: "1200px",
           width: "100%",
           margin: "0 auto",
+          position: "relative",
         }}
       >
         {/* Branding & Links (Left) */}
@@ -209,10 +210,6 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
             color: "var(--text-main)",
             cursor: "pointer",
             padding: "8px",
-            position: "absolute",
-            right: "0px",
-            top: "50%",
-            transform: "translateY(-50%)",
             zIndex: 10
           }}
         >

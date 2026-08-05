@@ -418,10 +418,8 @@ input::-webkit-search-results-decoration {
   }
   .nav-hamburger-mobile {
     display: block !important;
-    position: absolute !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    right: 24px !important;
+    position: static !important;
+    transform: none !important;
   }
   .nav-dropdown-mobile {
     display: flex !important;
