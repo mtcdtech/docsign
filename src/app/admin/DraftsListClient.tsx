@@ -272,14 +272,21 @@ export default function DraftsListClient({ draftDocs: initialDraftDocs, portalTi
       {/* Form Preview Modal for Drafts */}
       {previewDraft && (
         <FormPreviewModal
-          doc={{
+          submission={{
             id: previewDraft.id,
             signerName: previewDraft.signerName,
             signerEmail: previewDraft.signerEmail,
             formDataJson: previewDraft.formDataJson,
+            signedPdfPath: null,
             createdAt: previewDraft.createdAt,
+            sharepointUrl: null,
+            emailedUser: false,
+            emailedLeader: false,
+            emailedParent: false,
+            isDraft: true,
             template: previewDraft.template
           }}
+          template={previewDraft.template}
           onClose={() => setPreviewDraft(null)}
         />
       )}

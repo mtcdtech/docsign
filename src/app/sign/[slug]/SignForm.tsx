@@ -139,6 +139,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
   
   // Signer draft states
   const [draftId, setDraftId] = useState<string | null>(null);
+  const [hasUserEdited, setHasUserEdited] = useState(false);
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
   // Dynamic keyboard height offset for mobile viewport fixed elements
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -372,23 +373,34 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
 
   // Database draft auto-save sync loop (debounced)
   useEffect(() => {
+    // Only save draft if user has actually interacted/edited OR if draftId already exists
+    if (!hasUserEdited && !draftId) return;
     if (!signerName && !signerEmail && Object.keys(formData).length === 0) return;
 
     const saveDraftDebounced = setTimeout(async () => {
       try {
+        // Resolve pending signer name to display in draft listing
+        let resolvedSignerName = signerName;
+        if (!resolvedSignerName || resolvedSignerName === "Anonymous Draft") {
+          const nameField = fields.find((f) => f.type === "signer_name" || f.type === "parent_name");
+          if (nameField && formData[nameField.id]) {
+            resolvedSignerName = formData[nameField.id];
+          }
+        }
+
         if (draftId) {
           // Update existing draft
           await fetch(`/api/sign/${template.id}/draft`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ draftId, signerName, signerEmail, formData })
+            body: JSON.stringify({ draftId, signerName: resolvedSignerName, signerEmail, formData })
           });
         } else {
           // Create new draft
           const res = await fetch(`/api/sign/${template.id}/draft`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ signerName, signerEmail, formData })
+            body: JSON.stringify({ signerName: resolvedSignerName, signerEmail, formData })
           });
           const data = await res.json();
           if (res.ok && data.draftId) {
@@ -402,7 +414,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
     }, 3000); // 3 seconds of typing/interaction inactivity triggers draft save
 
     return () => clearTimeout(saveDraftDebounced);
-  }, [signerName, signerEmail, formData, draftId, template.id]);
+  }, [signerName, signerEmail, formData, draftId, template.id, hasUserEdited]);
 
   // Detect mobile view size
   useEffect(() => {
@@ -518,7 +530,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
     };
 
     renderPDF();
-  }, [pdfjsLoaded, pdfUrl]);
+  }, [pdfjsLoaded, pdfUrl, isMobile]);
 
   const toggleTheme = () => {
     const nextTheme = theme === "dark" ? "light" : "dark";
@@ -671,6 +683,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
   const remainingCount = sortedRequiredFields.length;
 
   const handleInputChange = (fieldId: string, value: any) => {
+    setHasUserEdited(true);
     setFormData((prev) => {
       const next = { ...prev, [fieldId]: value };
       return next;
@@ -895,6 +908,19 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
         onLoad={() => setPdfjsLoaded(true)}
       />
 
+      <style>{`
+        @media (max-width: 1150px) {
+          .header-master-logo {
+            display: none !important;
+          }
+        }
+        @media (max-width: 920px) {
+          .header-suborg-logo {
+            display: none !important;
+          }
+        }
+      `}</style>
+
       <div style={{ 
         position: "relative", 
         width: "100%",
@@ -957,10 +983,10 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
               {!isMobile && (() => {
                 const activeMasterLogo = theme === "dark" ? (masterLogoDark || masterLogoLight) : (masterLogoLight || masterLogoDark);
                 return activeMasterLogo ? (
-                  <>
+                  <div className="header-master-logo" style={{ display: "flex", alignItems: "center" }}>
                     <div style={{ width: "1px", height: "28px", background: "var(--border-color)", margin: "0 8px" }} />
                     <img src={activeMasterLogo} alt="Master Org Logo" style={{ maxHeight: "54px", maxWidth: "150px", objectFit: "contain", flexShrink: 0 }} />
-                  </>
+                  </div>
                 ) : null;
               })()}
             </div>
@@ -982,6 +1008,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                 <img 
                   src={activeOrgLogo} 
                   alt="Sub-Org Logo" 
+                  className="header-suborg-logo"
                   style={{ 
                     maxHeight: "56px", 
                     maxWidth: "160px", 
