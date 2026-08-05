@@ -204,15 +204,6 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
           type="button"
           className="nav-hamburger-mobile"
           onClick={() => setIsOpen(!isOpen)}
-          style={{
-            display: "none",
-            background: "transparent",
-            border: "none",
-            color: "var(--text-main)",
-            cursor: "pointer",
-            padding: "8px",
-            marginLeft: "auto"
-          }}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             {isOpen ? (
@@ -339,31 +330,7 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
         </div>
       )}
 
-      {/* CSS Styles for responsive rules */}
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-            @media (max-width: 900px) {
-              .nav-links-desktop {
-                display: none !important;
-              }
-              .nav-profile-desktop {
-                display: none !important;
-              }
-              .nav-hamburger-mobile {
-                display: block !important;
-                position: absolute !important;
-                top: 50% !important;
-                transform: translateY(-50%) !important;
-                right: 0px !important;
-              }
-              .nav-dropdown-mobile {
-                display: flex !important;
-              }
-            }
-          `,
-        }}
-      />
+
     </nav>
   );
 }
