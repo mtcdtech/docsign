@@ -846,13 +846,13 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
           <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, flexShrink: 0 }}>
             {/* App Logo */}
             <div className="logo-light-mode">
-              {portalLogoLight ? (
-                <img src={portalLogoLight} alt="App Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "80px", objectFit: "contain", flexShrink: 0 }} />
+              {portalLogoLight || portalLogoDark ? (
+                <img src={portalLogoLight || portalLogoDark} alt="App Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "80px", objectFit: "contain", flexShrink: 0 }} />
               ) : null}
             </div>
             <div className="logo-dark-mode">
-              {portalLogoDark ? (
-                <img src={portalLogoDark} alt="App Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "80px", objectFit: "contain", flexShrink: 0 }} />
+              {portalLogoDark || portalLogoLight ? (
+                <img src={portalLogoDark || portalLogoLight} alt="App Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "80px", objectFit: "contain", flexShrink: 0 }} />
               ) : null}
             </div>
 
@@ -863,13 +863,13 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
 
             {/* Master Organization Logo */}
             <div className="logo-light-mode">
-              {masterLogoLight ? (
-                <img src={masterLogoLight} alt="Master Org Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "80px", objectFit: "contain", flexShrink: 0 }} />
+              {masterLogoLight || masterLogoDark ? (
+                <img src={masterLogoLight || masterLogoDark} alt="Master Org Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "80px", objectFit: "contain", flexShrink: 0 }} />
               ) : null}
             </div>
             <div className="logo-dark-mode">
-              {masterLogoDark ? (
-                <img src={masterLogoDark} alt="Master Org Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "80px", objectFit: "contain", flexShrink: 0 }} />
+              {masterLogoDark || masterLogoLight ? (
+                <img src={masterLogoDark || masterLogoLight} alt="Master Org Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "80px", objectFit: "contain", flexShrink: 0 }} />
               ) : null}
             </div>
 
@@ -899,21 +899,23 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
           >
             {/* Light Mode Org Logo next to title */}
             <div className="logo-light-mode" style={{ flexShrink: 0 }}>
-              {orgLogoLight ? (
-                <img src={orgLogoLight} alt="Org Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "90px", objectFit: "contain" }} />
+              {orgLogoLight || orgLogoDark ? (
+                <img src={orgLogoLight || orgLogoDark} alt="Org Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "90px", objectFit: "contain" }} />
               ) : null}
             </div>
             {/* Dark Mode Org Logo next to title */}
             <div className="logo-dark-mode" style={{ flexShrink: 0 }}>
-              {orgLogoDark ? (
-                <img src={orgLogoDark} alt="Org Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "90px", objectFit: "contain" }} />
+              {orgLogoDark || orgLogoLight ? (
+                <img src={orgLogoDark || orgLogoLight} alt="Org Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "90px", objectFit: "contain" }} />
               ) : null}
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left", minWidth: 0 }}>
-              <span style={{ fontSize: isMobile ? "9px" : "11px", color: "var(--primary-color)", fontWeight: "bold", textTransform: "uppercase", display: "block", lineHeight: "1.1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {template.organization.name}
-              </span>
+              {!(orgLogoLight || orgLogoDark) && (
+                <span style={{ fontSize: isMobile ? "9px" : "11px", color: "var(--primary-color)", fontWeight: "bold", textTransform: "uppercase", display: "block", lineHeight: "1.1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {template.organization.name}
+                </span>
+              )}
               <h2 style={{ margin: "2px 0 0 0", fontSize: isMobile ? "13px" : "18px", lineHeight: "1.2", fontWeight: "bold", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={template.title}>
                 {template.title}
               </h2>
