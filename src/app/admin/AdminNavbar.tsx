@@ -58,6 +58,7 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
           alignItems: "center",
           justifyContent: "space-between",
           maxWidth: "1200px",
+          width: "100%",
           margin: "0 auto",
         }}
       >
@@ -209,6 +210,7 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
             color: "var(--text-main)",
             cursor: "pointer",
             padding: "8px",
+            marginLeft: "auto"
           }}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

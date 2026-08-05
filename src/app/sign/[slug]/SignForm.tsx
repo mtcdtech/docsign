@@ -92,6 +92,54 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
   // Dynamic keyboard height offset for mobile viewport fixed elements
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
+  // PDF local zoom states
+  const [zoomMultiplier, setZoomMultiplier] = useState(1.0);
+  const pdfContainerRef = useRef<HTMLDivElement>(null);
+  const initialPinchDistRef = useRef<number | null>(null);
+  const initialZoomRef = useRef<number>(1.0);
+
+  useEffect(() => {
+    const el = pdfContainerRef.current;
+    if (!el) return;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        initialPinchDistRef.current = dist;
+        initialZoomRef.current = zoomMultiplier;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && initialPinchDistRef.current !== null) {
+        e.preventDefault(); // Prevent standard browser zoom
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        const factor = dist / initialPinchDistRef.current;
+        setZoomMultiplier(Math.max(0.6, Math.min(3.0, initialZoomRef.current * factor)));
+      }
+    };
+
+    const handleTouchEnd = () => {
+      initialPinchDistRef.current = null;
+    };
+
+    el.addEventListener("touchstart", handleTouchStart, { passive: true });
+    el.addEventListener("touchmove", handleTouchMove, { passive: false });
+    el.addEventListener("touchend", handleTouchEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener("touchstart", handleTouchStart);
+      el.removeEventListener("touchmove", handleTouchMove);
+      el.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [zoomMultiplier]);
+
   useEffect(() => {
     if (typeof window === "undefined" || !window.visualViewport) return;
 
@@ -855,11 +903,47 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
           
           {/* Left Side: PDF Document Viewer with Overlay Interactive Inputs */}
           <div ref={viewerScrollContainerRef} style={{ flex: "1.2", minWidth: "320px", display: "flex", flexDirection: "column", gap: "16px", maxHeight: "calc(100vh - 160px)", overflowY: "auto", border: "1px solid var(--border-color)", borderRadius: "8px", padding: "16px", background: "rgba(0,0,0,0.2)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-color)", paddingBottom: "10px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-color)", paddingBottom: "10px", flexWrap: "wrap", gap: "10px" }}>
               <h3 style={{ margin: 0, fontSize: "15px" }}>Document Preview</h3>
-              <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-                Click directly on the fields overlaying the document to fill them in.
-              </span>
+              
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                {/* Zoom UI controls */}
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.04)", padding: "2px 8px", borderRadius: "16px", border: "1px solid var(--border-color)" }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setZoomMultiplier(prev => Math.max(0.5, prev - 0.15))}
+                    style={{ padding: "2px 6px", fontSize: "11px", width: "auto", border: "none", background: "transparent" }}
+                    title="Zoom Out"
+                  >
+                    ➖
+                  </button>
+                  <span style={{ fontSize: "11px", fontWeight: 600, minWidth: "36px", textAlign: "center" }}>
+                    {Math.round(zoomMultiplier * 100)}%
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setZoomMultiplier(prev => Math.min(3.0, prev + 0.15))}
+                    style={{ padding: "2px 6px", fontSize: "11px", width: "auto", border: "none", background: "transparent" }}
+                    title="Zoom In"
+                  >
+                    ➕
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setZoomMultiplier(1.0)}
+                    style={{ padding: "2px 6px", fontSize: "9px", width: "auto", marginLeft: "4px", border: "none", background: "transparent", borderLeft: "1px solid var(--border-color)", borderRadius: 0 }}
+                  >
+                    Reset
+                  </button>
+                </div>
+                
+                <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                  Click directly on the fields to fill them in.
+                </span>
+              </div>
             </div>
 
             {loadingPdf ? (
@@ -867,35 +951,34 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                 Rendering document pages...
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", alignItems: "stretch" }}>
+              <div ref={pdfContainerRef} style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", alignItems: "stretch" }}>
                 {Array.from({ length: numPages }).map((_, pageIdx) => {
                   const dims = pageDimensions[pageIdx];
                   const originalWidth = dims?.width || 800;
                   const originalHeight = dims?.height || 1100;
                   const paddingAdjustment = 34; // scrollbar and card padding
-                  const availableWidth = containerWidth - paddingAdjustment;
-                  let scale = (availableWidth > 0 && availableWidth < originalWidth)
+                  let scale = ((availableWidth > 0 && availableWidth < originalWidth)
                     ? (availableWidth / originalWidth)
-                    : 1;
+                    : 1) * zoomMultiplier;
 
                   // Check if there is an active focused field on this page
                   const focusedField = fields.find((f) => (f.instanceId || f.id) === selectedFieldId);
                   const isFocusedPage = focusedField && focusedField.pdfMapping.page === pageIdx;
 
-                  let leftStyle = "50%";
-                  let transformStyle = `translate(-50%, 0) scale(${scale})`;
-                  let transformOriginStyle = "top center";
+                  let leftStyle = "0px";
+                  let transformStyle = `scale(${scale})`;
+                  let transformOriginStyle = "top left";
 
                   if (isMobile && isFocusedPage && focusedField) {
                     const fieldWidth = focusedField.pdfMapping.width || 120;
                     // Zoom so the field fits the viewport with 24px space on either side (48px total padding)
-                    const targetZoomScale = availableWidth / (fieldWidth + 48);
+                    const targetZoomScale = (availableWidth / (fieldWidth + 48)) * zoomMultiplier;
                     if (targetZoomScale > scale) {
                       scale = targetZoomScale;
                       // Center the field horizontally in the available width
                       const fieldCenterX = originalWidth * (focusedField.pdfMapping.x / 100) + (fieldWidth / 2);
                       const translateX = (availableWidth / 2) - (fieldCenterX * scale);
-                      leftStyle = "0";
+                      leftStyle = `${translateX}px`;
                       transformStyle = `translate(${translateX}px, 0) scale(${scale})`;
                       transformOriginStyle = "top left";
                     }
@@ -907,31 +990,37 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                       style={{
                         width: "100%",
                         height: `${originalHeight * scale}px`,
-                        overflow: "hidden",
+                        overflowX: "auto",
                         position: "relative",
-                        display: "flex",
-                        justifyContent: "center",
                         background: "rgba(0,0,0,0.05)",
                         paddingBottom: "8px"
                       }}
                     >
                       <div
-                        id={`pdf-preview-overlay-${pageIdx}`}
                         style={{
-                          position: "absolute",
-                          top: 0,
-                          left: leftStyle,
-                          width: `${originalWidth}px`,
-                          height: `${originalHeight}px`,
-                          transform: transformStyle,
-                          transformOrigin: transformOriginStyle,
-                          border: "1px solid var(--border-color)",
-                          borderRadius: "4px",
-                          background: "#000",
-                          flexShrink: 0,
-                          transition: "all 0.3s ease-out"
+                          width: `${originalWidth * scale}px`,
+                          height: "100%",
+                          margin: "0 auto",
+                          position: "relative"
                         }}
                       >
+                        <div
+                          id={`pdf-preview-overlay-${pageIdx}`}
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: leftStyle === "0px" ? "0" : leftStyle,
+                            width: `${originalWidth}px`,
+                            height: `${originalHeight}px`,
+                            transform: transformStyle,
+                            transformOrigin: transformOriginStyle,
+                            border: "1px solid var(--border-color)",
+                            borderRadius: "4px",
+                            background: "#000",
+                            flexShrink: 0,
+                            transition: "all 0.3s ease-out"
+                          }}
+                        >
                         <canvas
                           id={`pdf-preview-canvas-${pageIdx}`}
                           style={{ display: "block" }}
@@ -1401,6 +1490,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                             />
                           );
                         })}
+                      </div>
                     </div>
                   </div>
                 </div>
