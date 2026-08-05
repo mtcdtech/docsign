@@ -835,7 +835,16 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
         onLoad={() => setPdfjsLoaded(true)}
       />
 
-      <div style={{ position: "relative", maxWidth: "1400px", margin: "0 auto", padding: "10px 0 80px" }}>
+      <div style={{ 
+        position: "relative", 
+        maxWidth: "1400px", 
+        margin: "0 auto", 
+        padding: isMobile ? "0px" : "10px 0 80px",
+        height: isMobile ? "100%" : "auto",
+        display: isMobile ? "flex" : "block",
+        flexDirection: "column",
+        overflow: isMobile ? "hidden" : "visible"
+      }}>
         
         {/* Sticky Parent Wrapper on Mobile */}
         <div style={{
@@ -1105,10 +1114,10 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
         )}
 
         {/* Split screen signing workspace */}
-        <div style={{ display: "flex", gap: "32px", alignItems: "stretch", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: isMobile ? "16px" : "32px", alignItems: "stretch", flexWrap: "wrap", flex: isMobile ? 1 : "none", overflow: isMobile ? "hidden" : "visible" }}>
           
           {/* Left Side: PDF Document Viewer with Overlay Interactive Inputs */}
-          <div ref={viewerScrollContainerRef} style={{ flex: "1.2", minWidth: "320px", display: "flex", flexDirection: "column", gap: "16px", maxHeight: isMobile ? "none" : "calc(100vh - 160px)", overflowY: isMobile ? "visible" : "auto", border: "1px solid var(--border-color)", borderRadius: "8px", padding: "16px", background: "rgba(0,0,0,0.2)" }}>
+          <div ref={viewerScrollContainerRef} style={{ flex: "1.2", minWidth: "320px", display: "flex", flexDirection: "column", gap: "16px", height: isMobile ? "100%" : "auto", maxHeight: isMobile ? "calc(100vh - 100px)" : "calc(100vh - 160px)", overflowY: "auto", border: "1px solid var(--border-color)", borderRadius: "8px", padding: "16px", background: "rgba(0,0,0,0.2)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-color)", paddingBottom: "10px" }}>
               <h3 style={{ margin: 0, fontSize: "15px" }}>Document Preview</h3>
               <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>

@@ -562,4 +562,17 @@ input::-webkit-search-results-decoration {
   .progress-step-pill {
     padding: 2px 8px !important;
   }
+  .public-sign-container {
+    padding: 0 !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  .public-sign-inner {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
 }

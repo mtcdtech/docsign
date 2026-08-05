@@ -65,8 +65,8 @@ export default async function SignPage({ params, searchParams }: SignPageProps) 
   const pdfUrl = `/api/download/templates/${template.pdfPath.split("/").pop()}`;
 
   return (
-    <main style={{ padding: "20px", display: "flex", flexDirection: "column", width: "100%" }}>
-      <div style={{ flex: 1 }}>
+    <main className="public-sign-container" style={{ padding: "20px", display: "flex", flexDirection: "column", width: "100%" }}>
+      <div className="public-sign-inner" style={{ flex: 1 }}>
         <SignForm 
           template={template} 
           portalTitle={portalTitle} 

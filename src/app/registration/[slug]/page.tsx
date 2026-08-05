@@ -85,8 +85,8 @@ export default async function RegistrationPage({ params, searchParams }: Registr
   } catch (e) {}
 
   return (
-    <main style={{ padding: "20px", display: "flex", flexDirection: "column", width: "100%" }}>
-      <div style={{ flex: 1 }}>
+    <main className="public-sign-container" style={{ padding: "20px", display: "flex", flexDirection: "column", width: "100%" }}>
+      <div className="public-sign-inner" style={{ flex: 1 }}>
         <RegistrationSignForm
           registration={signingRegistration}
           templates={sortedTemplates}
