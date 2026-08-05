@@ -36,7 +36,7 @@ export default async function AdminLayout({
   } catch (e) {}
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+    <div style={{ display: "flex", flexDirection: "column", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
       <AdminNavbar user={user} isGlobalAdmin={isGlobalAdmin} portalTitle={portalTitle} portalLogoLight={portalLogoLight} portalLogoDark={portalLogoDark} />
       <div style={{ flex: 1, padding: "40px 20px", maxWidth: "1200px", width: "100%", margin: "0 auto" }}>
         {children}
