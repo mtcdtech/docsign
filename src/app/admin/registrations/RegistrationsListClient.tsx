@@ -145,6 +145,22 @@ function RegistrationCard({
               {isExpanded ? "🔽 Hide PCO Table" : "🔌 Show PCO Table"}
             </button>
           )}
+          <a
+            href={`/registration/${reg.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-secondary"
+            style={{
+              padding: "6px 12px",
+              fontSize: "12.5px",
+              width: "auto",
+              textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center"
+            }}
+          >
+            🔗 Open Link
+          </a>
           <button
             type="button"
             onClick={() => handleCopyLink(reg.slug, reg.id)}
@@ -318,10 +334,35 @@ export default function RegistrationsListClient({ initialRegistrations, portalTi
   const handleCopyLink = (slug: string, id: string) => {
     if (typeof window !== "undefined") {
       const shareUrl = `${window.location.origin}/registration/${slug}`;
-      navigator.clipboard.writeText(shareUrl);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl)
+          .then(() => {
+            setCopiedId(id);
+            setTimeout(() => setCopiedId(null), 2000);
+          })
+          .catch(() => fallbackCopy(shareUrl, id));
+      } else {
+        fallbackCopy(shareUrl, id);
+      }
+    }
+  };
+
+  const fallbackCopy = (text: string, id: string) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.opacity = "0";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand("copy");
       setCopiedId(id);
       setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error("Fallback copy failed", err);
     }
+    document.body.removeChild(textArea);
   };
 
   // Toggle Archive Status

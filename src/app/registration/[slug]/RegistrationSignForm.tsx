@@ -56,6 +56,17 @@ export default function RegistrationSignForm({
   const [completedDocs, setCompletedDocs] = useState<CompletedDocument[]>([]);
   const [savedName, setSavedName] = useState("");
   const [savedEmail, setSavedEmail] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const activeTemplate = templates[currentIndex];
   const isFinished = currentIndex >= templates.length;
@@ -152,55 +163,71 @@ export default function RegistrationSignForm({
   const pdfUrl = `/api/download/templates/${pdfFilename}`;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: "1200px", margin: "0 auto", width: "100%" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? "6px" : "20px", maxWidth: "1200px", margin: "0 auto", width: "100%" }}>
       
       {/* Logos Switcher (Light / Dark mode, Org priority, Portal fallback) */}
-      <div className="logo-header-container" style={{ display: "flex", justifyContent: "center", marginBottom: "4px" }}>
-        {/* Light Mode Logos */}
-        <div className="logo-light-mode">
-          {orgLogoLight ? (
-            <img src={orgLogoLight} alt={registration.organizationName || "Logo"} style={{ maxHeight: "60px", maxWidth: "240px", objectFit: "contain" }} />
-          ) : portalLogoLight ? (
-            <img src={portalLogoLight} alt={portalTitle} style={{ maxHeight: "60px", maxWidth: "240px", objectFit: "contain" }} />
-          ) : (
-            <div style={{ fontSize: "20px", fontWeight: "bold", color: "#18181b" }}>✍️ {portalTitle}</div>
-          )}
-        </div>
+      {!isMobile && (
+        <div className="logo-header-container" style={{ display: "flex", justifyContent: "center", marginBottom: "4px" }}>
+          {/* Light Mode Logos */}
+          <div className="logo-light-mode">
+            {orgLogoLight ? (
+              <img src={orgLogoLight} alt={registration.organizationName || "Logo"} style={{ maxHeight: "60px", maxWidth: "240px", objectFit: "contain" }} />
+            ) : portalLogoLight ? (
+              <img src={portalLogoLight} alt={portalTitle} style={{ maxHeight: "60px", maxWidth: "240px", objectFit: "contain" }} />
+            ) : (
+              <div style={{ fontSize: "20px", fontWeight: "bold", color: "#18181b" }}>✍️ {portalTitle}</div>
+            )}
+          </div>
 
-        {/* Dark Mode Logos */}
-        <div className="logo-dark-mode">
-          {orgLogoDark ? (
-            <img src={orgLogoDark} alt={registration.organizationName || "Logo"} style={{ maxHeight: "60px", maxWidth: "240px", objectFit: "contain" }} />
-          ) : portalLogoDark ? (
-            <img src={portalLogoDark} alt={portalTitle} style={{ maxHeight: "60px", maxWidth: "240px", objectFit: "contain" }} />
-          ) : (
-            <div style={{ fontSize: "20px", fontWeight: "bold", color: "#ffffff" }}>✍️ {portalTitle}</div>
-          )}
+          {/* Dark Mode Logos */}
+          <div className="logo-dark-mode">
+            {orgLogoDark ? (
+              <img src={orgLogoDark} alt={registration.organizationName || "Logo"} style={{ maxHeight: "60px", maxWidth: "240px", objectFit: "contain" }} />
+            ) : portalLogoDark ? (
+              <img src={portalLogoDark} alt={portalTitle} style={{ maxHeight: "60px", maxWidth: "240px", objectFit: "contain" }} />
+            ) : (
+              <div style={{ fontSize: "20px", fontWeight: "bold", color: "#ffffff" }}>✍️ {portalTitle}</div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Registration Title Header */}
-      <div className="registration-title-header" style={{ textAlign: "center", marginBottom: "10px" }}>
-        <h1 style={{ fontSize: "24px", margin: "0 0 6px 0", fontWeight: "800" }}>{registration.title}</h1>
-        <p style={{ margin: 0, fontSize: "13px", color: "var(--text-muted)" }}>
-          Step {currentIndex + 1} of {templates.length} — Completing: <strong>{activeTemplate.title}</strong>
-        </p>
-      </div>
+      {!isMobile && (
+        <div className="registration-title-header" style={{ textAlign: "center", marginBottom: "10px" }}>
+          <h1 style={{ fontSize: "24px", margin: "0 0 6px 0", fontWeight: "800" }}>{registration.title}</h1>
+          <p style={{ margin: 0, fontSize: "13px", color: "var(--text-muted)" }}>
+            Step {currentIndex + 1} of {templates.length} — Completing: <strong>{activeTemplate.title}</strong>
+          </p>
+        </div>
+      )}
 
       {/* Progress Wizard Breadcrumb Steps */}
-      <div className="progress-wizard-container" style={{ display: "flex", flexWrap: "wrap", gap: "8px", justifyContent: "center", alignItems: "center", marginBottom: "10px" }}>
+      <div className="progress-wizard-container" style={{ 
+        display: "flex", 
+        gap: "6px", 
+        justifyContent: "center", 
+        alignItems: "center", 
+        marginBottom: isMobile ? "4px" : "10px",
+        marginTop: isMobile ? "4px" : "0px"
+      }}>
+        {isMobile && (
+          <span style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: "bold", marginRight: "4px" }}>
+            Packet:
+          </span>
+        )}
         {templates.map((tpl, index) => {
           const isActive = index === currentIndex;
           const isCompleted = index < currentIndex;
           return (
-            <div key={tpl.id} style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+            <div key={tpl.id} style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
               <div style={{
-                fontSize: "12px",
-                padding: "6px 14px",
+                fontSize: "11px",
+                padding: isMobile ? "2px 8px" : "6px 14px",
                 borderRadius: "20px",
                 background: isActive ? "var(--primary-color)" : isCompleted ? "rgba(16, 185, 129, 0.15)" : "rgba(255, 255, 255, 0.03)",
                 color: isActive ? "#ffffff" : isCompleted ? "#34d399" : "var(--text-muted)",
-                fontWeight: isActive || isCompleted ? "bold" : "normal",
+                fontWeight: "bold",
                 border: "1px solid " + (isActive ? "var(--primary-color)" : isCompleted ? "#10b981" : "var(--border-color)"),
                 transition: "all var(--transition-fast)",
                 display: "flex",
@@ -209,9 +236,9 @@ export default function RegistrationSignForm({
                 whiteSpace: "nowrap"
               }}>
                 {isCompleted && <span>✓</span>}
-                <span>{index + 1}. {tpl.title}</span>
+                <span>{index + 1}{!isMobile && `. ${tpl.title}`}</span>
               </div>
-              {index < templates.length - 1 && <span style={{ color: "var(--text-muted)", opacity: 0.3, flexShrink: 0 }}>➔</span>}
+              {index < templates.length - 1 && <span style={{ color: "var(--text-muted)", opacity: 0.3, flexShrink: 0, fontSize: "11px" }}>➔</span>}
             </div>
           );
         })}
