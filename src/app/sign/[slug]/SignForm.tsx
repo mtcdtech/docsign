@@ -903,47 +903,11 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
           
           {/* Left Side: PDF Document Viewer with Overlay Interactive Inputs */}
           <div ref={viewerScrollContainerRef} style={{ flex: "1.2", minWidth: "320px", display: "flex", flexDirection: "column", gap: "16px", maxHeight: "calc(100vh - 160px)", overflowY: "auto", border: "1px solid var(--border-color)", borderRadius: "8px", padding: "16px", background: "rgba(0,0,0,0.2)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-color)", paddingBottom: "10px", flexWrap: "wrap", gap: "10px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-color)", paddingBottom: "10px" }}>
               <h3 style={{ margin: 0, fontSize: "15px" }}>Document Preview</h3>
-              
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-                {/* Zoom UI controls */}
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.04)", padding: "2px 8px", borderRadius: "16px", border: "1px solid var(--border-color)" }}>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => setZoomMultiplier(prev => Math.max(0.5, prev - 0.15))}
-                    style={{ padding: "2px 6px", fontSize: "11px", width: "auto", border: "none", background: "transparent" }}
-                    title="Zoom Out"
-                  >
-                    ➖
-                  </button>
-                  <span style={{ fontSize: "11px", fontWeight: 600, minWidth: "36px", textAlign: "center" }}>
-                    {Math.round(zoomMultiplier * 100)}%
-                  </span>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => setZoomMultiplier(prev => Math.min(3.0, prev + 0.15))}
-                    style={{ padding: "2px 6px", fontSize: "11px", width: "auto", border: "none", background: "transparent" }}
-                    title="Zoom In"
-                  >
-                    ➕
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => setZoomMultiplier(1.0)}
-                    style={{ padding: "2px 6px", fontSize: "9px", width: "auto", marginLeft: "4px", border: "none", background: "transparent", borderLeft: "1px solid var(--border-color)", borderRadius: 0 }}
-                  >
-                    Reset
-                  </button>
-                </div>
-                
-                <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-                  Click directly on the fields to fill them in.
-                </span>
-              </div>
+              <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                Click directly on the fields overlaying the document to fill them in.
+              </span>
             </div>
 
             {loadingPdf ? (
