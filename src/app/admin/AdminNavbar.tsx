@@ -204,6 +204,18 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
           type="button"
           className="nav-hamburger-mobile"
           onClick={() => setIsOpen(!isOpen)}
+          style={{
+            background: "transparent",
+            border: "none",
+            color: "var(--text-main)",
+            cursor: "pointer",
+            padding: "8px",
+            position: "absolute",
+            right: "0px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            zIndex: 10
+          }}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             {isOpen ? (

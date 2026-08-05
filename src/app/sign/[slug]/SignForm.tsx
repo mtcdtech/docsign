@@ -840,7 +840,6 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
       <div style={{ position: "relative", maxWidth: "1400px", margin: "0 auto", padding: "10px 0 80px" }}>
         
         {/* Compressed Header and Brand next to logo with Exit triggers */}
-        {/* Compressed Header and Brand next to logo with Exit triggers */}
         <div style={{ 
           display: "flex", 
           justifyContent: "space-between", 
@@ -884,7 +883,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
             {(() => {
               const activeMasterLogo = theme === "dark" ? (masterLogoDark || masterLogoLight) : (masterLogoLight || masterLogoDark);
               return activeMasterLogo ? (
-                <img src={activeMasterLogo} alt="Master Org Logo" style={{ maxHeight: isMobile ? "18px" : "50px", maxWidth: isMobile ? "60px" : "90px", objectFit: "contain", flexShrink: 0 }} />
+                <img src={activeMasterLogo} alt="Master Org Logo" style={{ maxHeight: isMobile ? "18px" : "72px", maxWidth: isMobile ? "60px" : "120px", objectFit: "contain", flexShrink: 0 }} />
               ) : null;
             })()}
           </div>
@@ -898,9 +897,14 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
               alignItems: "center",
               justifyContent: "center",
               minWidth: 0,
-              paddingLeft: isMobile ? "105px" : "0px",
-              paddingRight: isMobile ? "90px" : "0px",
-              order: 2 
+              order: 2,
+              ...(isMobile ? {
+                position: "absolute",
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: "48%",
+                textAlign: "center"
+              } : {})
             }}
           >
             {/* Top Row: Org Logo + Title */}
@@ -908,10 +912,22 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
               {(() => {
                 const activeOrgLogo = theme === "dark" ? (orgLogoDark || orgLogoLight) : (orgLogoLight || orgLogoDark);
                 return activeOrgLogo ? (
-                  <img src={activeOrgLogo} alt="Org Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "80px", objectFit: "contain", flexShrink: 0 }} />
+                  <img src={activeOrgLogo} alt="Org Logo" style={{ maxHeight: isMobile ? "24px" : "56px", maxWidth: "100px", objectFit: "contain", flexShrink: 0 }} />
                 ) : null;
               })()}
-              <h2 style={{ margin: 0, fontSize: isMobile ? "13px" : "18px", lineHeight: "1.2", fontWeight: "bold", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={template.title}>
+              <h2 style={{ 
+                margin: 0, 
+                fontSize: isMobile ? "12px" : "18px", 
+                lineHeight: "1.2", 
+                fontWeight: "bold", 
+                textAlign: "center",
+                whiteSpace: "normal",
+                wordBreak: "break-word",
+                display: "-webkit-box",
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden"
+              }} title={template.title}>
                 {template.title}
               </h2>
             </div>
@@ -923,7 +939,16 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
           </div>
 
           {/* Right Side Actions */}
-          <div style={{ display: "flex", gap: "10px", alignItems: "center", flexShrink: 0, order: 3 }}>
+          <div style={{ 
+            display: "flex", 
+            gap: "10px", 
+            alignItems: "center", 
+            flexShrink: 0, 
+            order: 3,
+            position: isMobile ? "absolute" : "static",
+            right: isMobile ? "0px" : "auto",
+            zIndex: 10
+          }}>
             <button
               type="button"
               onClick={toggleTheme}
