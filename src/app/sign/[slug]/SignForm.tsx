@@ -951,7 +951,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                 Rendering document pages...
               </div>
             ) : (
-              <div ref={pdfContainerRef} style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", alignItems: "stretch" }}>
+              <div ref={pdfContainerRef} style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", alignItems: "center", overflowX: "auto" }}>
                 {Array.from({ length: numPages }).map((_, pageIdx) => {
                   const dims = pageDimensions[pageIdx];
                   const originalWidth = dims?.width || 800;
@@ -989,39 +989,32 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                     <div
                       key={pageIdx}
                       style={{
-                        width: "100%",
+                        width: `${originalWidth * scale}px`,
                         height: `${originalHeight * scale}px`,
-                        overflowX: "auto",
                         position: "relative",
                         background: "rgba(0,0,0,0.05)",
-                        paddingBottom: "8px"
+                        paddingBottom: "8px",
+                        margin: "0 auto",
+                        flexShrink: 0
                       }}
                     >
                       <div
+                        id={`pdf-preview-overlay-${pageIdx}`}
                         style={{
-                          width: `${originalWidth * scale}px`,
-                          height: "100%",
-                          margin: "0 auto",
-                          position: "relative"
+                          position: "absolute",
+                          top: 0,
+                          left: leftStyle === "0px" ? "0" : leftStyle,
+                          width: `${originalWidth}px`,
+                          height: `${originalHeight}px`,
+                          transform: transformStyle,
+                          transformOrigin: transformOriginStyle,
+                          border: "1px solid var(--border-color)",
+                          borderRadius: "4px",
+                          background: "#000",
+                          flexShrink: 0,
+                          transition: "all 0.3s ease-out"
                         }}
                       >
-                        <div
-                          id={`pdf-preview-overlay-${pageIdx}`}
-                          style={{
-                            position: "absolute",
-                            top: 0,
-                            left: leftStyle === "0px" ? "0" : leftStyle,
-                            width: `${originalWidth}px`,
-                            height: `${originalHeight}px`,
-                            transform: transformStyle,
-                            transformOrigin: transformOriginStyle,
-                            border: "1px solid var(--border-color)",
-                            borderRadius: "4px",
-                            background: "#000",
-                            flexShrink: 0,
-                            transition: "all 0.3s ease-out"
-                          }}
-                        >
                         <canvas
                           id={`pdf-preview-canvas-${pageIdx}`}
                           style={{ display: "block" }}
@@ -1494,8 +1487,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                       </div>
                     </div>
                   </div>
-                </div>
-              )})}
+                )})}
               </div>
             )}
           </div>
