@@ -238,6 +238,8 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            width: "40px",
+            flexShrink: 0
           }}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
