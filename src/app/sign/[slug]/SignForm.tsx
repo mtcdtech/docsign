@@ -862,11 +862,11 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
             display: "flex", 
             justifyContent: "space-between", 
             alignItems: "center", 
-            gap: "12px", 
+            gap: "8px", 
             marginBottom: isMobile ? "0" : "8px", 
-            paddingBottom: isMobile ? `${Math.max(4, 10 - shrink * 6)}px` : "6px", 
-            padding: isMobile ? "8px 16px" : "0",
-            minHeight: isMobile ? `${Math.max(34, 48 - shrink * 14)}px` : "auto",
+            paddingBottom: isMobile ? "8px" : "6px", 
+            padding: isMobile ? "8px 12px" : "0",
+            minHeight: isMobile ? "44px" : "auto",
             position: "relative"
           }}>
             {/* Left Side: App Logo + Master Org Logo */}
@@ -875,62 +875,69 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
               alignItems: "center", 
               gap: isMobile ? "4px" : "10px", 
               minWidth: 0, 
-              flexShrink: 0,
-              position: isMobile ? "absolute" : "static",
-              left: isMobile ? "16px" : "auto",
-              zIndex: 10,
-              transform: isMobile ? `scale(${Math.max(0.8, 1 - shrink * 0.2)})` : "none",
-              transformOrigin: isMobile ? "left center" : "initial"
+              flexShrink: 0
             }}>
               {/* App Logo */}
               {(() => {
                 const activeAppLogo = theme === "dark" ? (portalLogoDark || portalLogoLight) : (portalLogoLight || portalLogoDark);
                 return activeAppLogo ? (
                   <img src={activeAppLogo} alt="App Logo" style={{ maxHeight: isMobile ? "16px" : "28px", maxWidth: isMobile ? "40px" : "80px", objectFit: "contain", flexShrink: 0 }} />
-                ) : null;
+                ) : (
+                  <span style={{ fontSize: "14px" }}>✍️</span>
+                );
               })()}
 
-              {/* Separator Line */}
-              {(() => {
+              {/* Separator Line & Master Logo (Desktop only) */}
+              {!isMobile && (() => {
                 const activeAppLogo = theme === "dark" ? (portalLogoDark || portalLogoLight) : (portalLogoLight || portalLogoDark);
                 const activeMasterLogo = theme === "dark" ? (masterLogoDark || masterLogoLight) : (masterLogoLight || masterLogoDark);
                 return (activeAppLogo && activeMasterLogo) ? (
-                  <div style={{ width: "1px", height: isMobile ? "10px" : "18px", background: "var(--border-color)" }} />
+                  <div style={{ width: "1px", height: "18px", background: "var(--border-color)", margin: "0 10px" }} />
                 ) : null;
               })()}
 
-              {/* Master Organization Logo */}
-              {(() => {
+              {!isMobile && (() => {
                 const activeMasterLogo = theme === "dark" ? (masterLogoDark || masterLogoLight) : (masterLogoLight || masterLogoDark);
                 return activeMasterLogo ? (
-                  <img src={activeMasterLogo} alt="Master Org Logo" style={{ maxHeight: isMobile ? "16px" : "56px", maxWidth: isMobile ? "50px" : "100px", objectFit: "contain", flexShrink: 0 }} />
+                  <img src={activeMasterLogo} alt="Master Org Logo" style={{ maxHeight: "56px", maxWidth: "100px", objectFit: "contain", flexShrink: 0 }} />
                 ) : null;
               })()}
             </div>
 
-            {/* Middle: Active Template Organization Title (Desktop/Tablet only) */}
+            {/* Middle: Active Template Name & Wizard Progress */}
             <div style={{ 
-              position: "absolute", 
-              left: "50%", 
-              transform: "translateX(-50%)", 
-              textAlign: "center", 
-              minWidth: 0, 
-              display: isMobile ? "none" : "block"
+              flex: 1, 
+              display: "flex", 
+              alignItems: "center", 
+              justifyContent: "center", 
+              gap: "6px",
+              minWidth: 0,
+              padding: "0 4px"
             }}>
-              <span style={{ fontSize: "16px", fontWeight: "bold", color: "var(--text-main)", whiteSpace: "nowrap" }}>
-                {template.organization.name}
+              <span style={{ 
+                fontSize: isMobile ? "12px" : "16px", 
+                fontWeight: "bold", 
+                color: "var(--text-main)", 
+                whiteSpace: "nowrap",
+                overflow: "hidden", 
+                textOverflow: "ellipsis",
+                maxWidth: isMobile ? "95px" : "300px"
+              }} title={template.title}>
+                {isMobile ? template.title : template.organization.name}
               </span>
+              {isMobile && wizardStepsCount && wizardStepsCount > 1 ? (
+                <span style={{ fontSize: "11px", fontWeight: "bold", color: "var(--primary-color)", flexShrink: 0 }}>
+                  ({wizardCurrentIndex! + 1}/{wizardStepsCount})
+                </span>
+              ) : null}
             </div>
 
             {/* Right Side: Exit Workspace & Theme buttons */}
             <div style={{ 
               display: "flex", 
               alignItems: "center", 
-              gap: isMobile ? "6px" : "12px", 
-              marginLeft: "auto",
-              zIndex: 10,
-              transform: isMobile ? `scale(${Math.max(0.9, 1 - shrink * 0.1)})` : "none",
-              transformOrigin: isMobile ? "right center" : "initial"
+              gap: "6px", 
+              flexShrink: 0
             }}>
               {/* Theme Toggle Button */}
               <button
@@ -941,11 +948,11 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                   document.documentElement.setAttribute("data-theme", nextTheme);
                 }}
                 className="btn btn-secondary"
-                style={{ width: "36px", height: "36px", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--border-color)", padding: 0 }}
+                style={{ width: "30px", height: "30px", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--border-color)", padding: 0 }}
                 title="Toggle visual theme"
               >
                 {theme === "dark" ? (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="5" />
                     <line x1="12" y1="1" x2="12" y2="3" />
                     <line x1="12" y1="21" x2="12" y2="23" />
@@ -957,7 +964,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                     <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
                   </svg>
                 ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                   </svg>
                 )}
@@ -967,44 +974,13 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                 type="button"
                 onClick={handleExit}
                 className="btn btn-secondary"
-                style={{ width: isMobile ? "36px" : "auto", minWidth: "36px", flexShrink: 0, height: "36px", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "13px", padding: isMobile ? "0" : "0 16px" }}
+                style={{ width: "30px", height: "30px", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", padding: 0 }}
                 title="Exit signing workspace"
               >
-                {isMobile ? "✕" : "✕ Exit"}
+                ✕
               </button>
             </div>
           </div>
-
-          {/* Mobile-Only Form Title and Wizard Progress Sub-header */}
-          {isMobile && (
-            <div style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: "6px 16px",
-              background: "rgba(255, 255, 255, 0.02)",
-              borderTop: "1px solid var(--border-color)",
-              fontSize: "12px",
-              color: "var(--text-muted)",
-              gap: "8px"
-            }}>
-              <span style={{ 
-                fontWeight: "bold", 
-                color: "var(--text-main)", 
-                maxWidth: "70%", 
-                overflow: "hidden", 
-                textOverflow: "ellipsis", 
-                whiteSpace: "nowrap" 
-              }} title={template.title}>
-                {template.title}
-              </span>
-              {wizardStepsCount && wizardStepsCount > 1 && (
-                <span style={{ fontSize: "11px", fontWeight: "bold", color: "var(--primary-color)", flexShrink: 0 }}>
-                  Step {wizardCurrentIndex! + 1} of {wizardStepsCount}
-                </span>
-              )}
-            </div>
-          )}
 
           {/* Mobile-Only Document Completion Navigation Bar */}
           {isMobile && (
