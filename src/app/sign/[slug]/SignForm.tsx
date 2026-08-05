@@ -930,19 +930,27 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
             minHeight: isMobile ? "44px" : "72px",
             position: "relative"
           }}>
-            {/* Left Side: App Logo & Master Org Logo next to it on Desktop */}
+            {/* Left Side: App Logo, DocSign title & Master Org Logo (50% bigger) */}
             <div style={{ 
               display: "flex", 
               alignItems: "center", 
+              gap: isMobile ? "6px" : "10px", 
               minWidth: 0, 
               flexShrink: 0
             }}>
               {(() => {
                 const activeAppLogo = theme === "dark" ? (portalLogoDark || portalLogoLight) : (portalLogoLight || portalLogoDark);
-                return activeAppLogo ? (
-                  <img src={activeAppLogo} alt="App Logo" style={{ maxHeight: isMobile ? "16px" : "28px", maxWidth: isMobile ? "40px" : "80px", objectFit: "contain", flexShrink: 0 }} />
-                ) : (
-                  <span style={{ fontSize: "14px" }}>✍️</span>
+                return (
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    {activeAppLogo ? (
+                      <img src={activeAppLogo} alt="DocSign Logo" style={{ maxHeight: isMobile ? "18px" : "28px", maxWidth: isMobile ? "40px" : "80px", objectFit: "contain", flexShrink: 0 }} />
+                    ) : (
+                      <span style={{ fontSize: "14px" }}>✍️</span>
+                    )}
+                    <span style={{ fontSize: isMobile ? "13px" : "18px", fontWeight: 800, color: "var(--text-main)", letterSpacing: "-0.5px" }}>
+                      DocSign
+                    </span>
+                  </div>
                 );
               })()}
 
@@ -950,36 +958,45 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                 const activeMasterLogo = theme === "dark" ? (masterLogoDark || masterLogoLight) : (masterLogoLight || masterLogoDark);
                 return activeMasterLogo ? (
                   <>
-                    <div style={{ width: "1px", height: "24px", background: "var(--border-color)", margin: "0 14px" }} />
-                    <img src={activeMasterLogo} alt="Master Org Logo" style={{ maxHeight: "36px", maxWidth: "120px", objectFit: "contain", flexShrink: 0 }} />
+                    <div style={{ width: "1px", height: "28px", background: "var(--border-color)", margin: "0 8px" }} />
+                    <img src={activeMasterLogo} alt="Master Org Logo" style={{ maxHeight: "54px", maxWidth: "150px", objectFit: "contain", flexShrink: 0 }} />
                   </>
                 ) : null;
               })()}
             </div>
 
-            {/* Middle: Active Template Name & Organization on Two Lines */}
+            {/* Middle: Centered Block with 100% Larger Sub-Org Logo to the Left of Left-Aligned Title & Subtitle */}
             <div style={{ 
               flex: 1, 
               display: "flex", 
-              flexDirection: "column",
               alignItems: "center", 
               justifyContent: "center", 
-              gap: "2px",
+              gap: isMobile ? "8px" : "16px",
               minWidth: 0,
-              padding: isMobile ? "0 8px" : "0 16px",
-              textAlign: "center"
+              padding: isMobile ? "0 4px" : "0 16px"
             }}>
-              {/* Line 1: Form Title & Sub-Org Logo (Desktop only next to title) */}
-              <div style={{ 
-                display: "flex", 
-                alignItems: "center", 
-                justifyContent: "center", 
-                gap: isMobile ? "0" : "10px", 
-                width: "100%"
+              {/* Sub-Org Logo (100% larger, positioned to the left) */}
+              {!isMobile && activeOrgLogo && (
+                <img 
+                  src={activeOrgLogo} 
+                  alt="Sub-Org Logo" 
+                  style={{ 
+                    maxHeight: "56px", 
+                    maxWidth: "160px", 
+                    objectFit: "contain", 
+                    flexShrink: 0 
+                  }} 
+                />
+              )}
+
+              {/* Title & Organization Subtitle Column (Left-aligned against logo) */}
+              <div style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                textAlign: "left",
+                minWidth: 0
               }}>
-                {!isMobile && activeOrgLogo && (
-                  <img src={activeOrgLogo} alt="Sub-Org Logo" style={{ maxHeight: "28px", maxWidth: "80px", objectFit: "contain", flexShrink: 0 }} />
-                )}
                 <div style={{ 
                   fontSize: isMobile ? "11px" : "16px", 
                   fontWeight: "bold", 
@@ -995,19 +1012,18 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                 }} title={template.title}>
                   {template.title}
                 </div>
-              </div>
-
-              {/* Line 2: Organization Name */}
-              <div style={{ 
-                fontSize: isMobile ? "9px" : "11px", 
-                color: "var(--text-muted)", 
-                lineHeight: "1.2",
-                overflow: "hidden", 
-                textOverflow: "ellipsis", 
-                whiteSpace: "nowrap",
-                maxWidth: "100%" 
-              }} title={template.organization.name}>
-                {template.organization.name}
+                <div style={{ 
+                  fontSize: isMobile ? "9px" : "11px", 
+                  color: "var(--text-muted)", 
+                  lineHeight: "1.2",
+                  overflow: "hidden", 
+                  textOverflow: "ellipsis", 
+                  whiteSpace: "nowrap",
+                  maxWidth: "100%",
+                  marginTop: "2px"
+                }} title={template.organization.name}>
+                  {template.organization.name}
+                </div>
               </div>
             </div>
 

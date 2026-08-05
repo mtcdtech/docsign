@@ -15,9 +15,11 @@ interface AdminNavbarProps {
   portalTitle: string;
   portalLogoLight: string;
   portalLogoDark: string;
+  masterLogoLight?: string;
+  masterLogoDark?: string;
 }
 
-export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLogoLight, portalLogoDark }: AdminNavbarProps) {
+export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLogoLight, portalLogoDark, masterLogoLight, masterLogoDark }: AdminNavbarProps) {
   const pathname = usePathname();
   const [theme, setTheme] = React.useState<"dark" | "light">("dark");
   const [isOpen, setIsOpen] = React.useState(false);
@@ -69,16 +71,29 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
         <div style={{ display: "flex", alignItems: "center", gap: "28px" }}>
           <Link href="/admin" style={{ textDecoration: "none", color: "var(--text-main)", fontWeight: 800, fontSize: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
             {(() => {
-              const activeLogo = theme === "light" ? (portalLogoLight || portalLogoDark) : (portalLogoDark || portalLogoLight);
-              return activeLogo ? (
+              const activeAppLogo = theme === "light" ? (portalLogoLight || portalLogoDark) : (portalLogoDark || portalLogoLight);
+              return activeAppLogo ? (
                 <img
-                  src={activeLogo}
-                  alt="Logo"
+                  src={activeAppLogo}
+                  alt="DocSign Logo"
                   style={{ height: "28px", maxWidth: "120px", objectFit: "contain" }}
                 />
               ) : null;
             })()}
-            <span>{portalTitle}</span>
+            <span>DocSign</span>
+            {(() => {
+              const activeMasterLogo = theme === "light" ? (masterLogoLight || masterLogoDark) : (masterLogoDark || masterLogoLight);
+              return activeMasterLogo ? (
+                <>
+                  <div style={{ width: "1px", height: "28px", background: "var(--border-color)", margin: "0 4px" }} />
+                  <img
+                    src={activeMasterLogo}
+                    alt="Master Org Logo"
+                    style={{ height: "42px", maxWidth: "150px", objectFit: "contain" }}
+                  />
+                </>
+              ) : null;
+            })()}
           </Link>
 
           {/* Links */}
