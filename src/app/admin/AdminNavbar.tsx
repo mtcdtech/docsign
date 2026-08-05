@@ -351,6 +351,9 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
               }
               .nav-hamburger-mobile {
                 display: block !important;
+                position: absolute !important;
+                top: 20px !important;
+                right: 24px !important;
               }
               .nav-dropdown-mobile {
                 display: flex !important;

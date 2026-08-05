@@ -693,14 +693,23 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
     handleChecklistItemClick(targetId);
   };
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  const validateSignerInfo = () => {
     setSubmitError(null);
-
     if (!signerName.trim() || !signerEmail.trim()) {
       setSubmitError("Please fill out your name and email.");
-      return;
+      return false;
     }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(signerEmail.trim())) {
+      setSubmitError("Please enter a valid email address.");
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!validateSignerInfo()) return;
 
     if (remainingCount > 0) {
       setSubmitError(`Please fill out the remaining ${remainingCount} required fields highlighted on the document.`);
@@ -1536,7 +1545,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                 </div>
               </div>
             ) : (
-              <form onSubmit={(e) => { e.preventDefault(); setIsPreviewMode(true); }} style={{ flex: "1", minWidth: "320px", display: "flex", flexDirection: "column" }}>
+              <form onSubmit={(e) => { e.preventDefault(); if (validateSignerInfo()) { setIsPreviewMode(true); } }} style={{ flex: "1", minWidth: "320px", display: "flex", flexDirection: "column" }}>
                 <div className="card-glass" style={{ width: "100%", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", maxHeight: "calc(100vh - 160px)", overflowY: "auto" }}>
                   
                   <div>
