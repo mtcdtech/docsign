@@ -867,11 +867,11 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
             justifyContent: "space-between", 
             alignItems: "center", 
             gap: "8px", 
-            padding: isMobile ? "8px 12px" : "12px 24px",
-            minHeight: isMobile ? "44px" : "56px",
+            padding: isMobile ? "8px 12px" : "16px 24px",
+            minHeight: isMobile ? "44px" : "72px",
             position: "relative"
           }}>
-            {/* Left Side: App Logo */}
+            {/* Left Side: App Logo & Master Org Logo next to it on Desktop */}
             <div style={{ 
               display: "flex", 
               alignItems: "center", 
@@ -885,6 +885,16 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                 ) : (
                   <span style={{ fontSize: "14px" }}>✍️</span>
                 );
+              })()}
+
+              {!isMobile && (() => {
+                const activeMasterLogo = theme === "dark" ? (masterLogoDark || masterLogoLight) : (masterLogoLight || masterLogoDark);
+                return activeMasterLogo ? (
+                  <>
+                    <div style={{ width: "1px", height: "24px", background: "var(--border-color)", margin: "0 14px" }} />
+                    <img src={activeMasterLogo} alt="Master Org Logo" style={{ maxHeight: "36px", maxWidth: "120px", objectFit: "contain", flexShrink: 0 }} />
+                  </>
+                ) : null;
               })()}
             </div>
 
@@ -900,21 +910,32 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
               padding: isMobile ? "0 8px" : "0 16px",
               textAlign: "center"
             }}>
-              {/* Line 1: Form Title */}
+              {/* Line 1: Form Title & Sub-Org Logo (Desktop only next to title) */}
               <div style={{ 
-                fontSize: isMobile ? "11px" : "15px", 
-                fontWeight: "bold", 
-                color: "var(--text-main)", 
-                lineHeight: "1.2",
-                display: "-webkit-box",
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                wordBreak: "break-word",
-                maxWidth: isMobile ? "110px" : "600px"
-              }} title={template.title}>
-                {template.title}
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "center", 
+                gap: isMobile ? "0" : "10px", 
+                width: "100%"
+              }}>
+                {!isMobile && activeOrgLogo && (
+                  <img src={activeOrgLogo} alt="Sub-Org Logo" style={{ maxHeight: "28px", maxWidth: "80px", objectFit: "contain", flexShrink: 0 }} />
+                )}
+                <div style={{ 
+                  fontSize: isMobile ? "11px" : "16px", 
+                  fontWeight: "bold", 
+                  color: "var(--text-main)", 
+                  lineHeight: "1.2",
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  wordBreak: "break-word",
+                  maxWidth: isMobile ? "110px" : "600px"
+                }} title={template.title}>
+                  {template.title}
+                </div>
               </div>
 
               {/* Line 2: Organization Name */}
@@ -988,7 +1009,8 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
               alignItems: "center",
               justifyContent: isMobile ? "flex-start" : "center",
               gap: "8px",
-              padding: isMobile ? "6px 12px" : "8px 24px",
+              padding: isMobile ? "6px 12px" : "12px 24px",
+              minHeight: isMobile ? "auto" : "48px",
               borderTop: "1px solid var(--border-color)",
               background: "rgba(255, 255, 255, 0.01)",
               overflowX: "auto",
