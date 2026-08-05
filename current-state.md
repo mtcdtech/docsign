@@ -65,10 +65,11 @@
   - Brand Customization: Added settings tab to upload both App Logo (Light and Dark modes) and Organization Logo (Light and Dark modes). Modified client-facing wizard and forms header to dynamically swap app/org logos based on user system color preference.
   - Email Branding: Refactored automated confirmation email dispatches to query and display both App Logo and Organization Logo in headers side-by-side using high-compatibility HTML table cells.
   - Audit logs: Removed gray span label backgrounds in the System Audit Log dashboard card table rows, setting text colors to high-contrast bold color coding.
+  - Workspace Header and Viewport Optimizations (v0.14.6): Redesigned header layouts to space-saving 2-row design, resolved iOS Safari auto-zooming via dynamic font-size scales, integrated master/sub-org logo configurations in registration wizard sequences, and enforced dynamic viewport height layout stretch on mobile.
 
 ## What is In Progress
-- Final verification of v0.14.2 in production environment.
+- Final verification of v0.14.6 in production environment.
 
 ## Known Risks & Assumptions
 - **OAuth Callback Domain**: NextAuth and Authentik are configured to work against `https://docsign.server.mtcd.org`. Any local test verification of SSO logins will fail or require mocking.
-- **Mac vs. Linux (ARM64 vs. AMD64)**: Local dev is on Apple Silicon (ARM64 macOS), while production target Synology Docker might be AMD64. Build configurations should be mindfully cross-compatible.
+- **Mac vs. Linux (ARM64 vs. AMD64)**: Local dev is on Apple Silicon (ARM64 macOS), while production target Synology Docker might be AMD64. Docker builds are compiled with buildx for linux/amd64.
