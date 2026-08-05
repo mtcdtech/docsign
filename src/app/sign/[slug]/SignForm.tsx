@@ -843,6 +843,34 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
     );
   }
 
+  const PageListContainer = ({ children }: { children: React.ReactNode }) => {
+    if (!isMobile) {
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", alignItems: "center" }}>
+          {children}
+        </div>
+      );
+    }
+    return (
+      <TransformWrapper
+        ref={transformWrapperRef}
+        initialScale={1}
+        minScale={0.8}
+        maxScale={4}
+        centerOnInit={true}
+        panning={{ disabled: false }}
+        wheel={{ disabled: true }}
+      >
+        <TransformComponent
+          wrapperStyle={{ width: "100%" }}
+          contentStyle={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", alignItems: "center" }}
+        >
+          {children}
+        </TransformComponent>
+      </TransformWrapper>
+    );
+  };
+
   const resolvedLogoLight = template.logoLight || orgLogoLight;
   const resolvedLogoDark = template.logoDark || orgLogoDark;
   const activeOrgLogo = theme === "dark" ? (resolvedLogoDark || resolvedLogoLight) : (resolvedLogoLight || resolvedLogoDark);
@@ -1226,19 +1254,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                 Rendering document pages...
               </div>
             ) : (
-              <TransformWrapper
-                ref={transformWrapperRef}
-                initialScale={1}
-                minScale={0.8}
-                maxScale={4}
-                centerOnInit={true}
-                panning={{ disabled: !isMobile }}
-                wheel={{ disabled: true }}
-              >
-                <TransformComponent
-                  wrapperStyle={{ width: "100%" }}
-                  contentStyle={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", alignItems: "center" }}
-                >
+              <PageListContainer>
                   {Array.from({ length: numPages }).map((_, pageIdx) => {
                   const dims = pageDimensions[pageIdx];
                   const originalWidth = dims?.width || 800;
@@ -1768,8 +1784,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                     </div>
                   </div>
                 )})}
-                </TransformComponent>
-              </TransformWrapper>
+              </PageListContainer>
             )}
           </div>
 
