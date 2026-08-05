@@ -244,6 +244,7 @@ export default function RegistrationSignForm({
         onComplete={handleDocComplete}
         wizardStepsCount={templates.length}
         wizardCurrentIndex={currentIndex}
+        wizardFormTitles={templates.map(t => t.title)}
       />
 
       <style

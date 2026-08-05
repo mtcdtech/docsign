@@ -60,9 +60,10 @@ interface SignFormProps {
   onComplete?: (pdfUrl: string, completedDocId: string, name: string, email: string) => void;
   wizardStepsCount?: number;
   wizardCurrentIndex?: number;
+  wizardFormTitles?: string[];
 }
 
-export default function SignForm({ template, portalTitle, portalLogoLight, portalLogoDark, masterLogoLight, masterLogoDark, orgLogoLight, orgLogoDark, pdfUrl, pcoAttendeeId, defaultSignerName, defaultSignerEmail, onComplete, wizardStepsCount, wizardCurrentIndex }: SignFormProps) {
+export default function SignForm({ template, portalTitle, portalLogoLight, portalLogoDark, masterLogoLight, masterLogoDark, orgLogoLight, orgLogoDark, pdfUrl, pcoAttendeeId, defaultSignerName, defaultSignerEmail, onComplete, wizardStepsCount, wizardCurrentIndex, wizardFormTitles }: SignFormProps) {
   const fields = JSON.parse(template.fieldsJson) as FormField[];
 
   // Global reading order of all fields for sequential Tab navigation
@@ -848,36 +849,35 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
         overflow: isMobile ? "hidden" : "visible"
       }}>
         
-        {/* Sticky Parent Wrapper on Mobile */}
+        {/* Unified Sticky/Static Header Wrapper */}
         <div style={{
           position: isMobile ? "sticky" : "relative",
           top: 0,
           zIndex: 1000,
-          background: isMobile ? "var(--bg-card)" : "transparent",
-          borderBottom: isMobile ? "1px solid var(--border-color)" : "none",
-          boxShadow: isMobile ? "0 4px 15px rgba(0,0,0,0.15)" : "none"
+          background: "var(--bg-card)",
+          borderBottom: "1px solid var(--border-color)",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
+          width: "100%",
+          borderRadius: isMobile ? "0" : "8px 8px 0 0",
+          marginBottom: isMobile ? "0" : "16px"
         }}>
-          {/* Compressed Header and Brand next to logo with Exit triggers */}
+          {/* Row 1: Logo + (Title & Org) + Buttons */}
           <div style={{ 
             display: "flex", 
             justifyContent: "space-between", 
             alignItems: "center", 
             gap: "8px", 
-            marginBottom: isMobile ? "0" : "8px", 
-            paddingBottom: isMobile ? "8px" : "6px", 
-            padding: isMobile ? "8px 12px" : "0",
-            minHeight: isMobile ? "44px" : "auto",
+            padding: isMobile ? "8px 12px" : "12px 24px",
+            minHeight: isMobile ? "44px" : "56px",
             position: "relative"
           }}>
-            {/* Left Side: App Logo + Master Org Logo */}
+            {/* Left Side: App Logo */}
             <div style={{ 
               display: "flex", 
               alignItems: "center", 
-              gap: isMobile ? "4px" : "10px", 
               minWidth: 0, 
               flexShrink: 0
             }}>
-              {/* App Logo */}
               {(() => {
                 const activeAppLogo = theme === "dark" ? (portalLogoDark || portalLogoLight) : (portalLogoLight || portalLogoDark);
                 return activeAppLogo ? (
@@ -886,97 +886,56 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                   <span style={{ fontSize: "14px" }}>✍️</span>
                 );
               })()}
-
-              {/* Separator Line & Master Logo (Desktop only) */}
-              {!isMobile && (() => {
-                const activeAppLogo = theme === "dark" ? (portalLogoDark || portalLogoLight) : (portalLogoLight || portalLogoDark);
-                const activeMasterLogo = theme === "dark" ? (masterLogoDark || masterLogoLight) : (masterLogoLight || masterLogoDark);
-                return (activeAppLogo && activeMasterLogo) ? (
-                  <div style={{ width: "1px", height: "18px", background: "var(--border-color)", margin: "0 10px" }} />
-                ) : null;
-              })()}
-
-              {!isMobile && (() => {
-                const activeMasterLogo = theme === "dark" ? (masterLogoDark || masterLogoLight) : (masterLogoLight || masterLogoDark);
-                return activeMasterLogo ? (
-                  <img src={activeMasterLogo} alt="Master Org Logo" style={{ maxHeight: "56px", maxWidth: "100px", objectFit: "contain", flexShrink: 0 }} />
-                ) : null;
-              })()}
             </div>
 
-            {/* Middle: Active Template Name, Organization & Wizard Progress */}
+            {/* Middle: Active Template Name & Organization on Two Lines */}
             <div style={{ 
               flex: 1, 
               display: "flex", 
-              flexDirection: isMobile ? "column" : "row",
+              flexDirection: "column",
               alignItems: "center", 
               justifyContent: "center", 
-              gap: isMobile ? "2px" : "6px",
+              gap: "2px",
               minWidth: 0,
-              padding: isMobile ? "0 8px" : "0 4px",
+              padding: isMobile ? "0 8px" : "0 16px",
               textAlign: "center"
             }}>
-              {isMobile ? (
-                <>
-                  {/* Line 1: Form Title (wrapped up to 2 lines) */}
-                  <div style={{ 
-                    fontSize: "11px", 
-                    fontWeight: "bold", 
-                    color: "var(--text-main)", 
-                    lineHeight: "1.2",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    wordBreak: "break-word"
-                  }} title={template.title}>
-                    {template.title}
-                  </div>
+              {/* Line 1: Form Title */}
+              <div style={{ 
+                fontSize: isMobile ? "11px" : "15px", 
+                fontWeight: "bold", 
+                color: "var(--text-main)", 
+                lineHeight: "1.2",
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                wordBreak: "break-word",
+                maxWidth: isMobile ? "110px" : "600px"
+              }} title={template.title}>
+                {template.title}
+              </div>
 
-                  {/* Line 2: Organization Name + Form Progress */}
-                  <div style={{ 
-                    display: "flex", 
-                    alignItems: "center", 
-                    justifyContent: "center", 
-                    gap: "4px",
-                    fontSize: "9px", 
-                    color: "var(--text-muted)", 
-                    width: "100%",
-                    whiteSpace: "nowrap"
-                  }}>
-                    <span style={{ 
-                      overflow: "hidden", 
-                      textOverflow: "ellipsis", 
-                      whiteSpace: "nowrap",
-                      maxWidth: "100px" 
-                    }} title={template.organization.name}>
-                      {template.organization.name}
-                    </span>
-                    {wizardStepsCount && wizardStepsCount > 1 ? (
-                      <>
-                        <span>•</span>
-                        <span style={{ fontWeight: "bold", color: "var(--primary-color)" }}>
-                          Form {wizardCurrentIndex! + 1} of {wizardStepsCount}
-                        </span>
-                      </>
-                    ) : null}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <span style={{ fontSize: "16px", fontWeight: "bold", color: "var(--text-main)" }}>
-                    {template.organization.name}
-                  </span>
-                </>
-              )}
+              {/* Line 2: Organization Name */}
+              <div style={{ 
+                fontSize: isMobile ? "9px" : "11px", 
+                color: "var(--text-muted)", 
+                lineHeight: "1.2",
+                overflow: "hidden", 
+                textOverflow: "ellipsis", 
+                whiteSpace: "nowrap",
+                maxWidth: isMobile ? "100px" : "400px" 
+              }} title={template.organization.name}>
+                {template.organization.name}
+              </div>
             </div>
 
             {/* Right Side: Exit Workspace & Theme buttons */}
             <div style={{ 
               display: "flex", 
               alignItems: "center", 
-              gap: "6px", 
+              gap: isMobile ? "6px" : "10px", 
               flexShrink: 0
             }}>
               {/* Theme Toggle Button */}
@@ -988,11 +947,11 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                   document.documentElement.setAttribute("data-theme", nextTheme);
                 }}
                 className="btn btn-secondary"
-                style={{ width: "30px", height: "30px", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--border-color)", padding: 0 }}
+                style={{ width: isMobile ? "30px" : "36px", height: isMobile ? "30px" : "36px", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--border-color)", padding: 0 }}
                 title="Toggle visual theme"
               >
                 {theme === "dark" ? (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width={isMobile ? "12" : "16"} height={isMobile ? "12" : "16"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="5" />
                     <line x1="12" y1="1" x2="12" y2="3" />
                     <line x1="12" y1="21" x2="12" y2="23" />
@@ -1004,7 +963,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                     <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
                   </svg>
                 ) : (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width={isMobile ? "12" : "16"} height={isMobile ? "12" : "16"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                   </svg>
                 )}
@@ -1014,13 +973,58 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                 type="button"
                 onClick={handleExit}
                 className="btn btn-secondary"
-                style={{ width: "30px", height: "30px", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", padding: 0 }}
+                style={{ width: isMobile ? "30px" : "36px", height: isMobile ? "30px" : "36px", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: isMobile ? "12px" : "14px", padding: 0 }}
                 title="Exit signing workspace"
               >
                 ✕
               </button>
             </div>
           </div>
+
+          {/* Row 2: Wizard Breadcrumb Steps */}
+          {wizardStepsCount && wizardStepsCount > 1 && (
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: isMobile ? "flex-start" : "center",
+              gap: "8px",
+              padding: isMobile ? "6px 12px" : "8px 24px",
+              borderTop: "1px solid var(--border-color)",
+              background: "rgba(255, 255, 255, 0.01)",
+              overflowX: "auto",
+              whiteSpace: "nowrap",
+              scrollbarWidth: "none",
+              WebkitOverflowScrolling: "touch",
+              width: "100%"
+            }}>
+              <span style={{ fontSize: isMobile ? "10px" : "12px", fontWeight: "bold", color: "var(--primary-color)", flexShrink: 0 }}>
+                Form {wizardCurrentIndex! + 1} of {wizardStepsCount}:
+              </span>
+              {wizardFormTitles?.map((title, idx) => {
+                const isActive = idx === wizardCurrentIndex;
+                const isCompleted = idx < wizardCurrentIndex;
+                return (
+                  <div key={idx} style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+                    <span style={{
+                      fontSize: isMobile ? "10px" : "12px",
+                      fontWeight: isActive ? "bold" : "normal",
+                      color: isActive ? "var(--text-main)" : isCompleted ? "#34d399" : "var(--text-muted)",
+                      background: isActive ? "rgba(79, 70, 229, 0.15)" : "transparent",
+                      padding: "2px 8px",
+                      borderRadius: "12px",
+                      border: isActive ? "1px solid var(--primary-color)" : "none"
+                    }}>
+                      {isCompleted && <span style={{ marginRight: "2px" }}>✓</span>}
+                      {idx + 1}. {title}
+                    </span>
+                    {idx < wizardFormTitles.length - 1 && (
+                      <span style={{ color: "var(--text-muted)", opacity: 0.3, fontSize: "9px" }}>➔</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           {/* Mobile-Only Document Completion Navigation Bar */}
           {isMobile && (
@@ -1166,7 +1170,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
         <div style={{ display: "flex", gap: isMobile ? "16px" : "32px", alignItems: "stretch", flexWrap: "wrap", flex: isMobile ? 1 : "none", overflow: isMobile ? "hidden" : "visible" }}>
           
           {/* Left Side: PDF Document Viewer with Overlay Interactive Inputs */}
-          <div ref={viewerScrollContainerRef} style={{ flex: "1.2", minWidth: "320px", display: "flex", flexDirection: "column", gap: isMobile ? "8px" : "16px", height: isMobile ? "100%" : "auto", maxHeight: isMobile ? "calc(100vh - 124px)" : "calc(100vh - 160px)", overflowY: "auto", border: "1px solid var(--border-color)", borderRadius: "8px", padding: isMobile ? "8px" : "16px", background: "rgba(0,0,0,0.2)" }}>
+          <div ref={viewerScrollContainerRef} style={{ flex: "1.2", minWidth: "320px", display: "flex", flexDirection: "column", gap: isMobile ? "8px" : "16px", height: isMobile ? "100%" : "auto", maxHeight: isMobile ? "none" : "calc(100vh - 160px)", overflowY: "auto", border: "1px solid var(--border-color)", borderRadius: "8px", padding: isMobile ? "8px" : "16px", background: "rgba(0,0,0,0.2)" }}>
             {!isMobile && (
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-color)", paddingBottom: "10px" }}>
                 <h3 style={{ margin: 0, fontSize: "15px" }}>Document Preview</h3>
