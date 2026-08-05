@@ -892,28 +892,9 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                     ? (availableWidth / originalWidth)
                     : 1;
 
-                  // Check if there is an active focused field on this page
-                  const focusedField = fields.find((f) => (f.instanceId || f.id) === selectedFieldId);
-                  const isFocusedPage = focusedField && focusedField.pdfMapping.page === pageIdx;
-
                   let leftStyle = "50%";
                   let transformStyle = `translate(-50%, 0) scale(${scale})`;
                   let transformOriginStyle = "top center";
-
-                  if (isMobile && isFocusedPage && focusedField) {
-                    const fieldWidth = focusedField.pdfMapping.width || 120;
-                    // Zoom so the field fits the viewport with 24px space on either side (48px total padding)
-                    const targetZoomScale = availableWidth / (fieldWidth + 48);
-                    if (targetZoomScale > scale) {
-                      scale = targetZoomScale;
-                      // Center the field horizontally in the available width
-                      const fieldCenterX = originalWidth * (focusedField.pdfMapping.x / 100) + (fieldWidth / 2);
-                      const translateX = (availableWidth / 2) - (fieldCenterX * scale);
-                      leftStyle = `${translateX}px`;
-                      transformStyle = `translate(${translateX}px, 0) scale(${scale})`;
-                      transformOriginStyle = "top left";
-                    }
-                  }
 
                   return (
                     <div
