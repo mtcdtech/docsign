@@ -1495,7 +1495,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                                   background: isVisible ? "#fef08a" : "rgba(255, 255, 255, 0.05)",
                                   color: "#0f172a",
                                   boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
-                                  fontSize: isMobile ? "16px" : "11px",
+                                  fontSize: isMobile ? `${Math.max(16, Math.ceil(16 / scale))}px` : "11px",
                                   padding: "2px 6px",
                                   borderRadius: "4px",
                                   outline: "none",
@@ -1528,7 +1528,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                                   background: isVisible ? "#fef08a" : "rgba(255, 255, 255, 0.05)",
                                   color: "#0f172a",
                                   boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
-                                  fontSize: isMobile ? "16px" : "11px",
+                                  fontSize: isMobile ? `${Math.max(16, Math.ceil(16 / scale))}px` : "11px",
                                   padding: "2px 6px",
                                   borderRadius: "4px",
                                   outline: "none",
@@ -1571,7 +1571,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                                     height: "100%",
                                     background: isVisible ? "#fef08a" : "rgba(255, 255, 255, 0.05)",
                                     color: "#0f172a",
-                                    fontSize: isMobile ? "16px" : "11px",
+                                    fontSize: isMobile ? `${Math.max(16, Math.ceil(16 / scale))}px` : "11px",
                                     padding: "2px 24px 2px 6px",
                                     borderRadius: "4px",
                                     border: isHighlighted
@@ -1662,7 +1662,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                                   ...style,
                                   background: "rgba(156, 163, 175, 0.15)",
                                   color: "var(--text-muted)",
-                                  fontSize: isMobile ? "16px" : "11px",
+                                  fontSize: isMobile ? `${Math.max(16, Math.ceil(16 / scale))}px` : "11px",
                                   padding: "2px 6px",
                                   borderRadius: "4px",
                                   border: isHighlighted
@@ -1695,7 +1695,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                                   ...style,
                                   background: "rgba(156, 163, 175, 0.15)",
                                   color: "var(--text-muted)",
-                                  fontSize: isMobile ? "16px" : "11px",
+                                  fontSize: isMobile ? `${Math.max(16, Math.ceil(16 / scale))}px` : "11px",
                                   padding: "2px 6px",
                                   borderRadius: "4px",
                                   border: isHighlighted
@@ -1731,7 +1731,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                                 ...style,
                                 background: isVisible ? "#fef08a" : "rgba(255, 255, 255, 0.05)",
                                 color: "#0f172a",
-                                fontSize: isMobile ? "16px" : "11px",
+                                fontSize: isMobile ? `${Math.max(16, Math.ceil(16 / scale))}px` : "11px",
                                 padding: "2px 6px",
                                 borderRadius: "4px",
                                 border: isHighlighted
