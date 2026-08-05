@@ -102,6 +102,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
     const el = viewerScrollContainerRef.current;
     if (!el) return;
 
+    // Standard touch pinch events (Fallback for non-iOS)
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
         const dist = Math.hypot(
@@ -115,7 +116,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
 
     const handleTouchMove = (e: TouchEvent) => {
       if (e.touches.length === 2 && initialPinchDistRef.current !== null) {
-        e.preventDefault(); // Prevent standard browser zoom
+        e.preventDefault(); // Prevent browser native zoom
         const dist = Math.hypot(
           e.touches[0].clientX - e.touches[1].clientX,
           e.touches[0].clientY - e.touches[1].clientY
@@ -129,14 +130,40 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
       initialPinchDistRef.current = null;
     };
 
+    // iOS Gesture Events (For Safari / Webkit)
+    let iosStartZoom = 1.0;
+    const handleGestureStart = (e: any) => {
+      e.preventDefault();
+      iosStartZoom = zoomMultiplier;
+    };
+
+    const handleGestureChange = (e: any) => {
+      e.preventDefault();
+      const newZoom = iosStartZoom * e.scale;
+      setZoomMultiplier(Math.max(0.6, Math.min(3.0, newZoom)));
+    };
+
+    const handleGestureEnd = (e: any) => {
+      e.preventDefault();
+    };
+
+    // Register touch events
     el.addEventListener("touchstart", handleTouchStart, { passive: true });
     el.addEventListener("touchmove", handleTouchMove, { passive: false });
     el.addEventListener("touchend", handleTouchEnd, { passive: true });
+
+    // Register iOS gesture events
+    el.addEventListener("gesturestart", handleGestureStart, { passive: false });
+    el.addEventListener("gesturechange", handleGestureChange, { passive: false });
+    el.addEventListener("gestureend", handleGestureEnd, { passive: false });
 
     return () => {
       el.removeEventListener("touchstart", handleTouchStart);
       el.removeEventListener("touchmove", handleTouchMove);
       el.removeEventListener("touchend", handleTouchEnd);
+      el.removeEventListener("gesturestart", handleGestureStart);
+      el.removeEventListener("gesturechange", handleGestureChange);
+      el.removeEventListener("gestureend", handleGestureEnd);
     };
   }, [zoomMultiplier]);
 
