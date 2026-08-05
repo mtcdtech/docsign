@@ -175,14 +175,16 @@ function RegistrationCard({
           >
             {reg.isArchived ? "🔓 Restore" : "🗄️ Archive"}
           </button>
-          <button
-            type="button"
-            className="btn"
-            onClick={() => handleDeleteRegistration(reg.id)}
-            style={{ padding: "6px 12px", fontSize: "12.5px", width: "auto", color: "#ef4444" }}
-          >
-            🗑️ Delete
-          </button>
+          {reg.isArchived && (
+            <button
+              type="button"
+              className="btn"
+              onClick={() => handleDeleteRegistration(reg.id)}
+              style={{ padding: "6px 12px", fontSize: "12.5px", width: "auto", color: "#ef4444" }}
+            >
+              🗑️ Delete
+            </button>
+          )}
         </div>
       </div>
 

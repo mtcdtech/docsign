@@ -180,7 +180,7 @@ export default function RegistrationSignForm({
       </div>
 
       {/* Registration Title Header */}
-      <div style={{ textAlign: "center", marginBottom: "10px" }}>
+      <div className="registration-title-header" style={{ textAlign: "center", marginBottom: "10px" }}>
         <h1 style={{ fontSize: "24px", margin: "0 0 6px 0", fontWeight: "800" }}>{registration.title}</h1>
         <p style={{ margin: 0, fontSize: "13px", color: "var(--text-muted)" }}>
           Step {currentIndex + 1} of {templates.length} — Completing: <strong>{activeTemplate.title}</strong>
@@ -188,12 +188,12 @@ export default function RegistrationSignForm({
       </div>
 
       {/* Progress Wizard Breadcrumb Steps */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", justifyContent: "center", alignItems: "center", marginBottom: "10px" }}>
+      <div className="progress-wizard-container" style={{ display: "flex", flexWrap: "wrap", gap: "8px", justifyContent: "center", alignItems: "center", marginBottom: "10px" }}>
         {templates.map((tpl, index) => {
           const isActive = index === currentIndex;
           const isCompleted = index < currentIndex;
           return (
-            <div key={tpl.id} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div key={tpl.id} style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
               <div style={{
                 fontSize: "12px",
                 padding: "6px 14px",
@@ -205,12 +205,13 @@ export default function RegistrationSignForm({
                 transition: "all var(--transition-fast)",
                 display: "flex",
                 alignItems: "center",
-                gap: "4px"
+                gap: "4px",
+                whiteSpace: "nowrap"
               }}>
                 {isCompleted && <span>✓</span>}
                 <span>{index + 1}. {tpl.title}</span>
               </div>
-              {index < templates.length - 1 && <span style={{ color: "var(--text-muted)", opacity: 0.3 }}>➔</span>}
+              {index < templates.length - 1 && <span style={{ color: "var(--text-muted)", opacity: 0.3, flexShrink: 0 }}>➔</span>}
             </div>
           );
         })}
@@ -240,6 +241,30 @@ export default function RegistrationSignForm({
         @media (prefers-color-scheme: light) {
           .logo-light-mode { display: block !important; }
           .logo-dark-mode { display: none !important; }
+        }
+        @media (max-width: 768px) {
+          .logo-header-container {
+            display: none !important;
+          }
+          .registration-title-header h1 {
+            font-size: 16px !important;
+            margin-bottom: 2px !important;
+          }
+          .progress-wizard-container {
+            flex-wrap: nowrap !important;
+            justify-content: flex-start !important;
+            overflow-x: auto !important;
+            padding: 8px 4px !important;
+            width: 100% !important;
+            -webkit-overflow-scrolling: touch;
+          }
+          .progress-wizard-container::-webkit-scrollbar {
+            height: 4px;
+          }
+          .progress-wizard-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 2px;
+          }
         }
       `}</style>
     </div>

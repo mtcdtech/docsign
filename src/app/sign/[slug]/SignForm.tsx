@@ -70,11 +70,11 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
   });
 
   const [formData, setFormData] = useState<Record<string, any>>({});
-  const [signerName, setSignerName] = useState(defaultSignerName || "");
+  const [signerName, setSignerName] = useState((defaultSignerName && defaultSignerName !== "Anonymous Draft") ? defaultSignerName : "");
   const [signerEmail, setSignerEmail] = useState(defaultSignerEmail || "");
 
   useEffect(() => {
-    if (defaultSignerName) setSignerName(defaultSignerName);
+    if (defaultSignerName && defaultSignerName !== "Anonymous Draft") setSignerName(defaultSignerName);
   }, [defaultSignerName]);
 
   useEffect(() => {
@@ -88,6 +88,29 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
   // Signer draft states
   const [draftId, setDraftId] = useState<string | null>(null);
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
+
+  // Dynamic keyboard height offset for mobile viewport fixed elements
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) return;
+
+    const handleResize = () => {
+      const vv = window.visualViewport;
+      if (!vv) return;
+      const offset = window.innerHeight - vv.height;
+      setKeyboardHeight(Math.max(0, offset));
+    };
+
+    window.visualViewport.addEventListener("resize", handleResize);
+    window.visualViewport.addEventListener("scroll", handleResize);
+    handleResize();
+
+    return () => {
+      window.visualViewport?.removeEventListener("resize", handleResize);
+      window.visualViewport?.removeEventListener("scroll", handleResize);
+    };
+  }, []);
 
   // PDF.js rendering states
   const [pdfjsLoaded, setPdfjsLoaded] = useState(false);
@@ -185,7 +208,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed.signerName) setSignerName(parsed.signerName);
+        if (parsed.signerName && parsed.signerName !== "Anonymous Draft") setSignerName(parsed.signerName);
         if (parsed.signerEmail) setSignerEmail(parsed.signerEmail);
         if (parsed.formData) setFormData(parsed.formData);
       } catch (e) {
@@ -200,7 +223,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
         .then((r) => r.json())
         .then((data) => {
           if (data.ok) {
-            if (data.signerName) setSignerName(data.signerName);
+            if (data.signerName && data.signerName !== "Anonymous Draft") setSignerName(data.signerName);
             if (data.signerEmail) setSignerEmail(data.signerEmail);
             if (data.formData) setFormData(data.formData);
           } else if (data.error === "Draft not found.") {
@@ -396,10 +419,34 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
     localStorage.setItem("theme-mode", nextTheme);
   };
 
+  const parseDobDate = (dobStr: string): Date | null => {
+    if (!dobStr) return null;
+    const parts = dobStr.includes("-") ? dobStr.split("-") : dobStr.split("/");
+    if (parts.length !== 3) return null;
+    
+    let year = 0;
+    let month = 0;
+    let day = 0;
+    
+    if (dobStr.includes("-")) {
+      year = parseInt(parts[0], 10);
+      month = parseInt(parts[1], 10) - 1;
+      day = parseInt(parts[2], 10);
+    } else {
+      month = parseInt(parts[0], 10) - 1;
+      day = parseInt(parts[1], 10);
+      year = parseInt(parts[2], 10);
+    }
+    
+    if (isNaN(year) || isNaN(month) || isNaN(day)) return null;
+    return new Date(year, month, day);
+  };
+
   const getAge = (dobString: string): number => {
     if (!dobString) return 0;
     const today = new Date();
-    const birth = new Date(dobString);
+    const birth = parseDobDate(dobString);
+    if (!birth) return 0;
     let age = today.getFullYear() - birth.getFullYear();
     const m = today.getMonth() - birth.getMonth();
     if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
@@ -457,8 +504,8 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
       if (ageFields.length > 0) {
         let calculatedAgeStr = "";
         if (dobValue) {
-          const birthDate = new Date(dobValue);
-          if (!isNaN(birthDate.getTime())) {
+          const birthDate = parseDobDate(dobValue);
+          if (birthDate) {
             const today = new Date();
             let calculatedAge = today.getFullYear() - birthDate.getFullYear();
             const m = today.getMonth() - birthDate.getMonth();
@@ -1639,7 +1686,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
       {isMobile && (
         <div style={{
           position: "fixed",
-          bottom: 0,
+          bottom: keyboardHeight,
           left: 0,
           right: 0,
           background: "var(--bg-glass)",

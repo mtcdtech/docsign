@@ -39,6 +39,7 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
 
   return (
     <nav
+      className="admin-navbar"
       style={{
         background: "var(--bg-glass)",
         backdropFilter: "blur(12px)",
@@ -59,7 +60,7 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
           margin: "0 auto",
         }}
       >
-        {/* Branding */}
+        {/* Branding & Links (Left) */}
         <div style={{ display: "flex", alignItems: "center", gap: "28px" }}>
           <Link href="/admin" style={{ textDecoration: "none", color: "var(--text-main)", fontWeight: 800, fontSize: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
             {(() => {
@@ -75,8 +76,8 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
             <span>{portalTitle}</span>
           </Link>
 
-          {/* Links */}
-          <div style={{ display: "flex", gap: "8px" }}>
+          {/* Links (Hidden on mobile) */}
+          <div className="nav-links-desktop" style={{ display: "flex", gap: "8px" }}>
             <Link
               href="/admin"
               className="btn"
@@ -130,8 +131,8 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
           </div>
         </div>
 
-        {/* Profile info & logout */}
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        {/* Profile info & logout (Desktop-only) */}
+        <div className="nav-profile-desktop" style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           <button
             onClick={toggleTheme}
             className="btn btn-secondary"
@@ -194,7 +195,163 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
             Sign Out
           </button>
         </div>
+
+        {/* Mobile Hamburger Toggle */}
+        <button
+          type="button"
+          className="nav-hamburger-mobile"
+          onClick={() => setIsOpen(!isOpen)}
+          style={{
+            display: "none",
+            background: "transparent",
+            border: "none",
+            color: "var(--text-main)",
+            cursor: "pointer",
+            padding: "8px",
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            {isOpen ? (
+              <line x1="18" y1="6" x2="6" y2="18" />
+            ) : (
+              <>
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </>
+            )}
+          </svg>
+        </button>
       </div>
+
+      {/* Mobile Dropdown Panel */}
+      {isOpen && (
+        <div
+          className="nav-dropdown-mobile"
+          style={{
+            display: "none",
+            flexDirection: "column",
+            gap: "12px",
+            marginTop: "16px",
+            paddingTop: "16px",
+            borderTop: "1px solid var(--border-color)",
+          }}
+        >
+          <Link
+            href="/admin"
+            className="btn"
+            onClick={() => setIsOpen(false)}
+            style={{
+              background: pathname === "/admin" ? "rgba(255,255,255,0.06)" : "transparent",
+              color: pathname === "/admin" ? "var(--text-main)" : "var(--text-muted)",
+              padding: "10px 16px",
+              fontSize: "14px",
+              textAlign: "left",
+            }}
+          >
+            Dashboard
+          </Link>
+          <Link
+            href="/admin/templates"
+            className="btn"
+            onClick={() => setIsOpen(false)}
+            style={{
+              background: isActive("/admin/templates") ? "rgba(255,255,255,0.06)" : "transparent",
+              color: isActive("/admin/templates") ? "var(--text-main)" : "var(--text-muted)",
+              padding: "10px 16px",
+              fontSize: "14px",
+              textAlign: "left",
+            }}
+          >
+            Templates
+          </Link>
+          <Link
+            href="/admin/registrations"
+            className="btn"
+            onClick={() => setIsOpen(false)}
+            style={{
+              background: isActive("/admin/registrations") ? "rgba(255,255,255,0.06)" : "transparent",
+              color: isActive("/admin/registrations") ? "var(--text-main)" : "var(--text-muted)",
+              padding: "10px 16px",
+              fontSize: "14px",
+              textAlign: "left",
+            }}
+          >
+            Registrations
+          </Link>
+          {isGlobalAdmin && (
+            <Link
+              href="/admin/settings"
+              className="btn"
+              onClick={() => setIsOpen(false)}
+              style={{
+                background: isActive("/admin/settings") ? "rgba(255,255,255,0.06)" : "transparent",
+                color: isActive("/admin/settings") ? "var(--text-main)" : "var(--text-muted)",
+                padding: "10px 16px",
+                fontSize: "14px",
+                textAlign: "left",
+              }}
+            >
+              Settings
+            </Link>
+          )}
+
+          {/* Profile, Theme, and Signout inside Dropdown */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 16px", background: "rgba(255,255,255,0.02)", borderRadius: "8px", marginTop: "8px" }}>
+            <div style={{ textAlign: "left" }}>
+              <div style={{ fontSize: "14px", fontWeight: 600 }}>{user.name || user.email}</div>
+              <span style={{ fontSize: "10px", color: "var(--text-muted)" }}>
+                {user.role === "Admin" ? "Global Admin" : "Leader"}
+              </span>
+            </div>
+            <button
+              onClick={toggleTheme}
+              className="btn btn-secondary"
+              style={{
+                padding: "8px",
+                borderRadius: "50%",
+                width: "36px",
+                height: "36px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "1px solid var(--border-color)",
+                background: "transparent",
+              }}
+            >
+              {theme === "dark" ? "☀️" : "🌙"}
+            </button>
+          </div>
+
+          <button
+            onClick={() => signOut({ redirect: false }).then(() => {
+              window.location.href = "https://auth.server.mtcd.org/application/o/docsign/end-session/?post_logout_redirect_uri=" + encodeURIComponent(window.location.origin + "/");
+            })}
+            className="btn btn-secondary"
+            style={{ padding: "12px", fontSize: "14px", marginTop: "4px", color: "#f87171", borderColor: "rgba(239,68,68,0.2)" }}
+          >
+            Sign Out
+          </button>
+        </div>
+      )}
+
+      {/* CSS Styles for responsive rules */}
+      <style jsx>{`
+        @media (max-width: 900px) {
+          .nav-links-desktop {
+            display: none !important;
+          }
+          .nav-profile-desktop {
+            display: none !important;
+          }
+          .nav-hamburger-mobile {
+            display: block !important;
+          }
+          .nav-dropdown-mobile {
+            display: flex !important;
+          }
+        }
+      `}</style>
     </nav>
   );
 }

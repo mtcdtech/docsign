@@ -99,6 +99,24 @@ export default function TemplatesListClient({ templates: initialTemplates, porta
     }
   };
 
+  const handleDeleteTemplate = async (templateId: string) => {
+    try {
+      const res = await fetch(`/api/admin/templates/${templateId}`, {
+        method: "DELETE"
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setTemplates((prev) => prev.filter((t) => t.id !== templateId));
+        setConfirmDeleteTemplateId(null);
+      } else {
+        alert(data.error || "Failed to delete template.");
+      }
+    } catch (e: any) {
+      console.error("Error deleting template:", e);
+      alert("An unexpected error occurred while deleting template.");
+    }
+  };
+
   // History Expandable States
   const [activeTemplate, setActiveTemplate] = useState<Template | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -108,6 +126,7 @@ export default function TemplatesListClient({ templates: initialTemplates, porta
   const [submissionSortOrder, setSubmissionSortOrder] = useState<"asc" | "desc">("desc");
   const [confirmClearTemplateId, setConfirmClearTemplateId] = useState<string | null>(null);
   const [confirmDeleteSubmissionId, setConfirmDeleteSubmissionId] = useState<string | null>(null);
+  const [confirmDeleteTemplateId, setConfirmDeleteTemplateId] = useState<string | null>(null);
 
   // Handle template organization sorting
   const handleSortByOrganization = () => {
@@ -376,8 +395,8 @@ export default function TemplatesListClient({ templates: initialTemplates, porta
                             )}
                           </div>
                         </td>
-                        <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                          <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+                        <td style={{ textAlign: "right" }}>
+                          <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", flexWrap: "wrap" }}>
                             <button
                               type="button"
                               className="btn btn-secondary"
@@ -400,6 +419,38 @@ export default function TemplatesListClient({ templates: initialTemplates, porta
                             >
                               {tpl.isArchived ? "📁 Restore" : "📁 Archive"}
                             </button>
+                            {confirmDeleteTemplateId === tpl.id ? (
+                              <div style={{ display: "flex", gap: "4px", alignItems: "center", background: "rgba(239, 68, 68, 0.1)", padding: "2px 6px", borderRadius: "6px", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
+                                <span style={{ fontSize: "11px", color: "#ef4444", fontWeight: "bold" }}>Delete?</span>
+                                <button
+                                  type="button"
+                                  className="btn btn-primary"
+                                  onClick={() => handleDeleteTemplate(tpl.id)}
+                                  style={{ padding: "3px 6px", fontSize: "10px", width: "auto", background: "#ef4444", borderColor: "#ef4444" }}
+                                >
+                                  Yes
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary"
+                                  onClick={() => setConfirmDeleteTemplateId(null)}
+                                  style={{ padding: "3px 6px", fontSize: "10px", width: "auto" }}
+                                >
+                                  No
+                                </button>
+                              </div>
+                            ) : (
+                              tpl.isArchived && (
+                                <button
+                                  type="button"
+                                  className="btn"
+                                  onClick={() => setConfirmDeleteTemplateId(tpl.id)}
+                                  style={{ padding: "6px 12px", fontSize: "12px", width: "auto", background: "rgba(239, 68, 68, 0.15)", color: "#f87171", border: "1px solid rgba(239, 68, 68, 0.2)" }}
+                                >
+                                  🗑️ Delete
+                                </button>
+                              )
+                            )}
                           </div>
                         </td>
                       </tr>

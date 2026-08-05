@@ -20,6 +20,13 @@ export async function generateMetadata() {
 
 export const dynamic = "force-dynamic";
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+};
+
 export default async function RootLayout({
   children,
 }: {
