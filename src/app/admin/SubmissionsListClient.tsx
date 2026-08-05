@@ -83,19 +83,19 @@ export default function SubmissionsListClient({ signedDocs, portalTimezone = "Am
                     style={{ opacity: doc.isDraft ? 0.75 : 1, cursor: "pointer" }}
                     title="Click row to preview submission details"
                   >
-                    <td style={{ whiteSpace: "nowrap" }}>
+                    <td style={{ maxWidth: "140px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={`${displaySignerName} (${doc.signerEmail || "No Email"})`}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <div style={{ fontWeight: 600, color: "var(--text-main)" }}>{displaySignerName}</div>
+                        <div style={{ fontWeight: 600, color: "var(--text-main)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displaySignerName}</div>
                         {doc.isDraft && (
-                          <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "4px", background: "#f59e0b", color: "#fff", fontWeight: "bold" }}>
+                          <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "4px", background: "#f59e0b", color: "#fff", fontWeight: "bold", flexShrink: 0 }}>
                             Draft
                           </span>
                         )}
                       </div>
-                      <div style={{ fontSize: "12px" }}>{doc.signerEmail || "(Unspecified)"}</div>
+                      <div style={{ fontSize: "12px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.signerEmail || "(Unspecified)"}</div>
                     </td>
-                    <td style={{ maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={doc.template.title}>{doc.template.title}</td>
-                    <td style={{ whiteSpace: "nowrap" }}>{doc.template.organization.name}</td>
+                    <td style={{ maxWidth: "140px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={doc.template.title}>{doc.template.title}</td>
+                    <td style={{ maxWidth: "120px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={doc.template.organization.name}>{doc.template.organization.name}</td>
                     <td style={{ whiteSpace: "nowrap" }} suppressHydrationWarning>{new Date(doc.createdAt).toLocaleString("en-US", { timeZone: portalTimezone })}</td>
                     <td style={{ whiteSpace: "nowrap" }} onClick={(e) => e.stopPropagation()}>
                       {doc.isDraft ? (

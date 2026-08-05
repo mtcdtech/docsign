@@ -335,15 +335,15 @@ export default function TemplatesListClient({ templates: initialTemplates, porta
                   return (
                     <React.Fragment key={tpl.id}>
                       <tr style={{ background: isExpanded ? "rgba(255, 255, 255, 0.03)" : "none" }}>
-                        <td style={{ fontWeight: 600, color: "var(--text-main)", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={tpl.title}>{tpl.title}</td>
-                        <td style={{ whiteSpace: "nowrap" }}>{tpl.organization.name}</td>
-                        <td style={{ whiteSpace: "nowrap" }}>
+                        <td style={{ fontWeight: 600, color: "var(--text-main)", maxWidth: "140px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={tpl.title}>{tpl.title}</td>
+                        <td style={{ maxWidth: "120px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={tpl.organization.name}>{tpl.organization.name}</td>
+                        <td style={{ maxWidth: "130px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {tpl.isArchived ? (
-                            <span style={{ color: "var(--text-muted)", fontStyle: "italic", fontSize: "13px" }}>
+                            <span style={{ color: "var(--text-muted)", fontStyle: "italic", fontSize: "13px" }} title="Archived (Link Disabled)">
                               Archived (Link Disabled)
                             </span>
                           ) : (
-                            <a href={publicUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--primary-color)", textDecoration: "none" }}>
+                            <a href={publicUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--primary-color)", textDecoration: "none" }} title={`/${tpl.slug}`}>
                               /{tpl.slug}
                             </a>
                           )}
