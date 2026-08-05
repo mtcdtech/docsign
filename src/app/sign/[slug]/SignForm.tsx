@@ -1294,14 +1294,14 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                           transformOrigin: transformOriginStyle,
                           border: "1px solid var(--border-color)",
                           borderRadius: "4px",
-                          background: "#000",
+                          background: "#ffffff",
                           flexShrink: 0,
                           transition: "all 0.3s ease-out"
                         }}
                       >
                         <canvas
                           id={`pdf-preview-canvas-${pageIdx}`}
-                          style={{ display: "block" }}
+                          style={{ display: "block", background: "#ffffff" }}
                         />
                       
                       {/* Absolute Overlay Fields */}
