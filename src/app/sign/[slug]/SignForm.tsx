@@ -643,6 +643,9 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
     const container = viewerScrollContainerRef.current;
 
     if (isMobile && transformWrapperRef.current && element) {
+      if (field.type !== "signature") {
+        element.focus();
+      }
       setTimeout(() => {
         try {
           transformWrapperRef.current.zoomToElement(elementId, 1.8, 300, "easeOut");
