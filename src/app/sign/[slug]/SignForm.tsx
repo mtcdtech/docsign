@@ -145,10 +145,33 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
     if (digits.length <= 2) {
       return digits;
     } else if (digits.length <= 4) {
-      return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+      return `${digits.slice(0, 2)}/${digits.slice(2)}`;
     } else {
-      return `${digits.slice(0, 2)}-${digits.slice(2, 4)}-${digits.slice(4, 8)}`;
+      return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
     }
+  };
+
+  // Convert MM/DD/YYYY (or MM-DD-YYYY) to YYYY-MM-DD for native HTML5 date input
+  const convertToInputDate = (val: string): string => {
+    if (!val) return "";
+    const clean = val.replace(/[-\/]/g, ""); // strip / and -
+    if (clean.length === 8) {
+      const mm = clean.substring(0, 2);
+      const dd = clean.substring(2, 4);
+      const yyyy = clean.substring(4, 8);
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    return val;
+  };
+
+  // Convert YYYY-MM-DD to MM/DD/YYYY for stored format
+  const convertFromInputDate = (val: string): string => {
+    if (!val) return "";
+    if (val.includes("-") && val.split("-")[0].length === 4) {
+      const parts = val.split("-");
+      return `${parts[1]}/${parts[2]}/${parts[0]}`;
+    }
+    return val;
   };
 
   const getSubmissionDestinations = () => {
@@ -538,6 +561,9 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
   // Calculate required fields status in real-time
   const visibleFields = fields.filter(isFieldVisible);
   const remainingRequiredFields = visibleFields.filter((f) => {
+    // Skip auto-calculated fields from checklist navigation and edit check
+    if (f.type === "age" || f.type === "todays_date") return false;
+
     if (f.type === "signer_name") return !signerName.trim();
     if (f.type === "signer_email") return !signerEmail.trim();
     const val = formData[f.id];
@@ -1153,8 +1179,8 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                                   border: isHighlighted
                                     ? "3px solid #f59e0b"
                                     : "1.5px solid var(--border-color)",
-                                  background: isVisible ? "rgba(253, 224, 71, 0.15)" : "rgba(255, 255, 255, 0.05)",
-                                  color: "var(--text-main)",
+                                  background: isVisible ? "#fef08a" : "rgba(255, 255, 255, 0.05)",
+                                  color: "#0f172a",
                                   boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                   fontSize: isMobile ? "16px" : "11px",
                                   padding: "2px 6px",
@@ -1186,8 +1212,8 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                                   border: isHighlighted
                                     ? "3px solid #f59e0b"
                                     : "1.5px solid var(--border-color)",
-                                  background: isVisible ? "rgba(253, 224, 71, 0.15)" : "rgba(255, 255, 255, 0.05)",
-                                  color: "var(--text-main)",
+                                  background: isVisible ? "#fef08a" : "rgba(255, 255, 255, 0.05)",
+                                  color: "#0f172a",
                                   boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                   fontSize: isMobile ? "16px" : "11px",
                                   padding: "2px 6px",
@@ -1206,22 +1232,34 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                                 <input
                                   id={`field-input-box-${f.instanceId || f.id}`}
                                   type={dateInputTypes[f.id] || "text"}
-                                  value={val}
-                                  placeholder={isVisible ? (f.required ? `${f.label} (MM-DD-YYYY) *` : `${f.label} (MM-DD-YYYY)`) : ""}
+                                  value={
+                                    dateInputTypes[f.id] === "date"
+                                      ? convertToInputDate(val)
+                                      : val
+                                  }
+                                  placeholder={isVisible ? (f.required ? `${f.label} (MM/DD/YYYY) *` : `${f.label} (MM/DD/YYYY)`) : ""}
                                   disabled={!isVisible}
                                   readOnly={!isVisible}
                                   tabIndex={isVisible ? tabIdx : -1}
                                   onChange={(e) => {
                                     if (isVisible) {
-                                      const formatted = formatDateString(e.target.value);
-                                      handleInputChange(f.id, formatted);
+                                      let newVal = e.target.value;
+                                      if (e.target.type === "date") {
+                                        newVal = convertFromInputDate(newVal);
+                                      } else {
+                                        newVal = formatDateString(newVal);
+                                      }
+                                      handleInputChange(f.id, newVal);
                                     }
                                   }}
-                                  onFocus={() => handleChecklistItemClick(f.instanceId || f.id)}
+                                  onFocus={() => {
+                                    handleChecklistItemClick(f.instanceId || f.id);
+                                    setDateInputTypes((prev) => ({ ...prev, [f.id]: "date" }));
+                                  }}
                                   onClick={() => handleChecklistItemClick(f.instanceId || f.id)}
                                   onBlur={() => {
                                     setTimeout(() => {
-                                      setDateInputTypes(prev => ({ ...prev, [f.id]: "text" }));
+                                      setDateInputTypes((prev) => ({ ...prev, [f.id]: "text" }));
                                     }, 300);
                                   }}
                                   style={{
@@ -1229,8 +1267,8 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                                     height: "100%",
                                     maxWidth: "100%",
                                     minWidth: "0px",
-                                    background: isVisible ? "rgba(253, 224, 71, 0.15)" : "rgba(255, 255, 255, 0.05)",
-                                    color: "var(--text-main)",
+                                    background: isVisible ? "#fef08a" : "rgba(255, 255, 255, 0.05)",
+                                    color: "#0f172a",
                                     fontSize: isMobile ? "16px" : "11px",
                                     padding: "2px 6px",
                                     paddingRight: "6px",
@@ -1239,7 +1277,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                                       ? "3px solid #f59e0b"
                                       : "1.5px solid var(--border-color)",
                                     outline: "none",
-                                    colorScheme: theme,
+                                    colorScheme: "light",
                                     cursor: isVisible ? "text" : "not-allowed",
                                     boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                   }}
@@ -1320,22 +1358,34 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                                 <input
                                   id={`field-input-box-${f.instanceId || f.id}`}
                                   type={dateInputTypes[f.id] || "text"}
-                                  value={val}
-                                  placeholder={isVisible ? (f.required ? `${f.label} (MM-DD-YYYY) *` : `${f.label} (MM-DD-YYYY)`) : ""}
+                                  value={
+                                    dateInputTypes[f.id] === "date"
+                                      ? convertToInputDate(val)
+                                      : val
+                                  }
+                                  placeholder={isVisible ? (f.required ? `${f.label} (MM/DD/YYYY) *` : `${f.label} (MM/DD/YYYY)`) : ""}
                                   disabled={!isVisible}
                                   readOnly={!isVisible}
                                   tabIndex={isVisible ? tabIdx : -1}
                                   onChange={(e) => {
                                     if (isVisible) {
-                                      const formatted = formatDateString(e.target.value);
-                                      handleInputChange(f.id, formatted);
+                                      let newVal = e.target.value;
+                                      if (e.target.type === "date") {
+                                        newVal = convertFromInputDate(newVal);
+                                      } else {
+                                        newVal = formatDateString(newVal);
+                                      }
+                                      handleInputChange(f.id, newVal);
                                     }
                                   }}
-                                  onFocus={() => handleChecklistItemClick(f.instanceId || f.id)}
+                                  onFocus={() => {
+                                    handleChecklistItemClick(f.instanceId || f.id);
+                                    setDateInputTypes((prev) => ({ ...prev, [f.id]: "date" }));
+                                  }}
                                   onClick={() => handleChecklistItemClick(f.instanceId || f.id)}
                                   onBlur={() => {
                                     setTimeout(() => {
-                                      setDateInputTypes(prev => ({ ...prev, [f.id]: "text" }));
+                                      setDateInputTypes((prev) => ({ ...prev, [f.id]: "text" }));
                                     }, 300);
                                   }}
                                   style={{
@@ -1343,8 +1393,8 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                                     height: "100%",
                                     maxWidth: "100%",
                                     minWidth: "0px",
-                                    background: isVisible ? "rgba(253, 224, 71, 0.15)" : "rgba(255, 255, 255, 0.05)",
-                                    color: "var(--text-main)",
+                                    background: isVisible ? "#fef08a" : "rgba(255, 255, 255, 0.05)",
+                                    color: "#0f172a",
                                     fontSize: isMobile ? "16px" : "11px",
                                     padding: "2px 6px",
                                     paddingRight: "6px",
@@ -1353,7 +1403,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                                       ? "3px solid #f59e0b"
                                       : "1.5px solid var(--border-color)",
                                     outline: "none",
-                                    colorScheme: theme,
+                                    colorScheme: "light",
                                     cursor: isVisible ? "text" : "not-allowed",
                                     boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                   }}
@@ -1378,8 +1428,8 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                               placeholder={isVisible ? (f.required ? `${f.label} *` : f.label) : "Condition not met"}
                               style={{
                                 ...style,
-                                background: isVisible ? "rgba(253, 224, 71, 0.15)" : "rgba(255, 255, 255, 0.05)",
-                                color: "var(--text-main)",
+                                background: isVisible ? "#fef08a" : "rgba(255, 255, 255, 0.05)",
+                                color: "#0f172a",
                                 fontSize: isMobile ? "16px" : "11px",
                                 padding: "2px 6px",
                                 borderRadius: "4px",
@@ -1388,7 +1438,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                                   : "1.5px solid var(--border-color)",
                                 outline: "none",
                                 height: `${mapping.height}px`,
-                                colorScheme: theme,
+                                colorScheme: "light",
                                 cursor: isVisible ? "text" : "not-allowed",
                                 boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                               }}
