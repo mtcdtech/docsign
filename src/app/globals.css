@@ -425,3 +425,67 @@ input::-webkit-search-results-decoration {
     display: flex !important;
   }
 }
+
+@media (max-width: 768px) {
+  .mobile-hider {
+    display: none !important;
+  }
+  .mobile-only {
+    display: block !important;
+  }
+  span.mobile-only {
+    display: inline !important;
+  }
+}
+@media (min-width: 769px) {
+  .mobile-only {
+    display: none !important;
+  }
+}
+
+.registration-main-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+.progress-wizard-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 10px;
+  margin-top: 0px;
+}
+.progress-step-pill {
+  font-size: 11px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.arrow-step-divider {
+  color: var(--text-muted);
+  opacity: 0.3;
+  flex-shrink: 0;
+  font-size: 11px;
+}
+
+@media (max-width: 768px) {
+  .registration-main-container {
+    gap: 6px !important;
+  }
+  .progress-wizard-container {
+    margin-bottom: 4px !important;
+    margin-top: 4px !important;
+  }
+  .progress-step-pill {
+    padding: 2px 8px !important;
+  }
+}

@@ -163,82 +163,66 @@ export default function RegistrationSignForm({
   const pdfUrl = `/api/download/templates/${pdfFilename}`;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? "6px" : "20px", maxWidth: "1200px", margin: "0 auto", width: "100%" }}>
+    <div className="registration-main-container">
       
       {/* Logos Switcher (Light / Dark mode, Org priority, Portal fallback) */}
-      {!isMobile && (
-        <div className="logo-header-container" style={{ display: "flex", justifyContent: "center", marginBottom: "4px" }}>
-          {/* Light Mode Logos */}
-          <div className="logo-light-mode">
-            {orgLogoLight ? (
-              <img src={orgLogoLight} alt={registration.organizationName || "Logo"} style={{ maxHeight: "60px", maxWidth: "240px", objectFit: "contain" }} />
-            ) : portalLogoLight ? (
-              <img src={portalLogoLight} alt={portalTitle} style={{ maxHeight: "60px", maxWidth: "240px", objectFit: "contain" }} />
-            ) : (
-              <div style={{ fontSize: "20px", fontWeight: "bold", color: "#18181b" }}>✍️ {portalTitle}</div>
-            )}
-          </div>
-
-          {/* Dark Mode Logos */}
-          <div className="logo-dark-mode">
-            {orgLogoDark ? (
-              <img src={orgLogoDark} alt={registration.organizationName || "Logo"} style={{ maxHeight: "60px", maxWidth: "240px", objectFit: "contain" }} />
-            ) : portalLogoDark ? (
-              <img src={portalLogoDark} alt={portalTitle} style={{ maxHeight: "60px", maxWidth: "240px", objectFit: "contain" }} />
-            ) : (
-              <div style={{ fontSize: "20px", fontWeight: "bold", color: "#ffffff" }}>✍️ {portalTitle}</div>
-            )}
-          </div>
+      <div className="logo-header-container mobile-hider" style={{ display: "flex", justifyContent: "center", marginBottom: "4px" }}>
+        {/* Light Mode Logos */}
+        <div className="logo-light-mode">
+          {orgLogoLight ? (
+            <img src={orgLogoLight} alt={registration.organizationName || "Logo"} style={{ maxHeight: "60px", maxWidth: "240px", objectFit: "contain" }} />
+          ) : portalLogoLight ? (
+            <img src={portalLogoLight} alt={portalTitle} style={{ maxHeight: "60px", maxWidth: "240px", objectFit: "contain" }} />
+          ) : (
+            <div style={{ fontSize: "20px", fontWeight: "bold", color: "#18181b" }}>✍️ {portalTitle}</div>
+          )}
         </div>
-      )}
+
+        {/* Dark Mode Logos */}
+        <div className="logo-dark-mode">
+          {orgLogoDark ? (
+            <img src={orgLogoDark} alt={registration.organizationName || "Logo"} style={{ maxHeight: "60px", maxWidth: "240px", objectFit: "contain" }} />
+          ) : portalLogoDark ? (
+            <img src={portalLogoDark} alt={portalTitle} style={{ maxHeight: "60px", maxWidth: "240px", objectFit: "contain" }} />
+          ) : (
+            <div style={{ fontSize: "20px", fontWeight: "bold", color: "#ffffff" }}>✍️ {portalTitle}</div>
+          )}
+        </div>
+      </div>
 
       {/* Registration Title Header */}
-      {!isMobile && (
-        <div className="registration-title-header" style={{ textAlign: "center", marginBottom: "10px" }}>
-          <h1 style={{ fontSize: "24px", margin: "0 0 6px 0", fontWeight: "800" }}>{registration.title}</h1>
-          <p style={{ margin: 0, fontSize: "13px", color: "var(--text-muted)" }}>
-            Step {currentIndex + 1} of {templates.length} — Completing: <strong>{activeTemplate.title}</strong>
-          </p>
-        </div>
-      )}
+      <div className="registration-title-header mobile-hider" style={{ textAlign: "center", marginBottom: "10px" }}>
+        <h1 style={{ fontSize: "24px", margin: "0 0 6px 0", fontWeight: "800" }}>{registration.title}</h1>
+        <p style={{ margin: 0, fontSize: "13px", color: "var(--text-muted)" }}>
+          Step {currentIndex + 1} of {templates.length} — Completing: <strong>{activeTemplate.title}</strong>
+        </p>
+      </div>
 
       {/* Progress Wizard Breadcrumb Steps */}
-      <div className="progress-wizard-container" style={{ 
-        display: "flex", 
-        gap: "6px", 
-        justifyContent: "center", 
-        alignItems: "center", 
-        marginBottom: isMobile ? "4px" : "10px",
-        marginTop: isMobile ? "4px" : "0px"
-      }}>
-        {isMobile && (
-          <span style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: "bold", marginRight: "4px" }}>
-            Packet:
-          </span>
-        )}
+      <div className="progress-wizard-container">
+        <span className="mobile-only" style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: "bold", marginRight: "4px" }}>
+          Packet:
+        </span>
         {templates.map((tpl, index) => {
           const isActive = index === currentIndex;
           const isCompleted = index < currentIndex;
           return (
             <div key={tpl.id} style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
-              <div style={{
-                fontSize: "11px",
-                padding: isMobile ? "2px 8px" : "6px 14px",
-                borderRadius: "20px",
-                background: isActive ? "var(--primary-color)" : isCompleted ? "rgba(16, 185, 129, 0.15)" : "rgba(255, 255, 255, 0.03)",
-                color: isActive ? "#ffffff" : isCompleted ? "#34d399" : "var(--text-muted)",
-                fontWeight: "bold",
-                border: "1px solid " + (isActive ? "var(--primary-color)" : isCompleted ? "#10b981" : "var(--border-color)"),
-                transition: "all var(--transition-fast)",
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-                whiteSpace: "nowrap"
-              }}>
+              <div 
+                className="progress-step-pill"
+                style={{
+                  background: isActive ? "var(--primary-color)" : isCompleted ? "rgba(16, 185, 129, 0.15)" : "rgba(255, 255, 255, 0.03)",
+                  color: isActive ? "#ffffff" : isCompleted ? "#34d399" : "var(--text-muted)",
+                  border: "1px solid " + (isActive ? "var(--primary-color)" : isCompleted ? "#10b981" : "var(--border-color)"),
+                }}
+              >
                 {isCompleted && <span>✓</span>}
-                <span>{index + 1}{!isMobile && `. ${tpl.title}`}</span>
+                <span>
+                  {index + 1}
+                  <span className="mobile-hider">. {tpl.title}</span>
+                </span>
               </div>
-              {index < templates.length - 1 && <span style={{ color: "var(--text-muted)", opacity: 0.3, flexShrink: 0, fontSize: "11px" }}>➔</span>}
+              {index < templates.length - 1 && <span className="arrow-step-divider">➔</span>}
             </div>
           );
         })}
