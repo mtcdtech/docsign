@@ -106,33 +106,11 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
   // Signer draft states
   const [draftId, setDraftId] = useState<string | null>(null);
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
-
   // Dynamic keyboard height offset for mobile viewport fixed elements
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [headerTransformStyle, setHeaderTransformStyle] = useState<React.CSSProperties>({});
   const transformWrapperRef = useRef<any>(null);
   const datePickerRefs = useRef<Record<string, HTMLInputElement | null>>({});
-
-
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.visualViewport) return;
-
-    const handleResize = () => {
-      const vv = window.visualViewport;
-      if (!vv) return;
-      const offset = window.innerHeight - vv.height;
-      setKeyboardHeight(Math.max(0, offset));
-    };
-
-    window.visualViewport.addEventListener("resize", handleResize);
-    window.visualViewport.addEventListener("scroll", handleResize);
-    handleResize();
-
-    return () => {
-      window.visualViewport?.removeEventListener("resize", handleResize);
-      window.visualViewport?.removeEventListener("scroll", handleResize);
-    };
-  }, []);
 
   // Prevent browser native viewport pinch-zooming globally (especially when inputs are focused/active)
   useEffect(() => {
@@ -183,6 +161,45 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
 
   const [dateInputTypes, setDateInputTypes] = useState<Record<string, "text" | "date">>({});
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) return;
+
+    const handleResize = () => {
+      const vv = window.visualViewport;
+      if (!vv) return;
+      const offset = window.innerHeight - vv.height;
+      setKeyboardHeight(Math.max(0, offset));
+
+      // Visual viewport pinning for sticky header when zoomed in on mobile
+      if (isMobile) {
+        if (vv.scale > 1.05) {
+          setHeaderTransformStyle({
+            position: "absolute",
+            left: 0,
+            top: 0,
+            width: `${vv.width}px`,
+            transform: `translate3d(${vv.offsetLeft}px, ${vv.offsetTop}px, 0) scale(${1 / vv.scale})`,
+            transformOrigin: "top left",
+          });
+        } else {
+          setHeaderTransformStyle({});
+        }
+      } else {
+        setHeaderTransformStyle({});
+      }
+    };
+
+    window.visualViewport.addEventListener("resize", handleResize);
+    window.visualViewport.addEventListener("scroll", handleResize);
+    handleResize();
+
+    return () => {
+      window.visualViewport?.removeEventListener("resize", handleResize);
+      window.visualViewport?.removeEventListener("scroll", handleResize);
+    };
+  }, [isMobile]);
+
   const formatDateString = (value: string): string => {
     // Strip all non-digits
     const digits = value.replace(/\D/g, "");
@@ -860,7 +877,8 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
           boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
           width: "100%",
           borderRadius: isMobile ? "0" : "8px 8px 0 0",
-          marginBottom: isMobile ? "0" : "16px"
+          marginBottom: isMobile ? "0" : "16px",
+          ...headerTransformStyle
         }}>
           {/* Row 1: Logo + (Title & Org) + Buttons */}
           <div style={{ 
@@ -1214,7 +1232,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                 minScale={0.8}
                 maxScale={4}
                 centerOnInit={true}
-                panning={{ disabled: false }}
+                panning={{ disabled: !isMobile }}
                 wheel={{ disabled: true }}
               >
                 <TransformComponent

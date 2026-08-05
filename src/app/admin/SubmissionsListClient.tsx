@@ -29,6 +29,7 @@ interface Submission {
   emailedLeader: boolean;
   emailedParent: boolean;
   isDraft: boolean;
+  nullified?: boolean;
   template: Tpl;
 }
 
