@@ -234,6 +234,8 @@ button, .btn {
 /* Table layouts for lists */
 .table-container {
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: 65vh;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   background: var(--bg-glass);
@@ -247,7 +249,10 @@ table {
 }
 
 th {
-  background-color: rgba(255, 255, 255, 0.02);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--bg-card) !important;
   color: var(--text-main);
   font-weight: 600;
   padding: 16px;
@@ -438,6 +443,41 @@ input::-webkit-search-results-decoration {
     margin-top: 0 !important;
     border-radius: 0 !important;
     animation: slideDrawerIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+  .admin-navbar {
+    padding: 8px 16px !important;
+  }
+  .mobile-flex-only a {
+    font-size: 16px !important;
+  }
+  .mobile-flex-only img {
+    height: 20px !important;
+  }
+  footer {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    padding: 10px 16px !important;
+    background: var(--bg-glass) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border-top: 1px solid var(--border-color) !important;
+    z-index: 900 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 12px !important;
+  }
+  footer p {
+    display: inline-block !important;
+    margin: 0 !important;
+    font-size: 11px !important;
+    white-space: nowrap !important;
+  }
+  body {
+    padding-bottom: 50px !important;
   }
 }
 
