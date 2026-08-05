@@ -933,7 +933,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   wordBreak: "break-word",
-                  maxWidth: isMobile ? "110px" : "600px"
+                  maxWidth: "100%"
                 }} title={template.title}>
                   {template.title}
                 </div>
@@ -947,7 +947,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                 overflow: "hidden", 
                 textOverflow: "ellipsis", 
                 whiteSpace: "nowrap",
-                maxWidth: isMobile ? "100px" : "400px" 
+                maxWidth: "100%" 
               }} title={template.organization.name}>
                 {template.organization.name}
               </div>
@@ -1008,7 +1008,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
             <div style={{
               display: "flex",
               alignItems: "center",
-              justifyContent: isMobile ? "flex-start" : "center",
+              justifyContent: "center",
               gap: "8px",
               padding: isMobile ? "6px 12px" : "12px 24px",
               minHeight: isMobile ? "auto" : "48px",
