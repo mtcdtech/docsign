@@ -63,6 +63,40 @@ interface SignFormProps {
   wizardFormTitles?: string[];
 }
 
+interface PageListContainerProps {
+  isMobile: boolean;
+  transformWrapperRef: React.RefObject<any>;
+  children: React.ReactNode;
+}
+
+const PageListContainer = ({ isMobile, transformWrapperRef, children }: PageListContainerProps) => {
+  if (!isMobile) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", alignItems: "center" }}>
+        {children}
+      </div>
+    );
+  }
+  return (
+    <TransformWrapper
+      ref={transformWrapperRef}
+      initialScale={1}
+      minScale={0.8}
+      maxScale={4}
+      centerOnInit={true}
+      panning={{ disabled: false }}
+      wheel={{ disabled: true }}
+    >
+      <TransformComponent
+        wrapperStyle={{ width: "100%" }}
+        contentStyle={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", alignItems: "center" }}
+      >
+        {children}
+      </TransformComponent>
+    </TransformWrapper>
+  );
+};
+
 export default function SignForm({ template, portalTitle, portalLogoLight, portalLogoDark, masterLogoLight, masterLogoDark, orgLogoLight, orgLogoDark, pdfUrl, pcoAttendeeId, defaultSignerName, defaultSignerEmail, onComplete, wizardStepsCount, wizardCurrentIndex, wizardFormTitles }: SignFormProps) {
   const fields = JSON.parse(template.fieldsJson) as FormField[];
 
@@ -849,34 +883,6 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
     );
   }
 
-  const PageListContainer = ({ children }: { children: React.ReactNode }) => {
-    if (!isMobile) {
-      return (
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", alignItems: "center" }}>
-          {children}
-        </div>
-      );
-    }
-    return (
-      <TransformWrapper
-        ref={transformWrapperRef}
-        initialScale={1}
-        minScale={0.8}
-        maxScale={4}
-        centerOnInit={true}
-        panning={{ disabled: false }}
-        wheel={{ disabled: true }}
-      >
-        <TransformComponent
-          wrapperStyle={{ width: "100%" }}
-          contentStyle={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", alignItems: "center" }}
-        >
-          {children}
-        </TransformComponent>
-      </TransformWrapper>
-    );
-  };
-
   const resolvedLogoLight = template.logoLight || orgLogoLight;
   const resolvedLogoDark = template.logoDark || orgLogoDark;
   const activeOrgLogo = theme === "dark" ? (resolvedLogoDark || resolvedLogoLight) : (resolvedLogoLight || resolvedLogoDark);
@@ -1260,7 +1266,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                 Rendering document pages...
               </div>
             ) : (
-              <PageListContainer>
+              <PageListContainer isMobile={isMobile} transformWrapperRef={transformWrapperRef}>
                   {Array.from({ length: numPages }).map((_, pageIdx) => {
                   const dims = pageDimensions[pageIdx];
                   const originalWidth = dims?.width || 800;
