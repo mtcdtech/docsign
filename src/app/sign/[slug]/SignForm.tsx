@@ -957,6 +957,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                   const originalWidth = dims?.width || 800;
                   const originalHeight = dims?.height || 1100;
                   const paddingAdjustment = 34; // scrollbar and card padding
+                  const availableWidth = containerWidth - paddingAdjustment;
                   let scale = ((availableWidth > 0 && availableWidth < originalWidth)
                     ? (availableWidth / originalWidth)
                     : 1) * zoomMultiplier;
