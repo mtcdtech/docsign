@@ -904,32 +904,72 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
               })()}
             </div>
 
-            {/* Middle: Active Template Name & Wizard Progress */}
+            {/* Middle: Active Template Name, Organization & Wizard Progress */}
             <div style={{ 
               flex: 1, 
               display: "flex", 
+              flexDirection: isMobile ? "column" : "row",
               alignItems: "center", 
               justifyContent: "center", 
-              gap: "6px",
+              gap: isMobile ? "2px" : "6px",
               minWidth: 0,
-              padding: "0 4px"
+              padding: isMobile ? "0 8px" : "0 4px",
+              textAlign: "center"
             }}>
-              <span style={{ 
-                fontSize: isMobile ? "12px" : "16px", 
-                fontWeight: "bold", 
-                color: "var(--text-main)", 
-                whiteSpace: "nowrap",
-                overflow: "hidden", 
-                textOverflow: "ellipsis",
-                maxWidth: isMobile ? "95px" : "300px"
-              }} title={template.title}>
-                {isMobile ? template.title : template.organization.name}
-              </span>
-              {isMobile && wizardStepsCount && wizardStepsCount > 1 ? (
-                <span style={{ fontSize: "11px", fontWeight: "bold", color: "var(--primary-color)", flexShrink: 0 }}>
-                  ({wizardCurrentIndex! + 1}/{wizardStepsCount})
-                </span>
-              ) : null}
+              {isMobile ? (
+                <>
+                  {/* Line 1: Form Title (wrapped up to 2 lines) */}
+                  <div style={{ 
+                    fontSize: "11px", 
+                    fontWeight: "bold", 
+                    color: "var(--text-main)", 
+                    lineHeight: "1.2",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    wordBreak: "break-word"
+                  }} title={template.title}>
+                    {template.title}
+                  </div>
+
+                  {/* Line 2: Organization Name + Form Progress */}
+                  <div style={{ 
+                    display: "flex", 
+                    alignItems: "center", 
+                    justifyContent: "center", 
+                    gap: "4px",
+                    fontSize: "9px", 
+                    color: "var(--text-muted)", 
+                    width: "100%",
+                    whiteSpace: "nowrap"
+                  }}>
+                    <span style={{ 
+                      overflow: "hidden", 
+                      textOverflow: "ellipsis", 
+                      whiteSpace: "nowrap",
+                      maxWidth: "100px" 
+                    }} title={template.organization.name}>
+                      {template.organization.name}
+                    </span>
+                    {wizardStepsCount && wizardStepsCount > 1 ? (
+                      <>
+                        <span>•</span>
+                        <span style={{ fontWeight: "bold", color: "var(--primary-color)" }}>
+                          Form {wizardCurrentIndex! + 1} of {wizardStepsCount}
+                        </span>
+                      </>
+                    ) : null}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <span style={{ fontSize: "16px", fontWeight: "bold", color: "var(--text-main)" }}>
+                    {template.organization.name}
+                  </span>
+                </>
+              )}
             </div>
 
             {/* Right Side: Exit Workspace & Theme buttons */}
