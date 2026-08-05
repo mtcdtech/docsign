@@ -840,6 +840,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
 
       <div style={{ 
         position: "relative", 
+        width: "100%",
         maxWidth: "1400px", 
         margin: "0 auto", 
         padding: isMobile ? "0px" : "10px 0 80px",

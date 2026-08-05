@@ -554,6 +554,8 @@ input::-webkit-search-results-decoration {
 @media (max-width: 768px) {
   .registration-main-container {
     gap: 6px !important;
+    max-width: 100% !important;
+    width: 100% !important;
   }
   .progress-wizard-container {
     margin-bottom: 4px !important;
