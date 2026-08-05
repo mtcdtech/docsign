@@ -967,13 +967,15 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
 
             {/* Middle: Centered Block with 100% Larger Sub-Org Logo to the Left of Left-Aligned Title & Subtitle */}
             <div style={{ 
-              flex: 1, 
+              position: isMobile ? "relative" : "absolute",
+              left: isMobile ? "auto" : "50%",
+              transform: isMobile ? "none" : "translateX(-50%)",
               display: "flex", 
               alignItems: "center", 
               justifyContent: "center", 
               gap: isMobile ? "8px" : "16px",
-              minWidth: 0,
-              padding: isMobile ? "0 4px" : "0 16px"
+              maxWidth: isMobile ? "100%" : "calc(100% - 560px)",
+              zIndex: 5
             }}>
               {/* Sub-Org Logo (100% larger, positioned to the left) */}
               {!isMobile && activeOrgLogo && (
