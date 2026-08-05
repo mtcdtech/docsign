@@ -66,9 +66,10 @@
   - Email Branding: Refactored automated confirmation email dispatches to query and display both App Logo and Organization Logo in headers side-by-side using high-compatibility HTML table cells.
   - Audit logs: Removed gray span label backgrounds in the System Audit Log dashboard card table rows, setting text colors to high-contrast bold color coding.
   - Workspace Header and Viewport Optimizations (v0.14.6): Redesigned header layouts to space-saving 2-row design, resolved iOS Safari auto-zooming via dynamic font-size scales, integrated master/sub-org logo configurations in registration wizard sequences, and enforced dynamic viewport height layout stretch on mobile.
+  - Template PDF Replacement (v0.14.7): Programmed API and UI interfaces allowing admins to replace the background template PDF/Word file directly in the visual designer without modifying or losing any placed field coordinates.
 
 ## What is In Progress
-- Final verification of v0.14.6 in production environment.
+- Final verification of v0.14.7 in production environment.
 
 ## Known Risks & Assumptions
 - **OAuth Callback Domain**: NextAuth and Authentik are configured to work against `https://docsign.server.mtcd.org`. Any local test verification of SSO logins will fail or require mocking.

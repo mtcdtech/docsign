@@ -205,3 +205,8 @@
 - **Test Page Cleanup**: Removed the residual testing page [page.tsx](file:///Users/benny2168/Antigravity/docsign/src/app/test-nav/page.tsx) and committed its deletion.
 - **Deployment**: Bumped application version to `0.14.6` inside [package.json](file:///Users/benny2168/Antigravity/docsign/package.json), built the linux/amd64 Docker image, pushed to Docker Hub, and successfully triggered a production stack redeploy on Synology Portainer.
 - **Status**: Completed.
+
+### [2026-08-05] Template PDF Document Replacement in Designer (v0.14.7)
+- **Replace PDF/Word API**: Created the endpoint `/api/admin/templates/[id]/pdf` which handles replacement of template source documents. Supports PDF file upload and DOCX/DOC files with LibreOffice conversion. Wipes the old PDF file from local storage and assigns a cache-busting timestamped new PDF file path.
+- **Designer UI Integration**: Added `currentPdfUrl` state to [DesignCanvas.tsx](file:///Users/benny2168/Antigravity/docsign/src/app/admin/templates/[id]/design/DesignCanvas.tsx). Built a "Replace PDF File" toolbar button and hidden input in the sidebar actions panel to let users upload a new PDF or Word template file, dynamically reloading PDFJS pages in place while preserving all existing visual layout fields.
+- **Status**: Completed.
