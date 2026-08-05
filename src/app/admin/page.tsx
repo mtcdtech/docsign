@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { cleanExpiredDrafts } from "@/lib/drafts";
 import { redirect } from "next/navigation";
 import SubmissionsListClient from "./SubmissionsListClient";
+import DraftsListClient from "./DraftsListClient";
 import AuditLogsDashboardClient from "./AuditLogsDashboardClient";
 
 export const dynamic = "force-dynamic";
@@ -26,13 +27,25 @@ export default async function AdminDashboard() {
     if (tzSetting?.value) portalTimezone = tzSetting.value;
   } catch (e) {}
 
-  let signedDocs = [];
+  let signedDocs: any[] = [];
+  let draftDocs: any[] = [];
   let auditLogs: any[] = [];
   let stats = { templatesCount: 0, docsCount: 0, draftsCount: 0 };
 
   if (isGlobalAdmin) {
     signedDocs = await prisma.signedDocument.findMany({
       where: { isDraft: false },
+      include: {
+        template: {
+          include: {
+            organization: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    draftDocs = await prisma.signedDocument.findMany({
+      where: { isDraft: true },
       include: {
         template: {
           include: {
@@ -61,6 +74,23 @@ export default async function AdminDashboard() {
     signedDocs = await prisma.signedDocument.findMany({
       where: {
         isDraft: false,
+        template: {
+          organizationId: { in: orgIds },
+        },
+      },
+      include: {
+        template: {
+          include: {
+            organization: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    draftDocs = await prisma.signedDocument.findMany({
+      where: {
+        isDraft: true,
         template: {
           organizationId: { in: orgIds },
         },
@@ -142,6 +172,27 @@ export default async function AdminDashboard() {
             {isGlobalAdmin ? "Global (All Organizations)" : "Assigned Organizations"}
           </div>
         </div>
+      </div>
+
+      {/* In-Progress Drafts Table */}
+      <div className="card-glass" style={{ padding: "0px", overflow: "hidden", marginBottom: "32px" }}>
+        <div style={{ padding: "24px", borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <h2 style={{ margin: 0, display: "flex", alignItems: "center", gap: "10px" }}>
+              📝 In-Progress Drafts
+              {draftDocs.length > 0 && (
+                <span style={{ fontSize: "12px", background: "rgba(245, 158, 11, 0.2)", color: "#f59e0b", padding: "2px 8px", borderRadius: "12px", border: "1px solid rgba(245, 158, 11, 0.3)" }}>
+                  {draftDocs.length} active
+                </span>
+              )}
+            </h2>
+            <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "var(--text-muted)" }}>
+              Form submissions currently saved in-progress. Drafts automatically delete after 24 hours.
+            </p>
+          </div>
+        </div>
+
+        <DraftsListClient draftDocs={draftDocs} portalTimezone={portalTimezone} />
       </div>
 
       {/* Signed Documents Table */}
