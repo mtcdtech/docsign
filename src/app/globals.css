@@ -581,6 +581,7 @@ input::-webkit-search-results-decoration {
     position: fixed !important;
     width: 100vw !important;
     touch-action: pan-x pan-y !important;
+    padding-bottom: 0 !important;
   }
   .public-sign-container input,
   .public-sign-container select,
