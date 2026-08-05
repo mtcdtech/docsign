@@ -47,15 +47,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       fs.mkdirSync(templatesDir, { recursive: true });
     }
 
-    // Delete old PDF file if it exists
-    try {
-      if (template.pdfPath && fs.existsSync(template.pdfPath)) {
-        fs.unlinkSync(template.pdfPath);
-      }
-    } catch (e) {
-      console.error("Failed to delete old template PDF file:", e);
-    }
-
     // Generate new unique filename to prevent browser caching issues
     const newFileId = `${templateId}_${Date.now()}`;
     const newPdfPath = path.join(templatesDir, `${newFileId}.pdf`);
@@ -82,7 +73,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       } finally {
         // Remove temporary DOCX/DOC file
         if (fs.existsSync(tempDocxPath)) {
-          fs.unlinkSync(tempDocxPath);
+          try { fs.unlinkSync(tempDocxPath); } catch (e) {}
         }
       }
     } else {
@@ -91,11 +82,34 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       fs.writeFileSync(newPdfPath, fileBuffer);
     }
 
-    // Update database path
-    const updated = await prisma.template.update({
-      where: { id: templateId },
-      data: { pdfPath: newPdfPath }
-    });
+    // Verify new PDF file was written successfully and is non-empty
+    if (!fs.existsSync(newPdfPath) || fs.statSync(newPdfPath).size === 0) {
+      return NextResponse.json({ ok: false, error: "Uploaded PDF file is invalid or empty." }, { status: 400 });
+    }
+
+    // Capture old PDF path before updating
+    const oldPdfPath = template.pdfPath;
+
+    // Transactionally update template PDF path AND mark previous signed documents as nullified
+    await prisma.$transaction([
+      prisma.template.update({
+        where: { id: templateId },
+        data: { pdfPath: newPdfPath }
+      }),
+      prisma.signedDocument.updateMany({
+        where: { templateId, isDraft: false },
+        data: { nullified: true }
+      })
+    ]);
+
+    // Delete old PDF file ONLY AFTER database update and file creation have succeeded
+    if (oldPdfPath && oldPdfPath !== newPdfPath && fs.existsSync(oldPdfPath)) {
+      try {
+        fs.unlinkSync(oldPdfPath);
+      } catch (e) {
+        console.error("Failed to delete old template PDF file:", e);
+      }
+    }
 
     // Write audit log
     try {

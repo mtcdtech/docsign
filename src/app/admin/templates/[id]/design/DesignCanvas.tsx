@@ -506,7 +506,12 @@ export default function DesignCanvas({
           if (renderedPagesRef.current.has(pageNum)) continue;
 
           const page = await pdf.getPage(pageNum);
-          const canvas = document.getElementById(`pdf-canvas-${pageNum - 1}`) as HTMLCanvasElement;
+          let canvas: HTMLCanvasElement | null = null;
+          for (let attempt = 0; attempt < 30; attempt++) {
+            canvas = document.getElementById(`pdf-canvas-${pageNum - 1}`) as HTMLCanvasElement;
+            if (canvas) break;
+            await new Promise((r) => setTimeout(r, 50));
+          }
           if (!canvas) continue;
 
           const ctx = canvas.getContext("2d");
@@ -534,6 +539,26 @@ export default function DesignCanvas({
 
     renderPDF();
   }, [pdfjsLoaded, currentPdfUrl, numPages]);
+
+  // Clamp field page mappings if new PDF has fewer pages
+  useEffect(() => {
+    if (numPages > 0) {
+      setFields((prevFields) =>
+        prevFields.map((f) => {
+          if (f.pdfMapping.page >= numPages) {
+            return {
+              ...f,
+              pdfMapping: {
+                ...f.pdfMapping,
+                page: Math.max(0, numPages - 1),
+              },
+            };
+          }
+          return f;
+        })
+      );
+    }
+  }, [numPages]);
 
   // Mouse movements for drag repositioning & resizing
   useEffect(() => {
@@ -1227,20 +1252,7 @@ export default function DesignCanvas({
     );
   };
 
-  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const allowed = [".pdf", ".docx", ".doc"];
-    const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
-    if (!allowed.includes(ext)) {
-      setAlertState({
-        title: "Invalid File Type",
-        message: "Please upload a PDF (.pdf) or Word document (.docx, .doc)."
-      });
-      return;
-    }
-
+  const proceedWithPdfUpload = async (file: File) => {
     setUploadingPdf(true);
     const formData = new FormData();
     formData.append("file", file);
@@ -1261,7 +1273,7 @@ export default function DesignCanvas({
         setCurrentPdfUrl(data.pdfUrl);
         setAlertState({
           title: "PDF Updated Successfully",
-          message: "The template background PDF has been updated. All layout fields are preserved."
+          message: "The template background PDF has been updated. All layout fields are preserved, and existing signed documents have been marked as nullified."
         });
       } else {
         throw new Error("Invalid response payload from server.");
@@ -1274,8 +1286,35 @@ export default function DesignCanvas({
       });
     } finally {
       setUploadingPdf(false);
-      e.target.value = "";
     }
+  };
+
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowed = [".pdf", ".docx", ".doc"];
+    const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+    if (!allowed.includes(ext)) {
+      setAlertState({
+        title: "Invalid File Type",
+        message: "Please upload a PDF (.pdf) or Word document (.docx, .doc)."
+      });
+      e.target.value = "";
+      return;
+    }
+
+    const target = e.target;
+
+    setConfirmState({
+      title: "Warning: Nullify Existing Signatures?",
+      message: "Changing the template PDF will nullify all existing completed signed documents generated for this template. The fields will remain in their positions, but the previous signatures will be marked as 'Nullified' in logs and listings. Are you sure you want to proceed?",
+      onConfirm: () => {
+        proceedWithPdfUpload(file);
+      }
+    });
+
+    target.value = "";
   };
 
   // Save layout to database
