@@ -840,49 +840,33 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
       <div style={{ position: "relative", maxWidth: "1400px", margin: "0 auto", padding: "10px 0 80px" }}>
         
         {/* Compressed Header and Brand next to logo with Exit triggers */}
-        {/* Compressed Header and Brand next to logo with Exit triggers */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", marginBottom: "24px", paddingBottom: "16px", borderBottom: "1px solid var(--border-color)" }}>
           {/* Left Side: App Logo + Master Org Logo */}
           <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, flexShrink: 0 }}>
             {/* App Logo */}
-            <div className="logo-light-mode">
-              {portalLogoLight || portalLogoDark ? (
-                <img src={portalLogoLight || portalLogoDark} alt="App Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "80px", objectFit: "contain", flexShrink: 0 }} />
-              ) : null}
-            </div>
-            <div className="logo-dark-mode">
-              {portalLogoDark || portalLogoLight ? (
-                <img src={portalLogoDark || portalLogoLight} alt="App Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "80px", objectFit: "contain", flexShrink: 0 }} />
-              ) : null}
-            </div>
+            {(() => {
+              const activeAppLogo = theme === "dark" ? (portalLogoDark || portalLogoLight) : (portalLogoLight || portalLogoDark);
+              return activeAppLogo ? (
+                <img src={activeAppLogo} alt="App Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "80px", objectFit: "contain", flexShrink: 0 }} />
+              ) : null;
+            })()}
 
             {/* Separator Line */}
-            {((portalLogoLight || portalLogoDark) && (masterLogoLight || masterLogoDark)) && (
-              <div style={{ width: "1px", height: "20px", background: "var(--border-color)" }} />
-            )}
+            {(() => {
+              const activeAppLogo = theme === "dark" ? (portalLogoDark || portalLogoLight) : (portalLogoLight || portalLogoDark);
+              const activeMasterLogo = theme === "dark" ? (masterLogoDark || masterLogoLight) : (masterLogoLight || masterLogoDark);
+              return (activeAppLogo && activeMasterLogo) ? (
+                <div style={{ width: "1px", height: "20px", background: "var(--border-color)" }} />
+              ) : null;
+            })()}
 
             {/* Master Organization Logo */}
-            <div className="logo-light-mode">
-              {masterLogoLight || masterLogoDark ? (
-                <img src={masterLogoLight || masterLogoDark} alt="Master Org Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "80px", objectFit: "contain", flexShrink: 0 }} />
-              ) : null}
-            </div>
-            <div className="logo-dark-mode">
-              {masterLogoDark || masterLogoLight ? (
-                <img src={masterLogoDark || masterLogoLight} alt="Master Org Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "80px", objectFit: "contain", flexShrink: 0 }} />
-              ) : null}
-            </div>
-
-            <style jsx>{`
-              @media (prefers-color-scheme: dark) {
-                .logo-light-mode { display: none !important; }
-                .logo-dark-mode { display: block !important; }
-              }
-              @media (prefers-color-scheme: light) {
-                .logo-light-mode { display: block !important; }
-                .logo-dark-mode { display: none !important; }
-              }
-            `}</style>
+            {(() => {
+              const activeMasterLogo = theme === "dark" ? (masterLogoDark || masterLogoLight) : (masterLogoLight || masterLogoDark);
+              return activeMasterLogo ? (
+                <img src={activeMasterLogo} alt="Master Org Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "80px", objectFit: "contain", flexShrink: 0 }} />
+              ) : null;
+            })()}
           </div>
 
           {/* Center Block: Sub-org Logo and Title next to each other */}
@@ -893,29 +877,27 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
               justifyContent: "center",
               alignItems: "center",
               minWidth: 0,
-              gap: "8px",
+              gap: "10px",
               order: 2 
             }}
           >
-            {/* Light Mode Org Logo next to title */}
-            <div className="logo-light-mode" style={{ flexShrink: 0 }}>
-              {orgLogoLight || orgLogoDark ? (
-                <img src={orgLogoLight || orgLogoDark} alt="Org Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "90px", objectFit: "contain" }} />
-              ) : null}
-            </div>
-            {/* Dark Mode Org Logo next to title */}
-            <div className="logo-dark-mode" style={{ flexShrink: 0 }}>
-              {orgLogoDark || orgLogoLight ? (
-                <img src={orgLogoDark || orgLogoLight} alt="Org Logo" style={{ maxHeight: isMobile ? "24px" : "36px", maxWidth: "90px", objectFit: "contain" }} />
-              ) : null}
-            </div>
+            {/* Organization Logo */}
+            {(() => {
+              const activeOrgLogo = theme === "dark" ? (orgLogoDark || orgLogoLight) : (orgLogoLight || orgLogoDark);
+              return activeOrgLogo ? (
+                <img src={activeOrgLogo} alt="Org Logo" style={{ maxHeight: isMobile ? "28px" : "40px", maxWidth: "100px", objectFit: "contain", flexShrink: 0 }} />
+              ) : null;
+            })()}
 
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left", minWidth: 0 }}>
-              {!(orgLogoLight || orgLogoDark) && (
-                <span style={{ fontSize: isMobile ? "9px" : "11px", color: "var(--primary-color)", fontWeight: "bold", textTransform: "uppercase", display: "block", lineHeight: "1.1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {template.organization.name}
-                </span>
-              )}
+              {(() => {
+                const activeOrgLogo = theme === "dark" ? (orgLogoDark || orgLogoLight) : (orgLogoLight || orgLogoDark);
+                return !activeOrgLogo ? (
+                  <span style={{ fontSize: isMobile ? "9px" : "11px", color: "var(--primary-color)", fontWeight: "bold", textTransform: "uppercase", display: "block", lineHeight: "1.1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {template.organization.name}
+                  </span>
+                ) : null;
+              })()}
               <h2 style={{ margin: "2px 0 0 0", fontSize: isMobile ? "13px" : "18px", lineHeight: "1.2", fontWeight: "bold", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={template.title}>
                 {template.title}
               </h2>

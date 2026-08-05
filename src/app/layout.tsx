@@ -83,7 +83,18 @@ export default async function RootLayout({
           }}
         />
         {portalLogo ? (
-          <link rel="icon" href={portalLogo} />
+          <>
+            <link rel="icon" href={portalLogo} />
+            <link rel="apple-touch-icon" href={portalLogo} />
+            <link rel="apple-touch-icon" sizes="72x72" href={portalLogo} />
+            <link rel="apple-touch-icon" sizes="114x114" href={portalLogo} />
+            <link rel="apple-touch-icon" sizes="144x144" href={portalLogo} />
+            <link rel="apple-touch-icon" sizes="152x152" href={portalLogo} />
+            <link rel="apple-touch-icon" sizes="180x180" href={portalLogo} />
+            <link rel="icon" type="image/png" sizes="192x192" href={portalLogo} />
+            <link rel="icon" type="image/png" sizes="512x512" href={portalLogo} />
+            <meta name="apple-mobile-web-app-image" content={portalLogo} />
+          </>
         ) : (
           <link rel="icon" href="/favicon.ico" />
         )}
