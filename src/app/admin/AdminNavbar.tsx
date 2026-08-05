@@ -20,6 +20,7 @@ interface AdminNavbarProps {
 export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLogoLight, portalLogoDark }: AdminNavbarProps) {
   const pathname = usePathname();
   const [theme, setTheme] = React.useState<"dark" | "light">("dark");
+  const [isOpen, setIsOpen] = React.useState(false);
 
   React.useEffect(() => {
     const currentTheme = document.documentElement.getAttribute("data-theme") as "dark" | "light" || "dark";
