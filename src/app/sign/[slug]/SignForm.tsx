@@ -102,6 +102,9 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
     const el = viewerScrollContainerRef.current;
     if (!el) return;
 
+    let iosStartZoom = 1.0;
+    let currentZoom = zoomMultiplier;
+
     // Standard touch pinch events (Fallback for non-iOS)
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
@@ -111,6 +114,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
         );
         initialPinchDistRef.current = dist;
         initialZoomRef.current = zoomMultiplier;
+        currentZoom = zoomMultiplier;
       }
     };
 
@@ -122,29 +126,66 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
           e.touches[0].clientY - e.touches[1].clientY
         );
         const factor = dist / initialPinchDistRef.current;
-        setZoomMultiplier(Math.max(0.6, Math.min(3.0, initialZoomRef.current * factor)));
+        const newZoom = Math.max(0.6, Math.min(3.0, initialZoomRef.current * factor));
+        currentZoom = newZoom;
+
+        // Apply scale directly to DOM element for 60fps performance without React re-render lags
+        const zoomContainer = document.getElementById("pdf-pages-zoom-container");
+        if (zoomContainer) {
+          zoomContainer.style.transform = `scale(${newZoom})`;
+          zoomContainer.style.transformOrigin = "top center";
+          zoomContainer.style.transition = "none";
+        }
       }
     };
 
     const handleTouchEnd = () => {
-      initialPinchDistRef.current = null;
+      if (initialPinchDistRef.current !== null) {
+        initialPinchDistRef.current = null;
+        
+        // Reset direct DOM transform before state-driven re-render takes over
+        const zoomContainer = document.getElementById("pdf-pages-zoom-container");
+        if (zoomContainer) {
+          zoomContainer.style.transform = "";
+          zoomContainer.style.transformOrigin = "";
+          zoomContainer.style.transition = "";
+        }
+        setZoomMultiplier(currentZoom);
+      }
     };
 
     // iOS Gesture Events (For Safari / Webkit)
-    let iosStartZoom = 1.0;
     const handleGestureStart = (e: any) => {
       e.preventDefault();
       iosStartZoom = zoomMultiplier;
+      currentZoom = zoomMultiplier;
+      const zoomContainer = document.getElementById("pdf-pages-zoom-container");
+      if (zoomContainer) {
+        zoomContainer.style.transition = "none";
+      }
     };
 
     const handleGestureChange = (e: any) => {
       e.preventDefault();
-      const newZoom = iosStartZoom * e.scale;
-      setZoomMultiplier(Math.max(0.6, Math.min(3.0, newZoom)));
+      const newZoom = Math.max(0.6, Math.min(3.0, iosStartZoom * e.scale));
+      currentZoom = newZoom;
+
+      const zoomContainer = document.getElementById("pdf-pages-zoom-container");
+      if (zoomContainer) {
+        zoomContainer.style.transform = `scale(${newZoom})`;
+        zoomContainer.style.transformOrigin = "top center";
+      }
     };
 
     const handleGestureEnd = (e: any) => {
       e.preventDefault();
+      const zoomContainer = document.getElementById("pdf-pages-zoom-container");
+      if (zoomContainer) {
+        zoomContainer.style.transform = "";
+        zoomContainer.style.transformOrigin = "";
+        zoomContainer.style.transition = "";
+      }
+      setZoomMultiplier(currentZoom);
     };
 
     // Register touch events
