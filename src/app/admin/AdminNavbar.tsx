@@ -336,22 +336,26 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
       )}
 
       {/* CSS Styles for responsive rules */}
-      <style jsx>{`
-        @media (max-width: 900px) {
-          .nav-links-desktop {
-            display: none !important;
-          }
-          .nav-profile-desktop {
-            display: none !important;
-          }
-          .nav-hamburger-mobile {
-            display: block !important;
-          }
-          .nav-dropdown-mobile {
-            display: flex !important;
-          }
-        }
-      `}</style>
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            @media (max-width: 900px) {
+              .nav-links-desktop {
+                display: none !important;
+              }
+              .nav-profile-desktop {
+                display: none !important;
+              }
+              .nav-hamburger-mobile {
+                display: block !important;
+              }
+              .nav-dropdown-mobile {
+                display: flex !important;
+              }
+            }
+          `,
+        }}
+      />
     </nav>
   );
 }

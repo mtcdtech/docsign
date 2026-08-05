@@ -233,40 +233,44 @@ export default function RegistrationSignForm({
         onComplete={handleDocComplete}
       />
 
-      <style jsx global>{`
-        @media (prefers-color-scheme: dark) {
-          .logo-light-mode { display: none !important; }
-          .logo-dark-mode { display: block !important; }
-        }
-        @media (prefers-color-scheme: light) {
-          .logo-light-mode { display: block !important; }
-          .logo-dark-mode { display: none !important; }
-        }
-        @media (max-width: 768px) {
-          .logo-header-container {
-            display: none !important;
-          }
-          .registration-title-header h1 {
-            font-size: 16px !important;
-            margin-bottom: 2px !important;
-          }
-          .progress-wizard-container {
-            flex-wrap: nowrap !important;
-            justify-content: flex-start !important;
-            overflow-x: auto !important;
-            padding: 8px 4px !important;
-            width: 100% !important;
-            -webkit-overflow-scrolling: touch;
-          }
-          .progress-wizard-container::-webkit-scrollbar {
-            height: 4px;
-          }
-          .progress-wizard-container::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 2px;
-          }
-        }
-      `}</style>
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            @media (prefers-color-scheme: dark) {
+              .logo-light-mode { display: none !important; }
+              .logo-dark-mode { display: block !important; }
+            }
+            @media (prefers-color-scheme: light) {
+              .logo-light-mode { display: block !important; }
+              .logo-dark-mode { display: none !important; }
+            }
+            @media (max-width: 768px) {
+              .logo-header-container {
+                display: none !important;
+              }
+              .registration-title-header h1 {
+                font-size: 16px !important;
+                margin-bottom: 2px !important;
+              }
+              .progress-wizard-container {
+                flex-wrap: nowrap !important;
+                justify-content: flex-start !important;
+                overflow-x: auto !important;
+                padding: 8px 4px !important;
+                width: 100% !important;
+                -webkit-overflow-scrolling: touch;
+              }
+              .progress-wizard-container::-webkit-scrollbar {
+                height: 4px;
+              }
+              .progress-wizard-container::-webkit-scrollbar-thumb {
+                background: rgba(255, 255, 255, 0.15);
+                border-radius: 2px;
+              }
+            }
+          `,
+        }}
+      />
     </div>
   );
 }
