@@ -575,4 +575,10 @@ input::-webkit-search-results-decoration {
     flex-direction: column !important;
     overflow: hidden !important;
   }
+  body:has(.public-sign-container) {
+    overflow: hidden !important;
+    height: 100vh !important;
+    position: fixed !important;
+    width: 100vw !important;
+  }
 }

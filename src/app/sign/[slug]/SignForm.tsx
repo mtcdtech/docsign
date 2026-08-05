@@ -58,9 +58,11 @@ interface SignFormProps {
   defaultSignerName?: string;
   defaultSignerEmail?: string;
   onComplete?: (pdfUrl: string, completedDocId: string, name: string, email: string) => void;
+  wizardStepsCount?: number;
+  wizardCurrentIndex?: number;
 }
 
-export default function SignForm({ template, portalTitle, portalLogoLight, portalLogoDark, masterLogoLight, masterLogoDark, orgLogoLight, orgLogoDark, pdfUrl, pcoAttendeeId, defaultSignerName, defaultSignerEmail, onComplete }: SignFormProps) {
+export default function SignForm({ template, portalTitle, portalLogoLight, portalLogoDark, masterLogoLight, masterLogoDark, orgLogoLight, orgLogoDark, pdfUrl, pcoAttendeeId, defaultSignerName, defaultSignerEmail, onComplete, wizardStepsCount, wizardCurrentIndex }: SignFormProps) {
   const fields = JSON.parse(template.fieldsJson) as FormField[];
 
   // Global reading order of all fields for sequential Tab navigation
@@ -972,6 +974,37 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
               </button>
             </div>
           </div>
+
+          {/* Mobile-Only Form Title and Wizard Progress Sub-header */}
+          {isMobile && (
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "6px 16px",
+              background: "rgba(255, 255, 255, 0.02)",
+              borderTop: "1px solid var(--border-color)",
+              fontSize: "12px",
+              color: "var(--text-muted)",
+              gap: "8px"
+            }}>
+              <span style={{ 
+                fontWeight: "bold", 
+                color: "var(--text-main)", 
+                maxWidth: "70%", 
+                overflow: "hidden", 
+                textOverflow: "ellipsis", 
+                whiteSpace: "nowrap" 
+              }} title={template.title}>
+                {template.title}
+              </span>
+              {wizardStepsCount && wizardStepsCount > 1 && (
+                <span style={{ fontSize: "11px", fontWeight: "bold", color: "var(--primary-color)", flexShrink: 0 }}>
+                  Step {wizardCurrentIndex! + 1} of {wizardStepsCount}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Mobile-Only Document Completion Navigation Bar */}
           {isMobile && (

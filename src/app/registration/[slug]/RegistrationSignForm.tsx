@@ -199,7 +199,7 @@ export default function RegistrationSignForm({
       </div>
 
       {/* Progress Wizard Breadcrumb Steps */}
-      <div className="progress-wizard-container">
+      <div className="progress-wizard-container mobile-hider">
         <span className="mobile-only" style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: "bold", marginRight: "4px" }}>
           Packet:
         </span>
@@ -242,6 +242,8 @@ export default function RegistrationSignForm({
         defaultSignerName={savedName}
         defaultSignerEmail={savedEmail}
         onComplete={handleDocComplete}
+        wizardStepsCount={templates.length}
+        wizardCurrentIndex={currentIndex}
       />
 
       <style
