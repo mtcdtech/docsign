@@ -92,6 +92,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
 
   // Dynamic keyboard height offset for mobile viewport fixed elements
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const transformWrapperRef = useRef<any>(null);
 
 
 
@@ -637,9 +638,19 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
       setMobileActiveIdx(idx);
     }
 
-    const element = document.getElementById(`field-input-box-${targetId}`);
+    const elementId = `field-input-box-${targetId}`;
+    const element = document.getElementById(elementId);
     const container = viewerScrollContainerRef.current;
-    if (container && element) {
+
+    if (isMobile && transformWrapperRef.current && element) {
+      setTimeout(() => {
+        try {
+          transformWrapperRef.current.zoomToElement(elementId, 1.8, 300, "easeOut");
+        } catch (err) {
+          console.error("Auto-zoom to element failed:", err);
+        }
+      }, 100);
+    } else if (container && element) {
       const containerRect = container.getBoundingClientRect();
       const elementRect = element.getBoundingClientRect();
       // Scroll target relative to container scrolling position
@@ -652,13 +663,13 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
       });
 
       const isPopup = field.type === "date" || field.type === "dob" || field.type === "signature";
-      if (!isMobile || !isPopup) {
+      if (!isPopup) {
         element.focus();
       }
     } else if (element) {
       element.scrollIntoView({ behavior: "smooth", block: "center" });
       const isPopup = field.type === "date" || field.type === "dob" || field.type === "signature";
-      if (!isMobile || !isPopup) {
+      if (!isPopup) {
         element.focus();
       }
     }
@@ -922,6 +933,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
               </div>
             ) : (
               <TransformWrapper
+                ref={transformWrapperRef}
                 initialScale={1}
                 minScale={0.8}
                 maxScale={4}
