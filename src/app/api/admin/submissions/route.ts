@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
+import { cleanExpiredDrafts } from "@/lib/drafts";
 import fs from "fs";
 
 function deleteLocalFile(filePath: string) {
@@ -51,8 +52,11 @@ export async function GET(req: Request) {
       }
     }
 
+    // Trigger self-cleaning auto-deletion of expired drafts asynchronously
+    cleanExpiredDrafts().catch(console.error);
+
     const submissions = await prisma.signedDocument.findMany({
-      where: { templateId },
+      where: { templateId, isDraft: false },
       orderBy: { createdAt: "desc" }
     });
 

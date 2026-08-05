@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
+import { cleanExpiredDrafts } from "@/lib/drafts";
 import { redirect } from "next/navigation";
 import SubmissionsListClient from "./SubmissionsListClient";
 import AuditLogsDashboardClient from "./AuditLogsDashboardClient";
@@ -15,6 +16,9 @@ export default async function AdminDashboard() {
   const user = session.user as any;
   const isGlobalAdmin = user.role === "Admin";
 
+  // Trigger self-cleaning auto-deletion of expired drafts asynchronously
+  cleanExpiredDrafts().catch(console.error);
+
   // Load timezone setting
   let portalTimezone = "America/Chicago";
   try {
@@ -28,6 +32,7 @@ export default async function AdminDashboard() {
 
   if (isGlobalAdmin) {
     signedDocs = await prisma.signedDocument.findMany({
+      where: { isDraft: false },
       include: {
         template: {
           include: {
@@ -55,6 +60,7 @@ export default async function AdminDashboard() {
 
     signedDocs = await prisma.signedDocument.findMany({
       where: {
+        isDraft: false,
         template: {
           organizationId: { in: orgIds },
         },
@@ -74,8 +80,12 @@ export default async function AdminDashboard() {
         organizationId: { in: orgIds },
       },
     });
-    stats.docsCount = signedDocs.filter((d) => !d.isDraft).length;
-    stats.draftsCount = signedDocs.filter((d) => d.isDraft).length;
+    stats.docsCount = await prisma.signedDocument.count({
+      where: { isDraft: false, template: { organizationId: { in: orgIds } } },
+    });
+    stats.draftsCount = await prisma.signedDocument.count({
+      where: { isDraft: true, template: { organizationId: { in: orgIds } } },
+    });
   }
 
   return (

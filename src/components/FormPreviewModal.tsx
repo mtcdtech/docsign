@@ -36,13 +36,12 @@ interface FormPreviewModalProps {
   submission: Submission;
   template: Tpl;
   onClose: () => void;
-}
-
-export default function FormPreviewModal({ submission, template, onClose }: FormPreviewModalProps) {
+}export default function FormPreviewModal({ submission, template, onClose }: FormPreviewModalProps) {
   const [mounted, setMounted] = useState(false);
   const [numPages, setNumPages] = useState<number>(0);
   const [pdfjsLoaded, setPdfjsLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [pdfDoc, setPdfDoc] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -68,7 +67,7 @@ export default function FormPreviewModal({ submission, template, onClose }: Form
     if (!pdfjsLoaded) return;
     
     let active = true;
-    const renderPdf = async () => {
+    const loadPdf = async () => {
       setLoading(true);
       try {
         const pdfjsLib = (window as any).pdfjsLib;
@@ -77,41 +76,41 @@ export default function FormPreviewModal({ submission, template, onClose }: Form
         const loadingTask = pdfjsLib.getDocument(pdfUrl);
         const pdf = await loadingTask.promise;
         if (!active) return;
+        setPdfDoc(pdf);
         setNumPages(pdf.numPages);
-
-        setTimeout(async () => {
-          for (let i = 1; i <= pdf.numPages; i++) {
-            if (!active) break;
-            const page = await pdf.getPage(i);
-            const canvas = document.getElementById(`shared-preview-pdf-canvas-${i - 1}`) as HTMLCanvasElement;
-            if (!canvas) continue;
-
-            const context = canvas.getContext("2d");
-            if (!context) continue;
-
-            const viewport = page.getViewport({ scale: 1.2 });
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-
-            const renderContext = {
-              canvasContext: context,
-              viewport: viewport,
-            };
-            await page.render(renderContext).promise;
-          }
-          if (active) setLoading(false);
-        }, 100);
+        setLoading(false);
       } catch (err) {
-        console.error("Error rendering preview PDF:", err);
+        console.error("Error loading preview PDF:", err);
         if (active) setLoading(false);
       }
     };
 
-    renderPdf();
+    loadPdf();
     return () => {
       active = false;
     };
   }, [pdfjsLoaded, pdfUrl]);
+
+  const renderPage = async (canvas: HTMLCanvasElement, pageIdx: number) => {
+    if (!pdfDoc) return;
+    try {
+      const page = await pdfDoc.getPage(pageIdx + 1);
+      const context = canvas.getContext("2d");
+      if (!context) return;
+
+      const viewport = page.getViewport({ scale: 1.2 });
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+
+      const renderContext = {
+        canvasContext: context,
+        viewport: viewport,
+      };
+      await page.render(renderContext).promise;
+    } catch (err) {
+      console.error(`Error rendering preview page ${pageIdx + 1}:`, err);
+    }
+  };
 
   if (!mounted) return null;
 
@@ -179,7 +178,7 @@ export default function FormPreviewModal({ submission, template, onClose }: Form
           </button>
         </div>
 
-        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", background: "rgba(0,0,0,0.3)", borderRadius: "8px", padding: "20px", display: "flex", flexDirection: "column", gap: "24px", alignItems: "center", position: "relative" }}>
+        <div style={{ height: "calc(85vh - 120px)", overflowY: "auto", background: "rgba(0,0,0,0.3)", borderRadius: "8px", padding: "20px", display: "flex", flexDirection: "column", gap: "24px", alignItems: "center", position: "relative", width: "100%" }}>
           {loading && (
             <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", color: "var(--text-muted)", fontSize: "14px" }}>
               Generating form state preview...
@@ -203,6 +202,11 @@ export default function FormPreviewModal({ submission, template, onClose }: Form
                 }}
               >
                 <canvas 
+                  ref={(el) => {
+                    if (el) {
+                      renderPage(el, pageIdx);
+                    }
+                  }}
                   id={`shared-preview-pdf-canvas-${pageIdx}`} 
                   style={{ display: "block", width: "100%", height: "auto" }} 
                 />
