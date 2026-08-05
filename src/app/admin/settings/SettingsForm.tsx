@@ -33,6 +33,8 @@ interface SettingsFormProps {
   initialPortalTitle: string;
   initialLogoLightBase64: string;
   initialLogoDarkBase64: string;
+  initialMasterLogoLightBase64: string;
+  initialMasterLogoDarkBase64: string;
   initialThemeMode: string;
   initialCentralIamUrl: string;
   initialAzureTenantId: string;
@@ -54,6 +56,8 @@ export default function SettingsForm({
   initialPortalTitle,
   initialLogoLightBase64,
   initialLogoDarkBase64,
+  initialMasterLogoLightBase64,
+  initialMasterLogoDarkBase64,
   initialThemeMode,
   initialCentralIamUrl,
   initialAzureTenantId,
@@ -79,6 +83,8 @@ export default function SettingsForm({
   const [portalTitle, setPortalTitle] = useState(initialPortalTitle);
   const [logoLight, setLogoLight] = useState(initialLogoLightBase64);
   const [logoDark, setLogoDark] = useState(initialLogoDarkBase64);
+  const [masterLogoLight, setMasterLogoLight] = useState(initialMasterLogoLightBase64);
+  const [masterLogoDark, setMasterLogoDark] = useState(initialMasterLogoDarkBase64);
   const [orgs, setOrgs] = useState<Organization[]>(initialOrganizations);
   const [themeMode, setThemeMode] = useState(initialThemeMode);
   const [centralIamUrl, setCentralIamUrl] = useState(initialCentralIamUrl);
@@ -92,6 +98,8 @@ export default function SettingsForm({
   // Drag and drop states for global logos
   const [isDraggingLight, setIsDraggingLight] = useState(false);
   const [isDraggingDark, setIsDraggingDark] = useState(false);
+  const [isDraggingMasterLight, setIsDraggingMasterLight] = useState(false);
+  const [isDraggingMasterDark, setIsDraggingMasterDark] = useState(false);
   const [draggingOrg, setDraggingOrg] = useState<Record<string, "light" | "dark" | null>>({});
 
   // Directory synchronizing states
@@ -259,6 +267,8 @@ export default function SettingsForm({
         portal_title: fieldsToUpdate.portal_title ?? portalTitle,
         portal_logo_light: fieldsToUpdate.portal_logo_light !== undefined ? fieldsToUpdate.portal_logo_light : logoLight,
         portal_logo_dark: fieldsToUpdate.portal_logo_dark !== undefined ? fieldsToUpdate.portal_logo_dark : logoDark,
+        master_logo_light: fieldsToUpdate.master_logo_light !== undefined ? fieldsToUpdate.master_logo_light : masterLogoLight,
+        master_logo_dark: fieldsToUpdate.master_logo_dark !== undefined ? fieldsToUpdate.master_logo_dark : masterLogoDark,
         theme_mode: fieldsToUpdate.theme_mode ?? themeMode,
         central_iam_url: fieldsToUpdate.central_iam_url ?? centralIamUrl,
         azure_tenant_id: fieldsToUpdate.azure_tenant_id ?? azureTenantId,
@@ -394,6 +404,73 @@ export default function SettingsForm({
       handleLogoUpload("dark", e.dataTransfer.files[0]);
     }
   };
+  const handleDragOverMasterLight = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingMasterLight(true);
+  };
+  const handleDragLeaveMasterLight = () => {
+    setIsDraggingMasterLight(false);
+  };
+  const handleDropMasterLight = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingMasterLight(false);
+    if (e.dataTransfer.files?.[0]) {
+      handleMasterLogoUpload("light", e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleDragOverMasterDark = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingMasterDark(true);
+  };
+  const handleDragLeaveMasterDark = () => {
+    setIsDraggingMasterDark(false);
+  };
+  const handleDropMasterDark = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingMasterDark(false);
+    if (e.dataTransfer.files?.[0]) {
+      handleMasterLogoUpload("dark", e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleMasterLogoUpload = (type: "light" | "dark", file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setSaveError("Please upload an image file.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setSaveError("File is too large. Please select an image smaller than 2MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      if (uploadEvent.target?.result) {
+        const base64Str = uploadEvent.target.result as string;
+        if (type === "light") {
+          setMasterLogoLight(base64Str);
+          saveSettings({ master_logo_light: base64Str });
+        } else {
+          setMasterLogoDark(base64Str);
+          saveSettings({ master_logo_dark: base64Str });
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearMasterLogo = (type: "light" | "dark", e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (type === "light") {
+      setMasterLogoLight("");
+      saveSettings({ master_logo_light: "" });
+    } else {
+      setMasterLogoDark("");
+      saveSettings({ master_logo_dark: "" });
+    }
+  };
+
   const handleOrgDragOver = (e: React.DragEvent, orgId: string, type: "light" | "dark") => {
     e.preventDefault();
     setDraggingOrg(prev => ({ ...prev, [orgId]: type }));
@@ -911,6 +988,120 @@ export default function SettingsForm({
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                       <div style={{ fontSize: "28px", marginBottom: "8px" }}>🖼️</div>
                       <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-main)", marginBottom: "4px" }}>Click to select or drag logo here</div>
+                      <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>Suggested height: 40px–60px (Dark bg)</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", borderTop: "1px solid var(--border-color)", paddingTop: "20px" }}>
+              {/* Master Org Logo Light Mode */}
+              <div className="form-group" style={{ flex: 1, minWidth: "260px" }}>
+                <label className="form-label">Master Org Logo (Light Mode)</label>
+                <div
+                  style={{
+                    border: isDraggingMasterLight ? "2px dashed var(--primary-color)" : "2px dashed var(--border-color)",
+                    borderRadius: "var(--radius-lg)",
+                    padding: "24px 16px",
+                    textAlign: "center",
+                    background: isDraggingMasterLight ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.01)",
+                    cursor: "pointer",
+                    transition: "all var(--transition-fast)",
+                    position: "relative",
+                    minHeight: "140px",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                  onDragOver={handleDragOverMasterLight}
+                  onDragLeave={handleDragLeaveMasterLight}
+                  onDrop={handleDropMasterLight}
+                  onClick={() => document.getElementById("master-logo-light-file-input")?.click()}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    id="master-logo-light-file-input"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) handleMasterLogoUpload("light", e.target.files[0]);
+                    }}
+                    style={{ display: "none" }}
+                  />
+                  {masterLogoLight ? (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", width: "100%" }}>
+                      <img src={masterLogoLight} alt="Master light logo preview" style={{ maxHeight: "50px", maxWidth: "200px", objectFit: "contain", background: "#f0f0f0", padding: "6px", borderRadius: "4px" }} />
+                      <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Drag or click to replace logo</span>
+                      <button 
+                        type="button" 
+                        className="btn" 
+                        style={{ position: "absolute", top: "10px", right: "10px", padding: "4px 8px", fontSize: "10px", width: "auto", background: "rgba(239,68,68,0.15)", color: "#f87171", border: "1px solid rgba(239,68,68,0.2)" }} 
+                        onClick={(e) => clearMasterLogo("light", e)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                      <div style={{ fontSize: "28px", marginBottom: "8px" }}>🏢</div>
+                      <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-main)", marginBottom: "4px" }}>Click to select or drag master logo here</div>
+                      <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>Suggested height: 40px–60px (Light bg)</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Master Org Logo Dark Mode */}
+              <div className="form-group" style={{ flex: 1, minWidth: "260px" }}>
+                <label className="form-label">Master Org Logo (Dark Mode)</label>
+                <div
+                  style={{
+                    border: isDraggingMasterDark ? "2px dashed var(--primary-color)" : "2px dashed var(--border-color)",
+                    borderRadius: "var(--radius-lg)",
+                    padding: "24px 16px",
+                    textAlign: "center",
+                    background: isDraggingMasterDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.01)",
+                    cursor: "pointer",
+                    transition: "all var(--transition-fast)",
+                    position: "relative",
+                    minHeight: "140px",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                  onDragOver={handleDragOverMasterDark}
+                  onDragLeave={handleDragLeaveMasterDark}
+                  onDrop={handleDropMasterDark}
+                  onClick={() => document.getElementById("master-logo-dark-file-input")?.click()}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    id="master-logo-dark-file-input"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) handleMasterLogoUpload("dark", e.target.files[0]);
+                    }}
+                    style={{ display: "none" }}
+                  />
+                  {masterLogoDark ? (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", width: "100%" }}>
+                      <img src={masterLogoDark} alt="Master dark logo preview" style={{ maxHeight: "50px", maxWidth: "200px", objectFit: "contain", background: "#18181b", padding: "6px", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "4px" }} />
+                      <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Drag or click to replace logo</span>
+                      <button 
+                        type="button" 
+                        className="btn" 
+                        style={{ position: "absolute", top: "10px", right: "10px", padding: "4px 8px", fontSize: "10px", width: "auto", background: "rgba(239,68,68,0.15)", color: "#f87171", border: "1px solid rgba(239,68,68,0.2)" }} 
+                        onClick={(e) => clearMasterLogo("dark", e)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                      <div style={{ fontSize: "28px", marginBottom: "8px" }}>🏢</div>
+                      <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-main)", marginBottom: "4px" }}>Click to select or drag master logo here</div>
                       <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>Suggested height: 40px–60px (Dark bg)</div>
                     </div>
                   )}

@@ -32,6 +32,8 @@ export default async function SettingsPage() {
     const portalTitle = settingsMap["portal_title"] || "DocSign Portal";
     const portalLogoLight = settingsMap["portal_logo_light"] || "";
     const portalLogoDark = settingsMap["portal_logo_dark"] || "";
+    const masterLogoLight = settingsMap["master_logo_light"] || "";
+    const masterLogoDark = settingsMap["master_logo_dark"] || "";
     const themeMode = settingsMap["theme_mode"] || "dark";
     const portalTimezone = settingsMap["portal_timezone"] || "America/Chicago";
     const centralIamUrl = settingsMap["central_iam_url"] || "https://admin.server.mtcd.org";
@@ -76,6 +78,8 @@ export default async function SettingsPage() {
             initialPortalTitle={portalTitle}
             initialLogoLightBase64={portalLogoLight}
             initialLogoDarkBase64={portalLogoDark}
+            initialMasterLogoLightBase64={masterLogoLight}
+            initialMasterLogoDarkBase64={masterLogoDark}
             initialThemeMode={themeMode}
             initialCentralIamUrl={centralIamUrl}
             initialAzureTenantId={azureTenantId}

@@ -60,6 +60,7 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
           maxWidth: "1200px",
           width: "100%",
           margin: "0 auto",
+          position: "relative",
         }}
       >
         {/* Branding & Links (Left) */}
@@ -352,8 +353,9 @@ export default function AdminNavbar({ user, isGlobalAdmin, portalTitle, portalLo
               .nav-hamburger-mobile {
                 display: block !important;
                 position: absolute !important;
-                top: 20px !important;
-                right: 24px !important;
+                top: 50% !important;
+                transform: translateY(-50%) !important;
+                right: 0px !important;
               }
               .nav-dropdown-mobile {
                 display: flex !important;
