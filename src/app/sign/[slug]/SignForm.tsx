@@ -93,6 +93,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
   // Dynamic keyboard height offset for mobile viewport fixed elements
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const transformWrapperRef = useRef<any>(null);
+  const datePickerRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
 
 
@@ -1266,62 +1267,108 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                             );
                           }
 
-                          if (f.type === "dob") {
+                          if (f.type === "dob" || f.type === "date") {
                             return (
-                              <div key={f.instanceId || f.id} style={{ ...style, position: "absolute" }}>
+                              <div
+                                key={f.instanceId || f.id}
+                                style={{
+                                  ...style,
+                                  position: "absolute",
+                                  display: "flex",
+                                  alignItems: "center"
+                                }}
+                              >
                                 <input
                                   id={`field-input-box-${f.instanceId || f.id}`}
-                                  type={dateInputTypes[f.id] || "text"}
-                                  value={
-                                    dateInputTypes[f.id] === "date"
-                                      ? convertToInputDate(val)
-                                      : val
-                                  }
+                                  type="text"
+                                  value={val}
                                   placeholder={isVisible ? (f.required ? `${f.label} (MM/DD/YYYY) *` : `${f.label} (MM/DD/YYYY)`) : ""}
                                   disabled={!isVisible}
                                   readOnly={!isVisible}
                                   tabIndex={isVisible ? tabIdx : -1}
                                   onChange={(e) => {
                                     if (isVisible) {
-                                      let newVal = e.target.value;
-                                      if (e.target.type === "date") {
-                                        newVal = convertFromInputDate(newVal);
-                                      } else {
-                                        newVal = formatDateString(newVal);
-                                      }
-                                      handleInputChange(f.id, newVal);
+                                      const formatted = formatDateString(e.target.value);
+                                      handleInputChange(f.id, formatted);
                                     }
                                   }}
-                                  onFocus={() => {
-                                    handleChecklistItemClick(f.instanceId || f.id);
-                                    setDateInputTypes((prev) => ({ ...prev, [f.id]: "date" }));
-                                  }}
+                                  onFocus={() => handleChecklistItemClick(f.instanceId || f.id)}
                                   onClick={() => handleChecklistItemClick(f.instanceId || f.id)}
-                                  onBlur={() => {
-                                    setTimeout(() => {
-                                      setDateInputTypes((prev) => ({ ...prev, [f.id]: "text" }));
-                                    }, 300);
-                                  }}
                                   style={{
                                     width: "100%",
                                     height: "100%",
-                                    maxWidth: "100%",
-                                    minWidth: "0px",
                                     background: isVisible ? "#fef08a" : "rgba(255, 255, 255, 0.05)",
                                     color: "#0f172a",
                                     fontSize: isMobile ? "16px" : "11px",
-                                    padding: "2px 6px",
-                                    paddingRight: "6px",
+                                    padding: "2px 24px 2px 6px",
                                     borderRadius: "4px",
                                     border: isHighlighted
                                       ? "3px solid #f59e0b"
                                       : "1.5px solid var(--border-color)",
                                     outline: "none",
-                                    colorScheme: "light",
                                     cursor: isVisible ? "text" : "not-allowed",
                                     boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
                                   }}
                                 />
+
+                                <input
+                                  ref={(el) => {
+                                    datePickerRefs.current[f.id] = el;
+                                  }}
+                                  type="date"
+                                  value={convertToInputDate(val)}
+                                  disabled={!isVisible}
+                                  onChange={(e) => {
+                                    if (isVisible) {
+                                      const formatted = convertFromInputDate(e.target.value);
+                                      handleInputChange(f.id, formatted);
+                                    }
+                                  }}
+                                  style={{
+                                    position: "absolute",
+                                    width: 0,
+                                    height: 0,
+                                    opacity: 0,
+                                    pointerEvents: "none"
+                                  }}
+                                />
+
+                                {isVisible && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleChecklistItemClick(f.instanceId || f.id);
+                                      try {
+                                        datePickerRefs.current[f.id]?.showPicker();
+                                      } catch (err) {
+                                        console.error("showPicker failed:", err);
+                                      }
+                                    }}
+                                    style={{
+                                      position: "absolute",
+                                      right: "4px",
+                                      background: "none",
+                                      border: "none",
+                                      padding: 0,
+                                      cursor: "pointer",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      color: "#475569",
+                                      width: "18px",
+                                      height: "18px"
+                                    }}
+                                    title="Open calendar date picker"
+                                  >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                                      <line x1="16" y1="2" x2="16" y2="6" />
+                                      <line x1="8" y1="2" x2="8" y2="6" />
+                                      <line x1="3" y1="10" x2="21" y2="10" />
+                                    </svg>
+                                  </button>
+                                )}
                               </div>
                             );
                           }
@@ -1392,65 +1439,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                             );
                           }
 
-                          if (f.type === "date") {
-                            return (
-                              <div key={f.instanceId || f.id} style={{ ...style, position: "absolute" }}>
-                                <input
-                                  id={`field-input-box-${f.instanceId || f.id}`}
-                                  type={dateInputTypes[f.id] || "text"}
-                                  value={
-                                    dateInputTypes[f.id] === "date"
-                                      ? convertToInputDate(val)
-                                      : val
-                                  }
-                                  placeholder={isVisible ? (f.required ? `${f.label} (MM/DD/YYYY) *` : `${f.label} (MM/DD/YYYY)`) : ""}
-                                  disabled={!isVisible}
-                                  readOnly={!isVisible}
-                                  tabIndex={isVisible ? tabIdx : -1}
-                                  onChange={(e) => {
-                                    if (isVisible) {
-                                      let newVal = e.target.value;
-                                      if (e.target.type === "date") {
-                                        newVal = convertFromInputDate(newVal);
-                                      } else {
-                                        newVal = formatDateString(newVal);
-                                      }
-                                      handleInputChange(f.id, newVal);
-                                    }
-                                  }}
-                                  onFocus={() => {
-                                    handleChecklistItemClick(f.instanceId || f.id);
-                                    setDateInputTypes((prev) => ({ ...prev, [f.id]: "date" }));
-                                  }}
-                                  onClick={() => handleChecklistItemClick(f.instanceId || f.id)}
-                                  onBlur={() => {
-                                    setTimeout(() => {
-                                      setDateInputTypes((prev) => ({ ...prev, [f.id]: "text" }));
-                                    }, 300);
-                                  }}
-                                  style={{
-                                    width: "100%",
-                                    height: "100%",
-                                    maxWidth: "100%",
-                                    minWidth: "0px",
-                                    background: isVisible ? "#fef08a" : "rgba(255, 255, 255, 0.05)",
-                                    color: "#0f172a",
-                                    fontSize: isMobile ? "16px" : "11px",
-                                    padding: "2px 6px",
-                                    paddingRight: "6px",
-                                    borderRadius: "4px",
-                                    border: isHighlighted
-                                      ? "3px solid #f59e0b"
-                                      : "1.5px solid var(--border-color)",
-                                    outline: "none",
-                                    colorScheme: "light",
-                                    cursor: isVisible ? "text" : "not-allowed",
-                                    boxShadow: isHighlighted ? "0 0 14px #f59e0b, 0 0 0 3px rgba(245, 158, 11, 0.4)" : "none",
-                                  }}
-                                />
-                              </div>
-                            );
-                          }
+
 
                           // Default: text, number inputs matching theme
                           return (
