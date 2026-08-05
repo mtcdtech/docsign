@@ -43,6 +43,8 @@ interface SignFormProps {
     organization: {
       name: string;
     };
+    logoLight?: string | null;
+    logoDark?: string | null;
   };
   portalTitle: string;
   portalLogoLight: string;
@@ -87,6 +89,16 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [signedPdfUrl, setSignedPdfUrl] = useState<string | null>(null);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
   
   // Signer draft states
   const [draftId, setDraftId] = useState<string | null>(null);
@@ -830,6 +842,11 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
     );
   }
 
+  const resolvedLogoLight = template.logoLight || orgLogoLight;
+  const resolvedLogoDark = template.logoDark || orgLogoDark;
+  const activeOrgLogo = theme === "dark" ? (resolvedLogoDark || resolvedLogoLight) : (resolvedLogoLight || resolvedLogoDark);
+  const shrink = isMobile ? Math.min(scrollY / 80, 1) : 0;
+
   return (
     <>
       <Script
@@ -845,28 +862,33 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
           justifyContent: "space-between", 
           alignItems: "center", 
           gap: "12px", 
-          marginBottom: "24px", 
-          paddingBottom: "16px", 
+          marginBottom: isMobile ? `${Math.max(4, 12 - shrink * 8)}px` : "8px", 
+          paddingBottom: isMobile ? `${Math.max(4, 10 - shrink * 6)}px` : "6px", 
           borderBottom: "1px solid var(--border-color)",
-          position: "relative",
-          minHeight: isMobile ? "50px" : "auto"
+          position: isMobile ? "sticky" : "relative",
+          top: 0,
+          zIndex: 1000,
+          background: isMobile ? "var(--bg-main)" : "transparent",
+          minHeight: isMobile ? `${Math.max(34, 48 - shrink * 14)}px` : "auto"
         }}>
           {/* Left Side: App Logo + Master Org Logo */}
           <div style={{ 
             display: "flex", 
             alignItems: "center", 
-            gap: isMobile ? "6px" : "10px", 
+            gap: isMobile ? "4px" : "10px", 
             minWidth: 0, 
             flexShrink: 0,
             position: isMobile ? "absolute" : "static",
             left: isMobile ? "0px" : "auto",
-            zIndex: 10
+            zIndex: 10,
+            transform: isMobile ? `scale(${Math.max(0.8, 1 - shrink * 0.2)})` : "none",
+            transformOrigin: isMobile ? "left center" : "initial"
           }}>
             {/* App Logo */}
             {(() => {
               const activeAppLogo = theme === "dark" ? (portalLogoDark || portalLogoLight) : (portalLogoLight || portalLogoDark);
               return activeAppLogo ? (
-                <img src={activeAppLogo} alt="App Logo" style={{ maxHeight: isMobile ? "18px" : "36px", maxWidth: isMobile ? "50px" : "80px", objectFit: "contain", flexShrink: 0 }} />
+                <img src={activeAppLogo} alt="App Logo" style={{ maxHeight: isMobile ? "16px" : "28px", maxWidth: isMobile ? "40px" : "80px", objectFit: "contain", flexShrink: 0 }} />
               ) : null;
             })()}
 
@@ -875,7 +897,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
               const activeAppLogo = theme === "dark" ? (portalLogoDark || portalLogoLight) : (portalLogoLight || portalLogoDark);
               const activeMasterLogo = theme === "dark" ? (masterLogoDark || masterLogoLight) : (masterLogoLight || masterLogoDark);
               return (activeAppLogo && activeMasterLogo) ? (
-                <div style={{ width: "1px", height: isMobile ? "12px" : "20px", background: "var(--border-color)" }} />
+                <div style={{ width: "1px", height: isMobile ? "10px" : "18px", background: "var(--border-color)" }} />
               ) : null;
             })()}
 
@@ -883,7 +905,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
             {(() => {
               const activeMasterLogo = theme === "dark" ? (masterLogoDark || masterLogoLight) : (masterLogoLight || masterLogoDark);
               return activeMasterLogo ? (
-                <img src={activeMasterLogo} alt="Master Org Logo" style={{ maxHeight: isMobile ? "18px" : "72px", maxWidth: isMobile ? "60px" : "120px", objectFit: "contain", flexShrink: 0 }} />
+                <img src={activeMasterLogo} alt="Master Org Logo" style={{ maxHeight: isMobile ? "16px" : "56px", maxWidth: isMobile ? "50px" : "100px", objectFit: "contain", flexShrink: 0 }} />
               ) : null;
             })()}
           </div>
@@ -901,7 +923,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
               ...(isMobile ? {
                 position: "absolute",
                 left: "50%",
-                transform: "translateX(-50%)",
+                transform: `translateX(-50%) scale(${Math.max(0.85, 1 - shrink * 0.15)})`,
                 width: "48%",
                 textAlign: "center"
               } : {})
@@ -910,14 +932,13 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
             {/* Top Row: Org Logo + Title */}
             <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center", minWidth: 0, width: "100%" }}>
               {(() => {
-                const activeOrgLogo = theme === "dark" ? (orgLogoDark || orgLogoLight) : (orgLogoLight || orgLogoDark);
-                return activeOrgLogo ? (
-                  <img src={activeOrgLogo} alt="Org Logo" style={{ maxHeight: isMobile ? "24px" : "56px", maxWidth: "100px", objectFit: "contain", flexShrink: 0 }} />
+                return (activeOrgLogo && !isMobile) ? (
+                  <img src={activeOrgLogo} alt="Org Logo" style={{ maxHeight: "36px", maxWidth: "80px", objectFit: "contain", flexShrink: 0 }} />
                 ) : null;
               })()}
               <h2 style={{ 
                 margin: 0, 
-                fontSize: isMobile ? "12px" : "18px", 
+                fontSize: isMobile ? `${Math.max(9, 12 - shrink * 3)}px` : "16px", 
                 lineHeight: "1.2", 
                 fontWeight: "bold", 
                 textAlign: "center",
@@ -933,7 +954,18 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
             </div>
 
             {/* Bottom Row: Org Name underneath */}
-            <span style={{ marginTop: "4px", fontSize: isMobile ? "9px" : "11px", color: "var(--primary-color)", fontWeight: "bold", textTransform: "uppercase", display: "block", lineHeight: "1.1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <span style={{ 
+              marginTop: isMobile ? `${Math.max(0, 4 - shrink * 4)}px` : "4px", 
+              fontSize: isMobile ? `${Math.max(7, 9 - shrink * 2)}px` : "11px", 
+              color: "var(--primary-color)", 
+              fontWeight: "bold", 
+              textTransform: "uppercase", 
+              display: "block", 
+              lineHeight: "1.1", 
+              whiteSpace: "nowrap", 
+              overflow: "hidden", 
+              textOverflow: "ellipsis" 
+            }}>
               {template.organization.name}
             </span>
           </div>
@@ -941,13 +973,15 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
           {/* Right Side Actions */}
           <div style={{ 
             display: "flex", 
-            gap: "10px", 
+            gap: isMobile ? "4px" : "10px", 
             alignItems: "center", 
             flexShrink: 0, 
             order: 3,
             position: isMobile ? "absolute" : "static",
             right: isMobile ? "0px" : "auto",
-            zIndex: 10
+            zIndex: 10,
+            transform: isMobile ? `scale(${Math.max(0.75, 1 - shrink * 0.25)})` : "none",
+            transformOrigin: isMobile ? "right center" : "initial"
           }}>
             <button
               type="button"
@@ -966,6 +1000,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
                 </svg>
               )}
             </button>
+
 
             <button
               type="button"
@@ -1003,7 +1038,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
         <div style={{ display: "flex", gap: "32px", alignItems: "stretch", flexWrap: "wrap" }}>
           
           {/* Left Side: PDF Document Viewer with Overlay Interactive Inputs */}
-          <div ref={viewerScrollContainerRef} style={{ flex: "1.2", minWidth: "320px", display: "flex", flexDirection: "column", gap: "16px", maxHeight: "calc(100vh - 160px)", overflowY: "auto", border: "1px solid var(--border-color)", borderRadius: "8px", padding: "16px", background: "rgba(0,0,0,0.2)" }}>
+          <div ref={viewerScrollContainerRef} style={{ flex: "1.2", minWidth: "320px", display: "flex", flexDirection: "column", gap: "16px", maxHeight: isMobile ? "none" : "calc(100vh - 160px)", overflowY: isMobile ? "visible" : "auto", border: "1px solid var(--border-color)", borderRadius: "8px", padding: "16px", background: "rgba(0,0,0,0.2)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-color)", paddingBottom: "10px" }}>
               <h3 style={{ margin: 0, fontSize: "15px" }}>Document Preview</h3>
               <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>

@@ -29,6 +29,8 @@ export async function POST(req: Request) {
     const pcoSignupId = data.get("pcoSignupId") as string | null;
     const pcoQuestionTitle = data.get("pcoQuestionTitle") as string | null;
     const file = data.get("file") as File | null;
+    const logoLight = data.get("logoLight") as string | null;
+    const logoDark = data.get("logoDark") as string | null;
 
     if (!title || !slug || !organizationId) {
       return NextResponse.json({ ok: false, error: "Missing required fields." }, { status: 400 });
@@ -124,6 +126,8 @@ export async function POST(req: Request) {
         pcoSignupId,
         pcoQuestionTitle,
         organizationId,
+        logoLight: logoLight || null,
+        logoDark: logoDark || null,
       },
     });
 

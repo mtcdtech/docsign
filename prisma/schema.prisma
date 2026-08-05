@@ -58,6 +58,8 @@ model Template {
   pcoSignupId           String?
   pcoQuestionTitle      String?
   isArchived          Boolean          @default(false)
+  logoLight           String?
+  logoDark            String?
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
 }

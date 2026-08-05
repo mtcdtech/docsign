@@ -79,6 +79,8 @@ export default async function EditTemplatePage({ params }: EditTemplatePageProps
             pcoSignupId: template.pcoSignupId || "",
             pcoQuestionTitle: template.pcoQuestionTitle || "",
             organizationId: template.organizationId,
+            logoLight: template.logoLight || "",
+            logoDark: template.logoDark || "",
           }}
         />
       </div>

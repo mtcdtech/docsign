@@ -12,7 +12,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     }
 
     const body = await req.json();
-    const { title, slug, emailUser, emailLeader, emailParent, notificationEmails, saveSharepoint, sharepointFolderId, sharepointFolderName, pcoIntegrationEnabled, pcoSignupId, pcoQuestionTitle, fieldsJson, isArchived } = body;
+    const { title, slug, emailUser, emailLeader, emailParent, notificationEmails, saveSharepoint, sharepointFolderId, sharepointFolderName, pcoIntegrationEnabled, pcoSignupId, pcoQuestionTitle, fieldsJson, isArchived, logoLight, logoDark } = body;
 
     const templateId = params.id;
     const template = await prisma.template.findUnique({ where: { id: templateId } });
@@ -63,6 +63,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     if (pcoQuestionTitle !== undefined) updateData.pcoQuestionTitle = pcoQuestionTitle;
     if (fieldsJson !== undefined) updateData.fieldsJson = fieldsJson;
     if (isArchived !== undefined) updateData.isArchived = isArchived;
+    if (logoLight !== undefined) updateData.logoLight = logoLight;
+    if (logoDark !== undefined) updateData.logoDark = logoDark;
 
     const updated = await prisma.template.update({
       where: { id: templateId },

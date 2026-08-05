@@ -33,6 +33,8 @@ interface TemplateFormProps {
     pcoSignupId?: string | null;
     pcoQuestionTitle?: string | null;
     organizationId: string;
+    logoLight?: string | null;
+    logoDark?: string | null;
   };
 }
 
@@ -55,6 +57,8 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
   const [manualEmails, setManualEmails] = useState<string[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [logoLight, setLogoLight] = useState(template?.logoLight || "");
+  const [logoDark, setLogoDark] = useState(template?.logoDark || "");
 
   // Planning Center Online Integration States
   const [pcoIntegrationEnabled, setPcoIntegrationEnabled] = useState(template?.pcoIntegrationEnabled ?? false);
@@ -327,6 +331,8 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
             pcoIntegrationEnabled,
             pcoSignupId: pcoIntegrationEnabled ? pcoSignupId : null,
             pcoQuestionTitle: pcoIntegrationEnabled ? pcoQuestionTitle : null,
+            logoLight,
+            logoDark,
           }),
         });
 
@@ -360,6 +366,8 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
         formData.append("pcoSignupId", pcoSignupId);
         formData.append("pcoQuestionTitle", pcoQuestionTitle);
         formData.append("file", file);
+        formData.append("logoLight", logoLight);
+        formData.append("logoDark", logoDark);
 
         const res = await fetch("/api/admin/templates", {
           method: "POST",
@@ -663,6 +671,126 @@ export default function TemplateForm({ organizations, template }: TemplateFormPr
           </div>
         )}
       </div>
+
+      {/* Form-specific Logo Overrides (Only shown in Edit mode) */}
+      {isEdit && (
+        <div className="card-glass" style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "20px", marginTop: "24px" }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: "16px", color: "var(--text-main)", display: "flex", alignItems: "center", gap: "8px" }}>
+              🎨 Form Theming & Logo Overrides
+            </h3>
+            <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "var(--text-muted)" }}>
+              Upload logos specific to this form. If set, these will override default sub-organization logos on the signing page.
+            </p>
+          </div>
+
+          <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+            {/* Form Light Logo */}
+            <div style={{ flex: 1, minWidth: "240px", display: "flex", flexDirection: "column", gap: "8px" }}>
+              <label className="form-label" style={{ fontSize: "13px", fontWeight: "600" }}>Form Specific Light Logo</label>
+              <div style={{
+                border: "2px dashed var(--border-color)",
+                borderRadius: "var(--radius-lg)",
+                padding: "20px",
+                textAlign: "center",
+                background: "rgba(0,0,0,0.15)",
+                cursor: "pointer",
+                position: "relative"
+              }}
+              onClick={() => document.getElementById("form-logo-light-input")?.click()}
+              >
+                <input
+                  id="form-logo-light-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => setLogoLight(reader.result as string);
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  style={{ display: "none" }}
+                />
+                {logoLight ? (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+                    <img src={logoLight} alt="Light logo preview" style={{ maxHeight: "40px", maxWidth: "160px", objectFit: "contain", background: "#f0f0f0", padding: "4px", borderRadius: "4px" }} />
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLogoLight("");
+                      }}
+                      style={{ padding: "2px 8px", fontSize: "11px", width: "auto" }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ fontSize: "24px", marginBottom: "4px" }}>🖼️</div>
+                    <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>Click to upload Light Mode Logo</div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Form Dark Logo */}
+            <div style={{ flex: 1, minWidth: "240px", display: "flex", flexDirection: "column", gap: "8px" }}>
+              <label className="form-label" style={{ fontSize: "13px", fontWeight: "600" }}>Form Specific Dark Logo</label>
+              <div style={{
+                border: "2px dashed var(--border-color)",
+                borderRadius: "var(--radius-lg)",
+                padding: "20px",
+                textAlign: "center",
+                background: "rgba(0,0,0,0.15)",
+                cursor: "pointer",
+                position: "relative"
+              }}
+              onClick={() => document.getElementById("form-logo-dark-input")?.click()}
+              >
+                <input
+                  id="form-logo-dark-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => setLogoDark(reader.result as string);
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  style={{ display: "none" }}
+                />
+                {logoDark ? (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+                    <img src={logoDark} alt="Dark logo preview" style={{ maxHeight: "40px", maxWidth: "160px", objectFit: "contain", background: "#1a1a1a", padding: "4px", borderRadius: "4px" }} />
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLogoDark("");
+                      }}
+                      style={{ padding: "2px 8px", fontSize: "11px", width: "auto" }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ fontSize: "24px", marginBottom: "4px" }}>🖼️</div>
+                    <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>Click to upload Dark Mode Logo</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* SharePoint Configuration Modal */}
       {saveSharepoint && isSharePointModalOpen && (
