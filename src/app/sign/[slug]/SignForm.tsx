@@ -373,26 +373,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
     return () => observer.disconnect();
   }, []);
 
-  // Lock document vertical scroll completely on mobile
-  useEffect(() => {
-    if (isMobile) {
-      document.body.style.overflow = "hidden";
-      document.body.style.height = "100%";
-      document.body.style.position = "fixed";
-      document.body.style.width = "100%";
-    } else {
-      document.body.style.overflow = "";
-      document.body.style.height = "";
-      document.body.style.position = "";
-      document.body.style.width = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-      document.body.style.height = "";
-      document.body.style.position = "";
-      document.body.style.width = "";
-    };
-  }, [isMobile]);
+
 
   // Pre-fill today's date on all "todays_date" fields automatically on mount
   useEffect(() => {
