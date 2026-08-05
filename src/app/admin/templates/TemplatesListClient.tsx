@@ -335,7 +335,7 @@ export default function TemplatesListClient({ templates: initialTemplates, porta
                   return (
                     <React.Fragment key={tpl.id}>
                       <tr style={{ background: isExpanded ? "rgba(255, 255, 255, 0.03)" : "none" }}>
-                        <td style={{ fontWeight: 600, color: "var(--text-main)" }}>{tpl.title}</td>
+                        <td style={{ fontWeight: 600, color: "var(--text-main)", whiteSpace: "nowrap" }}>{tpl.title}</td>
                         <td style={{ whiteSpace: "nowrap" }}>{tpl.organization.name}</td>
                         <td style={{ whiteSpace: "nowrap" }}>
                           {tpl.isArchived ? (
@@ -395,38 +395,87 @@ export default function TemplatesListClient({ templates: initialTemplates, porta
                             )}
                           </div>
                         </td>
-                        <td style={{ textAlign: "right" }}>
-                          <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", flexWrap: "wrap" }}>
-                            <button
-                              type="button"
-                              className="btn btn-secondary"
-                              onClick={() => handleToggleHistory(tpl)}
-                              style={{ padding: "6px 12px", fontSize: "12px", width: "auto", display: "flex", alignItems: "center", gap: "4px" }}
-                            >
-                              {isExpanded ? "▲ Hide Log" : "📜 History"}
-                            </button>
-                            <Link href={`/admin/templates/${tpl.id}/design`} className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "12px", width: "auto" }}>
-                              Designer
-                            </Link>
-                            <Link href={`/admin/templates/${tpl.id}/edit`} className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "12px", width: "auto" }}>
-                              Settings
-                            </Link>
-                            <button
-                              type="button"
-                              className="btn btn-secondary"
-                              onClick={() => handleToggleArchive(tpl)}
-                              style={{ padding: "6px 12px", fontSize: "12px", width: "auto", border: "1px dashed var(--border-color)" }}
-                            >
-                              {tpl.isArchived ? "📁 Restore" : "📁 Archive"}
-                            </button>
+                        <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                          <div style={{ display: "inline-flex", gap: "8px", justifyContent: "flex-end", alignItems: "center" }}>
+                            {/* Segmented Button Group */}
+                            <div style={{ 
+                              display: "inline-flex", 
+                              borderRadius: "var(--radius-md)", 
+                              overflow: "hidden", 
+                              border: "1px solid var(--border-color)"
+                            }}>
+                              <Link 
+                                href={`/admin/templates/${tpl.id}/design`} 
+                                className="btn" 
+                                style={{ 
+                                  borderRadius: 0, 
+                                  padding: "6px 12px", 
+                                  fontSize: "12px", 
+                                  background: "rgba(255, 255, 255, 0.02)", 
+                                  color: "var(--text-main)", 
+                                  borderRight: "1px solid var(--border-color)",
+                                  width: "auto"
+                                }}
+                              >
+                                🎨 Design
+                              </Link>
+                              <Link 
+                                href={`/admin/templates/${tpl.id}/edit`} 
+                                className="btn" 
+                                style={{ 
+                                  borderRadius: 0, 
+                                  padding: "6px 12px", 
+                                  fontSize: "12px", 
+                                  background: "rgba(255, 255, 255, 0.02)", 
+                                  color: "var(--text-main)", 
+                                  borderRight: "1px solid var(--border-color)",
+                                  width: "auto"
+                                }}
+                              >
+                                ⚙️ Settings
+                              </Link>
+                              <button 
+                                type="button"
+                                onClick={() => handleToggleHistory(tpl)} 
+                                className="btn" 
+                                style={{ 
+                                  borderRadius: 0, 
+                                  padding: "6px 12px", 
+                                  fontSize: "12px", 
+                                  background: "rgba(255, 255, 255, 0.02)", 
+                                  color: "var(--text-main)", 
+                                  borderRight: "1px solid var(--border-color)",
+                                  width: "auto"
+                                }}
+                              >
+                                {isExpanded ? "▲ Hide Log" : "📜 History"}
+                              </button>
+                              <button 
+                                type="button"
+                                onClick={() => handleToggleArchive(tpl)} 
+                                className="btn" 
+                                style={{ 
+                                  borderRadius: 0, 
+                                  padding: "6px 12px", 
+                                  fontSize: "12px", 
+                                  background: "rgba(255, 255, 255, 0.02)", 
+                                  color: "var(--text-muted)",
+                                  width: "auto"
+                                }}
+                              >
+                                {tpl.isArchived ? "📁 Restore" : "📁 Archive"}
+                              </button>
+                            </div>
+
+                            {/* Separate Delete Actions */}
                             {confirmDeleteTemplateId === tpl.id ? (
-                              <div style={{ display: "flex", gap: "4px", alignItems: "center", background: "rgba(239, 68, 68, 0.1)", padding: "2px 6px", borderRadius: "6px", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
+                              <div style={{ display: "inline-flex", gap: "4px", alignItems: "center", background: "rgba(239, 68, 68, 0.1)", padding: "2px 6px", borderRadius: "var(--radius-md)", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
                                 <span style={{ fontSize: "11px", color: "#ef4444", fontWeight: "bold" }}>Delete?</span>
                                 <button
                                   type="button"
                                   className="btn btn-primary"
                                   onClick={() => handleDeleteTemplate(tpl.id)}
-                                  style={{ padding: "3px 6px", fontSize: "10px", width: "auto", background: "#ef4444", borderColor: "#ef4444" }}
+                                  style={{ padding: "4px 8px", fontSize: "11px", width: "auto", background: "#ef4444", borderColor: "#ef4444" }}
                                 >
                                   Yes
                                 </button>
@@ -434,7 +483,7 @@ export default function TemplatesListClient({ templates: initialTemplates, porta
                                   type="button"
                                   className="btn btn-secondary"
                                   onClick={() => setConfirmDeleteTemplateId(null)}
-                                  style={{ padding: "3px 6px", fontSize: "10px", width: "auto" }}
+                                  style={{ padding: "4px 8px", fontSize: "11px", width: "auto" }}
                                 >
                                   No
                                 </button>
@@ -445,7 +494,7 @@ export default function TemplatesListClient({ templates: initialTemplates, porta
                                   type="button"
                                   className="btn"
                                   onClick={() => setConfirmDeleteTemplateId(tpl.id)}
-                                  style={{ padding: "6px 12px", fontSize: "12px", width: "auto", background: "rgba(239, 68, 68, 0.15)", color: "#f87171", border: "1px solid rgba(239, 68, 68, 0.2)" }}
+                                  style={{ padding: "6px 12px", fontSize: "12px", width: "auto", background: "rgba(239, 68, 68, 0.15)", color: "#f87171", border: "1px solid rgba(239, 68, 68, 0.2)", borderRadius: "var(--radius-md)" }}
                                 >
                                   🗑️ Delete
                                 </button>
