@@ -431,6 +431,7 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
     const renderPDF = async () => {
       try {
         setLoadingPdf(true);
+        renderedPagesRef.current.clear();
         // @ts-ignore
         const pdfjsLib = window["pdfjs-dist/build/pdf"] || window.pdfjsLib;
         if (!pdfjsLib) return;
@@ -446,7 +447,12 @@ export default function SignForm({ template, portalTitle, portalLogoLight, porta
           if (renderedPagesRef.current.has(pageNum)) continue;
 
           const page = await pdf.getPage(pageNum);
-          const canvas = document.getElementById(`pdf-preview-canvas-${pageNum - 1}`) as HTMLCanvasElement;
+          let canvas: HTMLCanvasElement | null = null;
+          for (let attempt = 0; attempt < 30; attempt++) {
+            canvas = document.getElementById(`pdf-preview-canvas-${pageNum - 1}`) as HTMLCanvasElement;
+            if (canvas) break;
+            await new Promise((r) => setTimeout(r, 50));
+          }
           if (!canvas) continue;
 
           const ctx = canvas.getContext("2d");
