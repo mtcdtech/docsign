@@ -68,8 +68,14 @@
   - Workspace Header and Viewport Optimizations (v0.14.6): Redesigned header layouts to space-saving 2-row design, resolved iOS Safari auto-zooming via dynamic font-size scales, integrated master/sub-org logo configurations in registration wizard sequences, and enforced dynamic viewport height layout stretch on mobile.
   - Template PDF Replacement (v0.14.7): Programmed API and UI interfaces allowing admins to replace the background template PDF/Word file directly in the visual designer without modifying or losing any placed field coordinates.
 
+- Completed Email Diagnostics, Manual Reminders & Automated Reminder Schedules (v0.15.0):
+  - Database Setting Fallback: Updated `src/lib/mail.ts` to query `prisma.setting` fallback credentials if environment variables are missing, allowing full SMTP configuration via Admin Settings.
+  - Admin SMTP Settings & Connection Test: Added dedicated "SMTP & Reminders" tab in Admin Settings with Host, Port, User, Pass, From Address controls and a "📧 Send Test Email" button for instant connection verification.
+  - Manual Single & Batch Reminders: Added "📧 Send Reminder" buttons on individual rows and a "📧 Send All Reminders" header button on the PCO Registrants Dashboard (`/admin/registrations/[id]`).
+  - Automated Reminder Timing & Dashboard Status Column: Added `reminder_delay_hours` setting (0 = disabled, 12, 24, 48, 72, 168 hours) and rendered a "Reminder Status / Scheduled" table column showing sent timestamps or scheduled send times.
+
 ## What is In Progress
-- Final verification of v0.14.7 in production environment.
+- Final verification of v0.15.0 in production environment.
 
 ## Known Risks & Assumptions
 - **OAuth Callback Domain**: NextAuth and Authentik are configured to work against `https://docsign.server.mtcd.org`. Any local test verification of SSO logins will fail or require mocking.

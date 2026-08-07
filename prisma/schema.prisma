@@ -110,3 +110,19 @@ model SigningRegistration {
   updatedAt       DateTime     @updatedAt
 }
 
+model RegistrationReminder {
+  id             String   @id @default(cuid())
+  registrationId String
+  attendeeEmail  String
+  attendeeName   String?
+  lastSentAt     DateTime?
+  scheduledFor   DateTime?
+  sendCount      Int      @default(0)
+  status         String   @default("Pending") // Pending, Sent, Failed
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([registrationId, attendeeEmail])
+}
+
+

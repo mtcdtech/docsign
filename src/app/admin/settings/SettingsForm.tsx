@@ -43,6 +43,12 @@ interface SettingsFormProps {
   initialPcoApplicationId: string;
   initialPcoSecret: string;
   initialPortalTimezone: string;
+  initialSmtpHost?: string;
+  initialSmtpPort?: string;
+  initialSmtpUser?: string;
+  initialSmtpPass?: string;
+  initialSmtpFrom?: string;
+  initialReminderDelayHours?: string;
   initialOrganizations: Organization[];
   initialUsers: User[];
   initialAuditLogs: AuditLog[];
@@ -66,6 +72,12 @@ export default function SettingsForm({
   initialPcoApplicationId,
   initialPcoSecret,
   initialPortalTimezone,
+  initialSmtpHost,
+  initialSmtpPort,
+  initialSmtpUser,
+  initialSmtpPass,
+  initialSmtpFrom,
+  initialReminderDelayHours,
   initialOrganizations,
   initialUsers,
   initialAuditLogs,
@@ -94,6 +106,17 @@ export default function SettingsForm({
   const [pcoApplicationId, setPcoApplicationId] = useState(initialPcoApplicationId || "");
   const [pcoSecret, setPcoSecret] = useState(initialPcoSecret || "");
   const [portalTimezone, setPortalTimezone] = useState(initialPortalTimezone || "America/Chicago");
+
+  // SMTP & Reminder state
+  const [smtpHost, setSmtpHost] = useState(initialSmtpHost || "");
+  const [smtpPort, setSmtpPort] = useState(initialSmtpPort || "587");
+  const [smtpUser, setSmtpUser] = useState(initialSmtpUser || "");
+  const [smtpPass, setSmtpPass] = useState(initialSmtpPass || "");
+  const [smtpFrom, setSmtpFrom] = useState(initialSmtpFrom || "docsign@mtcd.org");
+  const [reminderDelayHours, setReminderDelayHours] = useState(initialReminderDelayHours || "24");
+  const [testingEmail, setTestingEmail] = useState(false);
+  const [testEmailStatus, setTestEmailStatus] = useState<{ success?: boolean; error?: string; messageId?: string } | null>(null);
+  const [testEmailRecipient, setTestEmailRecipient] = useState("");
 
   // Drag and drop states for global logos
   const [isDraggingLight, setIsDraggingLight] = useState(false);
@@ -277,6 +300,12 @@ export default function SettingsForm({
         pco_application_id: fieldsToUpdate.pco_application_id ?? pcoApplicationId,
         pco_secret: fieldsToUpdate.pco_secret ?? pcoSecret,
         portal_timezone: fieldsToUpdate.portal_timezone ?? portalTimezone,
+        smtp_host: fieldsToUpdate.smtp_host ?? smtpHost,
+        smtp_port: fieldsToUpdate.smtp_port ?? smtpPort,
+        smtp_user: fieldsToUpdate.smtp_user ?? smtpUser,
+        smtp_pass: fieldsToUpdate.smtp_pass ?? smtpPass,
+        smtp_from: fieldsToUpdate.smtp_from ?? smtpFrom,
+        reminder_delay_hours: fieldsToUpdate.reminder_delay_hours ?? reminderDelayHours,
       };
 
       const res = await fetch("/api/admin/settings", {
@@ -311,6 +340,36 @@ export default function SettingsForm({
       setSaveError(err.message || "An error occurred.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleTestEmail = async () => {
+    setTestingEmail(true);
+    setTestEmailStatus(null);
+    try {
+      // First save active settings so test uses updated credentials
+      await saveSettings({
+        smtp_host: smtpHost,
+        smtp_port: smtpPort,
+        smtp_user: smtpUser,
+        smtp_pass: smtpPass,
+        smtp_from: smtpFrom,
+      });
+
+      const res = await fetch("/api/admin/settings/test-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: testEmailRecipient })
+      });
+      const data = await res.json();
+      if (!res.ok || data.ok === false) {
+        throw new Error(data.error || "Failed to send test email.");
+      }
+      setTestEmailStatus({ success: true, messageId: data.messageId });
+    } catch (err: any) {
+      setTestEmailStatus({ success: false, error: err.message || "Test email delivery failed." });
+    } finally {
+      setTestingEmail(false);
     }
   };
 
@@ -598,6 +657,7 @@ export default function SettingsForm({
 
   const tabs = [
     { id: "general", label: "General Configuration" },
+    { id: "email", label: "SMTP & Reminders" },
     { id: "azure", label: "Azure AD / SharePoint" },
     { id: "pco", label: "Planning Center (PCO)" },
     { id: "branding", label: "Theming & Logo" },
@@ -651,16 +711,16 @@ export default function SettingsForm({
       {/* Main Settings Body */}
       {activeTab === "general" && (
         <div className="card-glass">
-          <h2 style={{ marginBottom: "20px" }}>General Configuration</h2>
+          <h2 style={{ marginBottom: "20px" }}>General Portal Parameters</h2>
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              saveSettings({ portal_title: portalTitle, theme_mode: themeMode });
+              saveSettings({ portal_title: portalTitle, portal_timezone: portalTimezone });
             }}
             style={{ display: "flex", flexDirection: "column", gap: "20px" }}
           >
             <div className="form-group">
-              <label className="form-label">Portal Application Title</label>
+              <label className="form-label">Portal Brand Title *</label>
               <input
                 type="text"
                 className="form-input"
@@ -669,29 +729,6 @@ export default function SettingsForm({
                 onChange={(e) => setPortalTitle(e.target.value)}
                 placeholder="DocSign Portal"
               />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Default Theme Mode</label>
-              <select
-                className="form-input"
-                value={themeMode}
-                onChange={(e) => setThemeMode(e.target.value)}
-                style={{
-                  background: "rgba(0,0,0,0.2)",
-                  cursor: "pointer",
-                  border: "1px solid var(--border-color)",
-                  borderRadius: "var(--radius-sm)",
-                  color: "var(--text-main)",
-                }}
-              >
-                <option value="dark" style={{ background: "var(--bg-card)", color: "var(--text-main)" }}>
-                  Dark Mode
-                </option>
-                <option value="light" style={{ background: "var(--bg-card)", color: "var(--text-main)" }}>
-                  Light Mode
-                </option>
-              </select>
             </div>
 
             <div className="form-group">

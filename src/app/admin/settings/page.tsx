@@ -44,6 +44,13 @@ export default async function SettingsPage() {
     const pcoApplicationId = settingsMap["pco_application_id"] || "";
     const pcoSecret = settingsMap["pco_secret"] || "";
 
+    const smtpHost = settingsMap["smtp_host"] || "";
+    const smtpPort = settingsMap["smtp_port"] || "587";
+    const smtpUser = settingsMap["smtp_user"] || "";
+    const smtpPass = settingsMap["smtp_pass"] || "";
+    const smtpFrom = settingsMap["smtp_from"] || "docsign@mtcd.org";
+    const reminderDelayHours = settingsMap["reminder_delay_hours"] || "24";
+
     // Fetch local API key for central IAM registration
     const apiKey = getApiKey();
     const rolesApiUrl = `${process.env.NEXTAUTH_URL || "http://docsign.server.mtcd.org"}/api/iam/roles`;
@@ -88,6 +95,12 @@ export default async function SettingsPage() {
             initialPcoApplicationId={pcoApplicationId}
             initialPcoSecret={pcoSecret}
             initialPortalTimezone={portalTimezone}
+            initialSmtpHost={smtpHost}
+            initialSmtpPort={smtpPort}
+            initialSmtpUser={smtpUser}
+            initialSmtpPass={smtpPass}
+            initialSmtpFrom={smtpFrom}
+            initialReminderDelayHours={reminderDelayHours}
             initialOrganizations={organizations}
             initialUsers={users}
             initialAuditLogs={auditLogs}

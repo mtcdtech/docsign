@@ -11,7 +11,29 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { primary_color, primary_hover, portal_title, portal_logo_light, portal_logo_dark, master_logo_light, master_logo_dark, theme_mode, central_iam_url, azure_tenant_id, azure_client_id, azure_client_secret, pco_application_id, pco_secret, portal_timezone } = body;
+    const {
+      primary_color,
+      primary_hover,
+      portal_title,
+      portal_logo_light,
+      portal_logo_dark,
+      master_logo_light,
+      master_logo_dark,
+      theme_mode,
+      central_iam_url,
+      azure_tenant_id,
+      azure_client_id,
+      azure_client_secret,
+      pco_application_id,
+      pco_secret,
+      portal_timezone,
+      smtp_host,
+      smtp_port,
+      smtp_user,
+      smtp_pass,
+      smtp_from,
+      reminder_delay_hours,
+    } = body;
 
     // Validate inputs
     if (!primary_color || !primary_hover || !portal_title) {
@@ -35,6 +57,12 @@ export async function POST(req: Request) {
       pco_application_id: pco_application_id || "",
       pco_secret: pco_secret || "",
       portal_timezone: portal_timezone || "America/Chicago",
+      smtp_host: smtp_host || "",
+      smtp_port: smtp_port || "587",
+      smtp_user: smtp_user || "",
+      smtp_pass: smtp_pass || "",
+      smtp_from: smtp_from || "docsign@mtcd.org",
+      reminder_delay_hours: reminder_delay_hours || "24",
     };
 
     for (const [key, value] of Object.entries(settings)) {

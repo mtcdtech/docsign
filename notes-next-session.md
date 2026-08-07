@@ -2,28 +2,20 @@
 
 Here is the recommended starting point and next steps for the next session.
 
-## Verification Checklist for Registrations & Branding (v0.14.0)
+## Verification Checklist for Email Diagnosis, Manual & Automated Reminders (v0.15.0)
 
-1. **Verify Global Settings & Branding**:
+1. **Verify Admin SMTP Configuration & Diagnostic Test**:
    - Access the Admin Dashboard and go to the **Settings** page.
-   - Under the **Theming & Logo** tab, upload **App Logo (Light Mode)** and **App Logo (Dark Mode)**. Change your system theme preference and verify that the logo changes dynamically.
-   - Go to the **Organization Branding** tab, find an organization, and upload **Light Mode** and **Dark Mode** logos.
+   - Click the **SMTP & Reminders** tab.
+   - Enter your SMTP Host, Port, Username, Password, and From Address (or rely on auto-detected Azure Communication Services credentials).
+   - Enter a test recipient email and click **📧 Send Test Email**. Confirm that the green success banner appears with a valid message ID and check your inbox for the test message.
 
-2. **Verify Registration Form PCO Setup**:
-   - Go to `/admin/registrations` and click **+ Create Registration**.
-   - Input a title, slug, select an organization, check multiple templates, and enter a valid **Planning Center Signup ID**.
-   - Arrange the templates in order and click **Create Registration**.
+2. **Verify Manual Individual & Batch Reminders**:
+   - Open a registration packet dashboard at `/admin/registrations/[id]`.
+   - Locate an attendee with incomplete waivers ("Not Started" or "Partial").
+   - Click **📧 Send Reminder** on their row. Verify that the button switches to "Sending...", then displays a success notification, and the **Reminder Status** column updates to show *"Sent: [Date] (1 reminder sent)"*.
+   - Click **📧 Send All Reminders** in the top action toolbar. Confirm that reminder emails are sent in batch to all incomplete registrants.
 
-3. **Verify PCO Attendees Grid & Live Tracking**:
-   - In the registrations table, click on the title of the newly created registration to access the details dashboard: `/admin/registrations/[id]`.
-   - Verify that the list table displays registrants fetched from Planning Center, with their names, emails, and form completion checklist statuses showing "Not Started" / "Partial".
-   - Submit a test signature sequence using a registrant's email.
-   - Re-visit the dashboard, click **🔄 Reload List**, and check that the registrant's status changed to **Completed** or **Partial**, displaying checkmarks on completed forms.
-   - Click the **Sync PCO** button on the row to verify manual check-off triggers.
-
-4. **Verify Email Logo Layouts**:
-   - Check the sent confirmation emails. Verify that both the **App Logo** and **Organization Logo** render side-by-side inside the dark header block cleanly.
-
-5. **Verify Audit Log Contrast**:
-   - Go to the Admin Dashboard and expand the **System Audit Log** card.
-   - Confirm that the gray background spans are removed and that the event actions (Login, Create, Delete, Email) display high-contrast bold color coding.
+3. **Verify Automated Reminder Schedule Display**:
+   - In Admin Settings under **SMTP & Reminders**, select an automated schedule timing (e.g. 24 Hours after Registration).
+   - Return to `/admin/registrations/[id]` and confirm that for registrants who have not completed their waivers, the **Reminder Status / Scheduled** column displays *"⏰ Scheduled: [Date & Time]"*.

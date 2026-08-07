@@ -64,6 +64,15 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       select: { templateId: true, signerEmail: true, signerName: true, pcoAttendeeId: true }
     });
 
+    // Fetch reminders and setting
+    const reminders = await prisma.registrationReminder.findMany({
+      where: { registrationId }
+    });
+    const reminderSetting = await prisma.setting.findUnique({
+      where: { key: "reminder_delay_hours" }
+    });
+    const reminderDelayHours = reminderSetting ? parseInt(reminderSetting.value || "0", 10) : 0;
+
     // Map each PCO attendee to their waiver completion state
     const mappedAttendees = pcoAttendees.map((att) => {
       const cleanAttEmail = att.email.trim().toLowerCase();
@@ -114,16 +123,29 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         status = `Partial (${completedCount}/${templates.length})`;
       }
 
+      // Reminder info
+      const reminder = reminders.find((r) => r.attendeeEmail.toLowerCase() === cleanAttEmail);
+      let scheduledFor: string | null = null;
+      if (status !== "Completed" && reminderDelayHours > 0) {
+        const baseDate = new Date(registration.createdAt);
+        scheduledFor = new Date(baseDate.getTime() + reminderDelayHours * 3600 * 1000).toISOString();
+      }
+
       return {
         id: att.id,
         name: att.name,
         email: att.email,
         checklist,
-        status
+        status,
+        reminderStatus: {
+          lastSentAt: reminder?.lastSentAt ? reminder.lastSentAt.toISOString() : null,
+          sendCount: reminder?.sendCount || 0,
+          scheduledFor,
+        }
       };
     });
 
-    return NextResponse.json({ ok: true, attendees: mappedAttendees });
+    return NextResponse.json({ ok: true, attendees: mappedAttendees, reminderDelayHours });
   } catch (err: any) {
     console.error("PCO attendees sync route exception:", err);
     return NextResponse.json({ ok: false, error: err.message || "Failed to load attendees list" }, { status: 500 });

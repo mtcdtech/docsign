@@ -12,12 +12,19 @@ interface ChecklistItem {
   pcoAnswered: boolean;
 }
 
+interface ReminderInfo {
+  lastSentAt: string | null;
+  sendCount: number;
+  scheduledFor: string | null;
+}
+
 interface Attendee {
   id: string;
   name: string;
   email: string;
   checklist: ChecklistItem[];
   status: string;
+  reminderStatus?: ReminderInfo;
 }
 
 interface RegistrationDashboardProps {
@@ -43,6 +50,7 @@ export default function RegistrationDashboardClient({ registration, templates }:
   const [searchQuery, setSearchQuery] = useState("");
   const [filterTab, setFilterTab] = useState<"all" | "completed" | "partial" | "not_started">("all");
   const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [sendingReminder, setSendingReminder] = useState<string | null>(null);
   const [syncSuccessMsg, setSyncSuccessMsg] = useState<string | null>(null);
 
   const fetchAttendees = async () => {
@@ -85,12 +93,51 @@ export default function RegistrationDashboardClient({ registration, templates }:
       }
       setSyncSuccessMsg(`Successfully synced check-offs for ${att.name}!`);
       setTimeout(() => setSyncSuccessMsg(null), 3000);
-      // Reload attendees list
       fetchAttendees();
     } catch (err: any) {
       alert(err.message || "Failed to complete PCO check-off sync.");
     } finally {
       setSyncingId(null);
+    }
+  };
+
+  const handleSendReminder = async (att?: Attendee, sendAll?: boolean) => {
+    const targetId = sendAll ? "ALL" : att?.id || null;
+    if (!targetId) return;
+
+    if (sendAll && !confirm("Send reminder emails to ALL attendees with incomplete waivers?")) {
+      return;
+    }
+
+    setSendingReminder(targetId);
+    setSyncSuccessMsg(null);
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/admin/registrations/${registration.id}/pco/remind`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          attendeeEmail: att?.email,
+          sendAll: !!sendAll
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || data.ok === false) {
+        throw new Error(data.error || "Failed to send reminder email(s).");
+      }
+
+      if (sendAll) {
+        setSyncSuccessMsg(`Successfully sent reminder emails to ${data.sentCount} registrant(s)!`);
+      } else {
+        setSyncSuccessMsg(`Sent reminder email to ${att?.name}!`);
+      }
+      setTimeout(() => setSyncSuccessMsg(null), 4000);
+      fetchAttendees();
+    } catch (err: any) {
+      setError(err.message || "Failed to send reminder email.");
+    } finally {
+      setSendingReminder(null);
     }
   };
 
@@ -113,6 +160,13 @@ export default function RegistrationDashboardClient({ registration, templates }:
   const completedCount = attendees.filter((a) => a.status === "Completed").length;
   const partialCount = attendees.filter((a) => a.status.startsWith("Partial")).length;
   const notStartedCount = attendees.filter((a) => a.status === "Not Started").length;
+  const incompleteCount = totalCount - completedCount;
+
+  const formatDate = (isoStr: string | null) => {
+    if (!isoStr) return null;
+    const d = new Date(isoStr);
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + ", " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
@@ -131,7 +185,15 @@ export default function RegistrationDashboardClient({ registration, templates }:
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <button
+            onClick={() => handleSendReminder(undefined, true)}
+            className="btn btn-primary"
+            style={{ width: "auto", display: "flex", alignItems: "center", gap: "8px", background: "linear-gradient(135deg, #2563eb, #1d4ed8)" }}
+            disabled={loading || sendingReminder !== null || incompleteCount === 0}
+          >
+            {sendingReminder === "ALL" ? "Sending Reminders..." : `📧 Send All Reminders (${incompleteCount})`}
+          </button>
           <button onClick={fetchAttendees} className="btn btn-secondary" style={{ width: "auto", display: "flex", alignItems: "center", gap: "8px" }} disabled={loading}>
             🔄 Reload List
           </button>
@@ -236,66 +298,115 @@ export default function RegistrationDashboardClient({ registration, templates }:
                       <th style={{ padding: "12px", fontSize: "11px", color: "var(--text-muted)", fontWeight: "600", textTransform: "uppercase" }}>Name & Email</th>
                       <th style={{ padding: "12px", fontSize: "11px", color: "var(--text-muted)", fontWeight: "600", textTransform: "uppercase" }}>Waiver Packet Checklist</th>
                       <th style={{ padding: "12px", fontSize: "11px", color: "var(--text-muted)", fontWeight: "600", textTransform: "uppercase" }}>Status</th>
-                      <th style={{ padding: "12px", fontSize: "11px", color: "var(--text-muted)", fontWeight: "600", textTransform: "uppercase", textAlign: "right" }}>PCO Sync</th>
+                      <th style={{ padding: "12px", fontSize: "11px", color: "var(--text-muted)", fontWeight: "600", textTransform: "uppercase" }}>Reminder Status / Scheduled</th>
+                      <th style={{ padding: "12px", fontSize: "11px", color: "var(--text-muted)", fontWeight: "600", textTransform: "uppercase", textAlign: "right" }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredAttendees.map((att) => (
-                      <tr key={att.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.02)" }}>
-                        <td style={{ padding: "14px 12px" }}>
-                          <div style={{ fontWeight: "600", fontSize: "13.5px", color: "var(--text-main)" }}>{att.name}</div>
-                          <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>{att.email}</div>
-                        </td>
-                        <td style={{ padding: "14px 12px" }}>
-                          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                            {att.checklist.map((item) => (
-                              <div key={item.templateId} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px" }}>
-                                <span style={{ color: item.signed ? "#10b981" : "#ef4444", fontWeight: "bold" }}>
-                                  {item.signed ? "✓" : "✗"}
-                                </span>
-                                <span style={{ color: item.signed ? "var(--text-main)" : "var(--text-muted)" }}>
-                                  {item.title}
-                                </span>
-                                {item.pcoQuestionTitle && (
-                                  <span style={{ fontSize: "10px", background: item.pcoAnswered ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)", color: item.pcoAnswered ? "#34d399" : "#f87171", padding: "1px 4px", borderRadius: "3px" }}>
-                                    PCO: {item.pcoAnswered ? "Checked" : "Unchecked"}
+                    {filteredAttendees.map((att) => {
+                      const isCompleted = att.status === "Completed";
+                      const lastSentFormatted = formatDate(att.reminderStatus?.lastSentAt || null);
+                      const scheduledFormatted = formatDate(att.reminderStatus?.scheduledFor || null);
+
+                      return (
+                        <tr key={att.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.02)" }}>
+                          <td style={{ padding: "14px 12px" }}>
+                            <div style={{ fontWeight: "600", fontSize: "13.5px", color: "var(--text-main)" }}>{att.name}</div>
+                            <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>{att.email}</div>
+                          </td>
+                          <td style={{ padding: "14px 12px" }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                              {att.checklist.map((item) => (
+                                <div key={item.templateId} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px" }}>
+                                  <span style={{ color: item.signed ? "#10b981" : "#ef4444", fontWeight: "bold" }}>
+                                    {item.signed ? "✓" : "✗"}
                                   </span>
-                                )}
+                                  <span style={{ color: item.signed ? "var(--text-main)" : "var(--text-muted)" }}>
+                                    {item.title}
+                                  </span>
+                                  {item.pcoQuestionTitle && (
+                                    <span style={{ fontSize: "10px", background: item.pcoAnswered ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)", color: item.pcoAnswered ? "#34d399" : "#f87171", padding: "1px 4px", borderRadius: "3px" }}>
+                                      PCO: {item.pcoAnswered ? "Checked" : "Unchecked"}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                          <td style={{ padding: "14px 12px" }}>
+                            <span style={{
+                              padding: "4px 8px",
+                              borderRadius: "4px",
+                              fontSize: "11px",
+                              fontWeight: "bold",
+                              background: isCompleted ? "rgba(16,185,129,0.12)" : att.status.startsWith("Partial") ? "rgba(250,204,21,0.12)" : "rgba(255,255,255,0.04)",
+                              color: isCompleted ? "#34d399" : att.status.startsWith("Partial") ? "#fde047" : "var(--text-muted)"
+                            }}>
+                              {att.status}
+                            </span>
+                          </td>
+                          <td style={{ padding: "14px 12px" }}>
+                            {isCompleted ? (
+                              <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>Completed</span>
+                            ) : lastSentFormatted ? (
+                              <div>
+                                <div style={{ fontSize: "12px", color: "#60a5fa", fontWeight: "600" }}>
+                                  Sent: {lastSentFormatted}
+                                </div>
+                                <div style={{ fontSize: "10.5px", color: "var(--text-muted)", marginTop: "2px" }}>
+                                  ({att.reminderStatus?.sendCount} reminder{att.reminderStatus?.sendCount === 1 ? "" : "s"} sent)
+                                </div>
                               </div>
-                            ))}
-                          </div>
-                        </td>
-                        <td style={{ padding: "14px 12px" }}>
-                          <span style={{
-                            padding: "4px 8px",
-                            borderRadius: "4px",
-                            fontSize: "11px",
-                            fontWeight: "bold",
-                            background: att.status === "Completed" ? "rgba(16,185,129,0.12)" : att.status.startsWith("Partial") ? "rgba(250,204,21,0.12)" : "rgba(255,255,255,0.04)",
-                            color: att.status === "Completed" ? "#34d399" : att.status.startsWith("Partial") ? "#fde047" : "var(--text-muted)"
-                          }}>
-                            {att.status}
-                          </span>
-                        </td>
-                        <td style={{ padding: "14px 12px", textAlign: "right" }}>
-                          <button
-                            type="button"
-                            onClick={() => handleSyncAttendee(att)}
-                            className="btn btn-secondary"
-                            disabled={syncingId !== null || att.checklist.every((c) => !c.signed)}
-                            style={{
-                              padding: "4px 10px",
-                              fontSize: "12px",
-                              width: "auto",
-                              background: syncingId === att.id ? "rgba(255,255,255,0.02)" : "transparent",
-                              cursor: att.checklist.every((c) => !c.signed) ? "not-allowed" : "pointer"
-                            }}
-                          >
-                            {syncingId === att.id ? "Syncing..." : "Sync PCO"}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                            ) : scheduledFormatted ? (
+                              <div>
+                                <div style={{ fontSize: "12px", color: "#f59e0b", fontWeight: "500" }}>
+                                  ⏰ Scheduled: {scheduledFormatted}
+                                </div>
+                              </div>
+                            ) : (
+                              <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>Not Scheduled</span>
+                            )}
+                          </td>
+                          <td style={{ padding: "14px 12px", textAlign: "right" }}>
+                            <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end" }}>
+                              {!isCompleted && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleSendReminder(att, false)}
+                                  className="btn btn-secondary"
+                                  disabled={sendingReminder !== null || !att.email}
+                                  style={{
+                                    padding: "4px 10px",
+                                    fontSize: "12px",
+                                    width: "auto",
+                                    background: "rgba(37, 99, 235, 0.15)",
+                                    border: "1px solid rgba(37, 99, 235, 0.3)",
+                                    color: "#60a5fa",
+                                  }}
+                                >
+                                  {sendingReminder === att.id ? "Sending..." : "📧 Send Reminder"}
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleSyncAttendee(att)}
+                                className="btn btn-secondary"
+                                disabled={syncingId !== null || att.checklist.every((c) => !c.signed)}
+                                style={{
+                                  padding: "4px 10px",
+                                  fontSize: "12px",
+                                  width: "auto",
+                                  background: syncingId === att.id ? "rgba(255,255,255,0.02)" : "transparent",
+                                  cursor: att.checklist.every((c) => !c.signed) ? "not-allowed" : "pointer"
+                                }}
+                              >
+                                {syncingId === att.id ? "Syncing..." : "Sync PCO"}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -312,3 +423,4 @@ export default function RegistrationDashboardClient({ registration, templates }:
     </div>
   );
 }
+
