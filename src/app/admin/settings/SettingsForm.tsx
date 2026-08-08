@@ -775,6 +775,168 @@ export default function SettingsForm({
         </div>
       )}
 
+      {activeTab === "email" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+          <div className="card-glass">
+            <h2 style={{ marginBottom: "8px" }}>SMTP Mail Delivery Configuration</h2>
+            <p style={{ color: "var(--text-muted)", fontSize: "13px", marginBottom: "24px" }}>
+              Configure your outgoing mail server parameters to enable automated document notifications and reminder emails.
+            </p>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                saveSettings({
+                  smtp_host: smtpHost,
+                  smtp_port: smtpPort,
+                  smtp_user: smtpUser,
+                  smtp_pass: smtpPass,
+                  smtp_from: smtpFrom,
+                  reminder_delay_hours: reminderDelayHours,
+                });
+              }}
+              style={{ display: "flex", flexDirection: "column", gap: "20px" }}
+            >
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 120px", gap: "16px" }}>
+                <div className="form-group">
+                  <label className="form-label">SMTP Host / Server Address</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={smtpHost}
+                    onChange={(e) => setSmtpHost(e.target.value)}
+                    placeholder="e.g. smtp.azurecomm.net or smtp.office365.com"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Port</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={smtpPort}
+                    onChange={(e) => setSmtpPort(e.target.value)}
+                    placeholder="587"
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                <div className="form-group">
+                  <label className="form-label">SMTP Username / App Client ID</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={smtpUser}
+                    onChange={(e) => setSmtpUser(e.target.value)}
+                    placeholder="e.g. docsign@mtcd.org or <client_id>@<tenant_id>"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">SMTP Password / Client Secret</label>
+                  <input
+                    type="password"
+                    className="form-input"
+                    value={smtpPass}
+                    onChange={(e) => setSmtpPass(e.target.value)}
+                    placeholder="••••••••••••••••••••"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Default From / Envelope Email Address</label>
+                <input
+                  type="email"
+                  className="form-input"
+                  value={smtpFrom}
+                  onChange={(e) => setSmtpFrom(e.target.value)}
+                  placeholder="docsign@mtcd.org"
+                />
+              </div>
+
+              <hr style={{ border: "none", borderTop: "1px solid var(--border-color)", margin: "8px 0" }} />
+
+              <div className="form-group">
+                <label className="form-label" style={{ fontWeight: "700" }}>Automated Reminder Schedule Timing</label>
+                <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "8px" }}>
+                  Select when automated reminder emails should be scheduled after a Planning Center registration packet is created.
+                </p>
+                <select
+                  className="form-input"
+                  value={reminderDelayHours}
+                  onChange={(e) => setReminderDelayHours(e.target.value)}
+                >
+                  <option value="0">Disabled (Manual Reminders Only)</option>
+                  <option value="12">12 Hours after Registration</option>
+                  <option value="24">24 Hours (1 Day) after Registration</option>
+                  <option value="48">48 Hours (2 Days) after Registration</option>
+                  <option value="72">72 Hours (3 Days) after Registration</option>
+                  <option value="168">168 Hours (7 Days) after Registration</option>
+                </select>
+              </div>
+
+              {saveSuccess && (
+                <div style={{ color: "#22c55e", fontSize: "14px", fontWeight: "bold", background: "rgba(34, 197, 94, 0.1)", padding: "12px", borderRadius: "8px", border: "1px solid rgba(34, 197, 94, 0.2)" }}>
+                  ✓ Mail & Reminder settings saved successfully!
+                </div>
+              )}
+
+              {saveError && (
+                <div style={{ color: "#ef4444", fontSize: "14px", fontWeight: "bold", background: "rgba(239, 68, 68, 0.1)", padding: "12px", borderRadius: "8px", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
+                  ⚠️ {saveError}
+                </div>
+              )}
+
+              <button type="submit" className="btn btn-primary" disabled={isSaving} style={{ width: "auto", alignSelf: "flex-end" }}>
+                {isSaving ? "Saving Settings..." : "Save SMTP & Reminder Settings"}
+              </button>
+            </form>
+          </div>
+
+          {/* Test Email Connection Card */}
+          <div className="card-glass" style={{ borderLeft: "4px solid var(--primary-color)" }}>
+            <h3 style={{ marginBottom: "8px" }}>🧪 Test Email Delivery Connection</h3>
+            <p style={{ color: "var(--text-muted)", fontSize: "13px", marginBottom: "16px" }}>
+              Send a diagnostic test email to verify your SMTP server host, authentication credentials, and sender configuration.
+            </p>
+
+            <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+              <input
+                type="email"
+                className="form-input"
+                value={testEmailRecipient}
+                onChange={(e) => setTestEmailRecipient(e.target.value)}
+                placeholder="Enter recipient email address..."
+                style={{ flex: 1 }}
+              />
+              <button
+                type="button"
+                onClick={handleTestEmail}
+                className="btn btn-secondary"
+                disabled={testingEmail}
+                style={{ width: "auto", display: "flex", alignItems: "center", gap: "8px", background: "rgba(37, 99, 235, 0.15)", border: "1px solid rgba(37, 99, 235, 0.3)", color: "#60a5fa" }}
+              >
+                {testingEmail ? "Sending Test..." : "📧 Send Test Email"}
+              </button>
+            </div>
+
+            {testEmailStatus?.success && (
+              <div style={{ marginTop: "16px", color: "#22c55e", fontSize: "13.5px", background: "rgba(34, 197, 94, 0.1)", padding: "12px", borderRadius: "8px", border: "1px solid rgba(34, 197, 94, 0.2)" }}>
+                ✓ Test email sent successfully! Message ID: <code>{testEmailStatus.messageId}</code>
+              </div>
+            )}
+
+            {testEmailStatus?.error && (
+              <div style={{ marginTop: "16px", color: "#ef4444", fontSize: "13.5px", background: "rgba(239, 68, 68, 0.1)", padding: "12px", borderRadius: "8px", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
+                ⚠️ Test email failed: {testEmailStatus.error}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {activeTab === "azure" && (
         <div className="card-glass">
           <h2 style={{ marginBottom: "8px" }}>Azure AD / SharePoint Integration</h2>

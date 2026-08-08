@@ -218,3 +218,8 @@
 - **Automated Reminder Schedules & Status Column**: Added `RegistrationReminder` model to [schema.prisma](file:///Users/benny2168/Antigravity/docsign/prisma/schema.prisma) and added `reminder_delay_hours` setting. Rendered a "Reminder Status / Scheduled" table column on the dashboard showing sent timestamps or scheduled send times.
 - **Status**: Completed, ready for deployment.
 
+### [2026-08-08] SMTP & Reminders Settings Tab Render Fix (v0.15.1)
+- **SettingsForm Render Fix**: Restored missing `{activeTab === "email" && (...)}` JSX render block in [SettingsForm.tsx](file:///Users/benny2168/Antigravity/docsign/src/app/admin/settings/SettingsForm.tsx). This fixes the issue where clicking the "SMTP & Reminders" tab displayed an empty card.
+- **Status**: Completed, deployed.
+
+
