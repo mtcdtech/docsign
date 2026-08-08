@@ -51,14 +51,20 @@ export default async function SettingsPage() {
     let smtpPass = settingsMap["smtp_pass"] || process.env.SMTP_PASS || "";
     let smtpFrom = settingsMap["smtp_from"] || process.env.SMTP_FROM || "docsign@mtcd.org";
 
-    if (!smtpHost && azureClientId && azureTenantId && azureClientSecret) {
+    if (!smtpHost && !smtpUser && azureClientId && azureTenantId && azureClientSecret) {
       smtpHost = "smtp.azurecomm.net";
       smtpPort = "587";
-      if (!smtpUser) smtpUser = `${azureClientId}@${azureTenantId}`;
-      if (!smtpPass) smtpPass = azureClientSecret;
+      smtpUser = `${azureClientId}@${azureTenantId}`;
+      smtpPass = azureClientSecret;
     }
 
-    if (!smtpHost) smtpHost = "smtp.azurecomm.net";
+    if (!smtpHost) {
+      if (smtpUser && smtpUser.includes("@") && !smtpUser.split("@")[0].includes("-")) {
+        smtpHost = "smtp.office365.com";
+      } else {
+        smtpHost = "smtp.azurecomm.net";
+      }
+    }
 
     const reminderDelayHours = settingsMap["reminder_delay_hours"] || "24";
 

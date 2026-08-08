@@ -28,21 +28,39 @@ export async function sendEmail({
     console.warn("Could not query Setting model for email config fallback:", err);
   }
 
-  let host = process.env.SMTP_HOST || dbSettings["smtp_host"] || "smtp.azurecomm.net";
-  let port = parseInt(process.env.SMTP_PORT || dbSettings["smtp_port"] || "587");
-  let user = process.env.SMTP_USER || dbSettings["smtp_user"] || "";
-  let pass = process.env.SMTP_PASS || dbSettings["smtp_pass"] || "";
+  // 1. First check explicit DB settings or explicit SMTP environment variables
+  let host = dbSettings["smtp_host"] || process.env.SMTP_HOST || "";
+  let port = parseInt(dbSettings["smtp_port"] || process.env.SMTP_PORT || "587");
+  let user = dbSettings["smtp_user"] || process.env.SMTP_USER || "";
+  let pass = dbSettings["smtp_pass"] || process.env.SMTP_PASS || "";
 
-  // Auto-configure Azure Communication Services SMTP if Azure credentials are present in env or DB
-  const azureClientId = process.env.AZURE_AD_CLIENT_ID || dbSettings["azure_client_id"];
-  const azureTenantId = process.env.AZURE_AD_TENANT_ID || dbSettings["azure_tenant_id"];
-  const azureClientSecret = process.env.AZURE_AD_CLIENT_SECRET || dbSettings["azure_client_secret"];
+  // 2. Only if explicit SMTP credentials are NOT provided, check Azure Communication Services auto-config
+  const azureClientId = dbSettings["azure_client_id"] || process.env.AZURE_AD_CLIENT_ID;
+  const azureTenantId = dbSettings["azure_tenant_id"] || process.env.AZURE_AD_TENANT_ID;
+  const azureClientSecret = dbSettings["azure_client_secret"] || process.env.AZURE_AD_CLIENT_SECRET;
 
-  if (azureClientId && azureTenantId && azureClientSecret) {
+  if (!user && azureClientId && azureTenantId && azureClientSecret) {
     host = "smtp.azurecomm.net";
     port = 587;
     user = `${azureClientId}@${azureTenantId}`;
     pass = azureClientSecret;
+  }
+
+  // 3. Fallbacks for Microsoft 365 Exchange Online vs Azure ACS
+  if (!host) {
+    if (user && user.includes("@") && !user.includes("-")) {
+      host = "smtp.office365.com";
+    } else {
+      host = "smtp.azurecomm.net";
+    }
+  }
+
+  // If host is set to smtp.azurecomm.net but user is an Office 365 email (like docsign@mtcd.org), route to Office 365
+  if (host === "smtp.azurecomm.net" && user && !user.includes("@")) {
+    // missing tenant ID in user format
+  } else if (host === "smtp.azurecomm.net" && user && user.includes("@") && !user.split("@")[0].includes("-")) {
+    // User is a standard email address like docsign@mtcd.org, not an Azure App ID (uuid@uuid)
+    host = "smtp.office365.com";
   }
 
   const mailFrom = process.env.SMTP_FROM || dbSettings["smtp_from"] || "docsign@mtcd.org";

@@ -218,9 +218,10 @@
 - **Automated Reminder Schedules & Status Column**: Added `RegistrationReminder` model to [schema.prisma](file:///Users/benny2168/Antigravity/docsign/prisma/schema.prisma) and added `reminder_delay_hours` setting. Rendered a "Reminder Status / Scheduled" table column on the dashboard showing sent timestamps or scheduled send times.
 - **Status**: Completed, ready for deployment.
 
-### [2026-08-08] Auto-populate SMTP Settings from Environment (v0.15.2)
-- **Automatic Environment Pre-filling**: Updated [page.tsx](file:///Users/benny2168/Antigravity/docsign/src/app/admin/settings/page.tsx) to query runtime `process.env` values (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `AZURE_AD_*`) when database setting entries are not yet saved. The fields in the "SMTP & Reminders" tab now populate automatically with active environment values so admins do not have to re-enter existing server settings.
+### [2026-08-08] Fix Exchange Online vs Azure ACS SMTP Routing (v0.15.3)
+- **SMTP Credential Priority Fix**: Refactored [mail.ts](file:///Users/benny2168/Antigravity/docsign/src/lib/mail.ts) so that explicit SMTP credentials (`SMTP_USER`, `SMTP_PASS`) are used directly and not overridden by Azure AD Client ID credentials (`${azureClientId}@${azureTenantId}`). Added automatic host routing to `smtp.office365.com` when authenticating with Office 365 mailbox accounts.
 - **Status**: Completed, deployed.
+
 
 
 
