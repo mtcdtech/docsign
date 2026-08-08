@@ -37,18 +37,29 @@ export default async function SettingsPage() {
     const themeMode = settingsMap["theme_mode"] || "dark";
     const portalTimezone = settingsMap["portal_timezone"] || "America/Chicago";
     const centralIamUrl = settingsMap["central_iam_url"] || "https://admin.server.mtcd.org";
-    const azureTenantId = settingsMap["azure_tenant_id"] || "";
-    const azureClientId = settingsMap["azure_client_id"] || "";
-    const azureClientSecret = settingsMap["azure_client_secret"] || "";
+    const azureTenantId = settingsMap["azure_tenant_id"] || process.env.AZURE_AD_TENANT_ID || "";
+    const azureClientId = settingsMap["azure_client_id"] || process.env.AZURE_AD_CLIENT_ID || "";
+    const azureClientSecret = settingsMap["azure_client_secret"] || process.env.AZURE_AD_CLIENT_SECRET || "";
 
-    const pcoApplicationId = settingsMap["pco_application_id"] || "";
-    const pcoSecret = settingsMap["pco_secret"] || "";
+    const pcoApplicationId = settingsMap["pco_application_id"] || process.env.PCO_APPLICATION_ID || "";
+    const pcoSecret = settingsMap["pco_secret"] || process.env.PCO_SECRET || "";
 
-    const smtpHost = settingsMap["smtp_host"] || "";
-    const smtpPort = settingsMap["smtp_port"] || "587";
-    const smtpUser = settingsMap["smtp_user"] || "";
-    const smtpPass = settingsMap["smtp_pass"] || "";
-    const smtpFrom = settingsMap["smtp_from"] || "docsign@mtcd.org";
+    // Default SMTP settings using DB settings with process.env / Azure AD auto-config fallbacks
+    let smtpHost = settingsMap["smtp_host"] || process.env.SMTP_HOST || "";
+    let smtpPort = settingsMap["smtp_port"] || process.env.SMTP_PORT || "587";
+    let smtpUser = settingsMap["smtp_user"] || process.env.SMTP_USER || "";
+    let smtpPass = settingsMap["smtp_pass"] || process.env.SMTP_PASS || "";
+    let smtpFrom = settingsMap["smtp_from"] || process.env.SMTP_FROM || "docsign@mtcd.org";
+
+    if (!smtpHost && azureClientId && azureTenantId && azureClientSecret) {
+      smtpHost = "smtp.azurecomm.net";
+      smtpPort = "587";
+      if (!smtpUser) smtpUser = `${azureClientId}@${azureTenantId}`;
+      if (!smtpPass) smtpPass = azureClientSecret;
+    }
+
+    if (!smtpHost) smtpHost = "smtp.azurecomm.net";
+
     const reminderDelayHours = settingsMap["reminder_delay_hours"] || "24";
 
     // Fetch local API key for central IAM registration

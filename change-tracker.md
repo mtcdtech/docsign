@@ -218,8 +218,9 @@
 - **Automated Reminder Schedules & Status Column**: Added `RegistrationReminder` model to [schema.prisma](file:///Users/benny2168/Antigravity/docsign/prisma/schema.prisma) and added `reminder_delay_hours` setting. Rendered a "Reminder Status / Scheduled" table column on the dashboard showing sent timestamps or scheduled send times.
 - **Status**: Completed, ready for deployment.
 
-### [2026-08-08] SMTP & Reminders Settings Tab Render Fix (v0.15.1)
-- **SettingsForm Render Fix**: Restored missing `{activeTab === "email" && (...)}` JSX render block in [SettingsForm.tsx](file:///Users/benny2168/Antigravity/docsign/src/app/admin/settings/SettingsForm.tsx). This fixes the issue where clicking the "SMTP & Reminders" tab displayed an empty card.
+### [2026-08-08] Auto-populate SMTP Settings from Environment (v0.15.2)
+- **Automatic Environment Pre-filling**: Updated [page.tsx](file:///Users/benny2168/Antigravity/docsign/src/app/admin/settings/page.tsx) to query runtime `process.env` values (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `AZURE_AD_*`) when database setting entries are not yet saved. The fields in the "SMTP & Reminders" tab now populate automatically with active environment values so admins do not have to re-enter existing server settings.
 - **Status**: Completed, deployed.
+
 
 
