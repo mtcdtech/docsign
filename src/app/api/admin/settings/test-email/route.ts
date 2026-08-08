@@ -21,10 +21,10 @@ export async function POST(req: Request) {
       to: testRecipient,
       subject: "MTCD DocSign - Test Email Delivery Check",
       html: `
-        <div style="font-family: sans-serif; padding: 24px; max-width: 500px; border: 1px solid #e2e8f0; border-radius: 12px;">
+        <div style="font-family: sans-serif; padding: 24px; max-width: 500px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
           <h2 style="color: #2563eb; margin-top: 0;">✓ Email Delivery Test Successful</h2>
-          <p style="color: #334155;">
-            This test email confirms that your DocSign SMTP mail server configuration is active and working properly.
+          <p style="color: #334155; font-size: 14px; line-height: 1.5;">
+            This test email confirms that your DocSign email server integration is active and working properly.
           </p>
           <p style="color: #64748b; font-size: 13px;">
             Sent to: <strong>${testRecipient}</strong><br/>
@@ -32,6 +32,11 @@ export async function POST(req: Request) {
           </p>
         </div>
       `,
+      smtpHost: body.smtpHost,
+      smtpPort: body.smtpPort,
+      smtpUser: body.smtpUser,
+      smtpPass: body.smtpPass,
+      smtpFrom: body.smtpFrom,
     });
 
     return NextResponse.json({ ok: true, messageId: res.messageId, recipient: testRecipient });

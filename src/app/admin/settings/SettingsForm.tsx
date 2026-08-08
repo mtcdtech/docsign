@@ -347,19 +347,17 @@ export default function SettingsForm({
     setTestingEmail(true);
     setTestEmailStatus(null);
     try {
-      // First save active settings so test uses updated credentials
-      await saveSettings({
-        smtp_host: smtpHost,
-        smtp_port: smtpPort,
-        smtp_user: smtpUser,
-        smtp_pass: smtpPass,
-        smtp_from: smtpFrom,
-      });
-
       const res = await fetch("/api/admin/settings/test-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: testEmailRecipient })
+        body: JSON.stringify({
+          email: testEmailRecipient,
+          smtpHost,
+          smtpPort,
+          smtpUser,
+          smtpPass,
+          smtpFrom,
+        })
       });
       const data = await res.json();
       if (!res.ok || data.ok === false) {

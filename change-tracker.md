@@ -218,9 +218,11 @@
 - **Automated Reminder Schedules & Status Column**: Added `RegistrationReminder` model to [schema.prisma](file:///Users/benny2168/Antigravity/docsign/prisma/schema.prisma) and added `reminder_delay_hours` setting. Rendered a "Reminder Status / Scheduled" table column on the dashboard showing sent timestamps or scheduled send times.
 - **Status**: Completed, ready for deployment.
 
-### [2026-08-08] Fix Exchange Online vs Azure ACS SMTP Routing (v0.15.3)
-- **SMTP Credential Priority Fix**: Refactored [mail.ts](file:///Users/benny2168/Antigravity/docsign/src/lib/mail.ts) so that explicit SMTP credentials (`SMTP_USER`, `SMTP_PASS`) are used directly and not overridden by Azure AD Client ID credentials (`${azureClientId}@${azureTenantId}`). Added automatic host routing to `smtp.office365.com` when authenticating with Office 365 mailbox accounts.
+### [2026-08-08] Microsoft Graph API Email Integration & Test Email Trigger Fix (v0.15.4)
+- **Microsoft Graph API Email Dispatch**: Programmed `sendViaGraphApi` helper in [mail.ts](file:///Users/benny2168/Antigravity/docsign/src/lib/mail.ts) to send emails via Microsoft Graph API OAuth2 token exchange when Azure credentials (`AZURE_AD_CLIENT_ID`, `AZURE_AD_TENANT_ID`, `AZURE_AD_CLIENT_SECRET`) are available. This completely bypasses Exchange Online SMTP Basic Auth restriction errors (`535 5.7.139`).
+- **Independent Test Email Trigger**: Removed automatic `saveSettings(...)` call from `handleTestEmail` in [SettingsForm.tsx](file:///Users/benny2168/Antigravity/docsign/src/app/admin/settings/SettingsForm.tsx). Test email dispatches now send input credentials directly to [/api/admin/settings/test-email](file:///Users/benny2168/Antigravity/docsign/src/app/api/admin/settings/test-email/route.ts) without triggering form submission or global setting saves.
 - **Status**: Completed, deployed.
+
 
 
 
