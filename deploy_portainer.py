@@ -99,6 +99,7 @@ def deploy_stack():
         merged_env_dict = {item["name"]: item["value"] for item in existing_env}
         for k, v in local_env.items():
             if v and k not in EXCLUDE_SYNC_KEYS:
+                # Only overwrite existing value if v is not empty
                 merged_env_dict[k] = v
                 
         # Enforce strict production overrides for critical database and auth config
@@ -108,7 +109,8 @@ def deploy_stack():
         merged_env_dict["AUTHENTIK_CLIENT_SECRET"] = "GMym0HOG89dShkeZVvGwheeEkvUmcLwiIYjemwZZonCyCYiF"
         merged_env_dict["AUTHENTIK_ISSUER"] = "https://auth.server.mtcd.org/application/o/docsign"
                 
-        final_env = [{"name": k, "value": v} for k, v in merged_env_dict.items()]
+        final_env = [{"name": k, "value": v} for k, v in merged_env_dict.items() if v != ""]
+
         
         payload = {
             "StackFileContent": compose_content,
